@@ -1,0 +1,64 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Max's Bar — Cocktail Index</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,400..700;1,9..144,400..600&family=Hanken+Grotesk:wght@400;500;600;700&family=Spline+Sans+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+</head>
+<body>
+
+<header class="bar">
+  <div class="brand">
+    <span class="mark"><em>Max's</em>&nbsp;Bar</span>
+    <span class="sub" id="count">— recipes</span>
+  </div>
+  <div class="controls">
+    <div class="seg" id="modeSeg">
+      <button data-mode="group" class="on">Group</button>
+      <button data-mode="sort">Sort</button>
+    </div>
+    <select id="keySel" title="grouping / sorting key"></select>
+    <label class="search">
+      <svg width="13" height="13" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="7" cy="7" r="5"/><path d="M11 11l3.5 3.5"/></svg>
+      <input id="search" placeholder="filter…" autocomplete="off">
+    </label>
+    <button class="btn primary" id="addBtn">+ Add</button>
+    <div class="menu" id="menu">
+      <button class="btn" id="menuBtn">···</button>
+      <div class="pop">
+        <button data-act="exp-csv">Export CSV</button>
+        <button data-act="exp-txt">Export .txt</button>
+        <div class="div"></div>
+        <button data-act="imp-txt">Import .txt</button>
+        <button data-act="reset" class="danger">Reset to seed</button>
+      </div>
+    </div>
+  </div>
+</header>
+
+<main id="main"></main>
+
+<!-- add / edit modal -->
+<div class="overlay" id="overlay">
+  <div class="modal">
+    <h3 id="mTitle">Add cocktail</h3>
+    <p class="hint">Format: <code>Name: 2 spirit, 3/4 lime, 3/4 syrup (method)</code>. Units default to oz. Tokens: <code>top</code>, <code>float</code>, <code>dash</code>, <code>muddled</code>, <code>(built)</code>, <code>(stirred)</code>. The recipe string is the source of truth.</p>
+    <div class="field"><label>Name</label><input id="fName" placeholder="Daiquiri" autocomplete="off"></div>
+    <div class="field"><label>Recipe</label><textarea id="fRecipe" placeholder="2 rum, 3/4 lime, 3/4 syrup"></textarea></div>
+    <div class="preview"><div class="plbl">Parsed preview</div><div class="chips" id="pvChips"></div></div>
+    <div class="actions">
+      <button class="btn danger-text warn" id="mDelete" style="display:none">Delete</button>
+      <span class="spacer"></span>
+      <button class="btn" id="mCancel">Cancel</button>
+      <button class="btn primary" id="mSave">Save</button>
+    </div>
+  </div>
+</div>
+<input type="file" id="fileIn" accept=".txt,text/plain" style="display:none">
+
+<script type="module" src="/src/main.ts"></script>
+</body>
+</html>
