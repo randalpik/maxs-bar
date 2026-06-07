@@ -10,14 +10,18 @@ import { $ } from './dom';
    Wire up
    ============================================================ */
 const tabs = $('#tabs');
+/** Switch tabs: set state.page and sync the tab + toolbar classes. Caller renders. */
+function selectPage(page: 'recipes' | 'ingredients' | 'syrups'): void {
+  state.page = page;
+  [...tabs.children].forEach(x => x.classList.toggle('on', (x as HTMLElement).dataset.page === page));
+  const bar = $('.bar');
+  bar.classList.toggle('page-ingredients', page === 'ingredients');
+  bar.classList.toggle('page-syrups', page === 'syrups');
+}
 tabs.addEventListener('click', e => {
   const b = (e.target as HTMLElement).closest('button');
   if (!b) return;
-  state.page = b.dataset.page as 'recipes' | 'ingredients' | 'syrups';
-  [...tabs.children].forEach(x => x.classList.toggle('on', x === b));
-  const bar = $('.bar');
-  bar.classList.toggle('page-ingredients', state.page === 'ingredients');
-  bar.classList.toggle('page-syrups', state.page === 'syrups');
+  selectPage(b.dataset.page as 'recipes' | 'ingredients' | 'syrups');
   render();
 });
 $('#modeSeg').addEventListener('click', e => {
@@ -32,6 +36,15 @@ $<HTMLInputElement>('#search').addEventListener('input', e => { state.query = (e
 $('#addBtn').addEventListener('click', () => openModal(null));
 $('#main').addEventListener('click', e => {
   const t = e.target as HTMLElement;
+  // Find button (on every chip): jump to Recipes filtered by that ingredient.
+  const find = t.closest<HTMLElement>('[data-find]');
+  if (find) {
+    selectPage('recipes');
+    state.query = find.dataset.find!;
+    $<HTMLInputElement>('#search').value = state.query;
+    render();
+    return;
+  }
   if (state.page === 'ingredients') {
     const ing = t.closest<HTMLElement>('[data-ing]');
     if (ing) { toggleStock(ing.dataset.ing!); updateIngredientChip(ing); }

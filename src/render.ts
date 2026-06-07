@@ -3,7 +3,7 @@ import { state, derive } from './state';
 import { SPIRIT_LABEL, SPIRIT_ORDER, METHOD_ORDER, titleCase } from './parser';
 import { icon, iconFor, amountTag } from './icons';
 import {
-  buildCatalog, buildStockCtx, isAvailable, missingCount,
+  buildCatalog, buildStockCtx, isAvailable, missingCount, ingredientKey,
   CATEGORY_ORDER, CATEGORY_LABEL,
 } from './ingredients';
 import type { StockCtx, IngredientEntry } from './ingredients';
@@ -43,7 +43,15 @@ export function esc(s: unknown): string {
   return String(s).replace(/[&<>]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;' }[c]!));
 }
 
-export function chipHTML(i: Ingredient, ctx?: StockCtx): string {
+/** Inset top-right "find recipes with this ingredient" button. `key` is the search
+ *  term fed into the recipe filter; `label` is the human name for the tooltip. */
+export function findBtn(key: string, label: string): string {
+  return `<button type="button" class="find" data-find="${esc(key)}" title="Find recipes with ${esc(label)}" tabindex="-1">`
+    + `<svg width="11" height="11" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6"><circle cx="7" cy="7" r="5"/><path d="M11 11l3.5 3.5"/></svg>`
+    + `</button>`;
+}
+
+export function chipHTML(i: Ingredient, ctx?: StockCtx, searchable = false): string {
   const shp = iconFor(i);
   const { amount, tag } = amountTag(i);
   // Available/stocked chips stay plain; only flag what's missing (no ctx -> plain, e.g. modal preview).
@@ -55,6 +63,7 @@ export function chipHTML(i: Ingredient, ctx?: StockCtx): string {
     + (tag ? `<span class="tag">${tag}</span>` : '')
     + (amount ? `<span class="q">${esc(amount)}</span>` : '')
     + `</span>`
+    + (searchable ? findBtn(ingredientKey(i), i.disp) : '')
     + `</div>`;
 }
 
@@ -69,7 +78,7 @@ function cardHTML(d: Derived, idx: number, ctx?: StockCtx): string {
   return `<article class="card" style="animation-delay:${Math.min(idx * 28, 420)}ms">`
     + `<button class="edit" data-edit="${esc(d.rec.name)}" title="edit"><svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4"><path d="M11 2l3 3-8 8-4 1 1-4z"/></svg></button>`
     + `<div class="head"><h2>${esc(d.rec.name)}${d.rec.author ? ` <span class="byline">${esc(d.rec.author)}</span>` : ''}</h2><div class="meta">${meta}</div></div>`
-    + d.p.ingredients.map(i => chipHTML(i, ctx)).join('')
+    + d.p.ingredients.map(i => chipHTML(i, ctx, true)).join('')
     + `</article>`;
 }
 
@@ -192,6 +201,7 @@ function igChipHTML(e: IngredientEntry, stocked: boolean): string {
     + (e.shape ? icon(e.shape, e.color) : '<span class="ph"></span>')
     + `<span class="nm">${esc(e.disp)}</span>`
     + `<span class="qwrap"><span class="tag">${e.count} use${e.count === 1 ? '' : 's'}</span></span>`
+    + findBtn(e.key, e.disp)
     + `</div>`;
 }
 
@@ -234,6 +244,9 @@ export function renderIngredients(): void {
   requestAnimationFrame(layoutCards);
 }
 
+/** Min chip border-box width that keeps the top-right find button off the icon. */
+const FIND_FLOOR = 76;
+
 function chipNeededWidth(c: HTMLElement): number {
   let w = 0;
   c.querySelectorAll('.nm,.q,.tag').forEach(el => {
@@ -245,7 +258,9 @@ function chipNeededWidth(c: HTMLElement): number {
   if (ic) w = Math.max(w, ic.getBoundingClientRect().width);
   const cs = getComputedStyle(c);
   const extra = parseFloat(cs.paddingLeft) + parseFloat(cs.paddingRight) + parseFloat(cs.borderLeftWidth) + parseFloat(cs.borderRightWidth);
-  return Math.ceil(w + extra + 0.5);
+  const v = Math.ceil(w + extra + 0.5);
+  // Reserve width so the inset top-right find button clears the centered 30px icon.
+  return c.querySelector('.find') ? Math.max(v, FIND_FLOOR) : v;
 }
 
 /** Fit each chip in a container to its widest wrapped line, then equalize heights. */
