@@ -79,6 +79,8 @@ export interface IngredientOverride {
   cat?: string;
   color?: string;
   shape?: string | null;
+  /** A removed seed ingredient (always renders unstocked in recipes; hidden from the list). */
+  removed?: boolean;
 }
 
 /** A record paired with its parsed/derived data for rendering. */

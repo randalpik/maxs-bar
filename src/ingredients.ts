@@ -153,19 +153,25 @@ export interface StockCtx {
   stocked: Set<string>;
   stockedUmbrellas: Set<string>;
   active: Set<string>;
+  removed: Set<string>;
 }
 
-/** Precompute, for one render, the stocked keys plus the umbrellas they cover. */
+/** Precompute, for one render, the stocked keys, the umbrellas they cover, and the
+ *  set of removed ingredient keys (which always render unstocked). */
 export function buildStockCtx(cat: Catalog, stocked: Set<string>): StockCtx {
   const stockedUmbrellas = new Set<string>();
   for (const e of cat.entries) if (stocked.has(e.key)) stockedUmbrellas.add(e.umbrella);
-  return { stocked, stockedUmbrellas, active: cat.active };
+  const removed = new Set(Object.entries(state.ingredients).filter(([, o]) => o.removed).map(([k]) => k));
+  return { stocked, stockedUmbrellas, active: cat.active, removed };
 }
 
 /** A recipe ingredient is available if its exact item is stocked, or — only for
- *  generics that actually function as umbrellas — if any family member is stocked. */
+ *  generics that actually function as umbrellas — if any family member is stocked.
+ *  Removed ingredients are never available. */
 export function isAvailable(i: Ingredient, ctx: StockCtx): boolean {
-  if (ctx.stocked.has(ingredientKey(i))) return true;
+  const key = ingredientKey(i);
+  if (ctx.removed.has(key)) return false;
+  if (ctx.stocked.has(key)) return true;
   if (isGeneric(i, ctx.active)) return ctx.stockedUmbrellas.has(umbrellaKey(i));
   return false;
 }

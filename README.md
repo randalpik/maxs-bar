@@ -28,7 +28,9 @@ index.html        # markup + Vite module entry
 src/
   main.ts         # event wiring + init
   state.ts        # shared state + localStorage load/save (key: backbar.csv.v2)
-  parser.ts       # shorthand parser + ingredient classification rules
+  parser.ts       # shorthand parser + ingredient classification rules (regex; build-time)
+  catalog.ts      # runtime ingredient catalog (seed + overrides) + seed-backed classifier
+  ingredients-seed.ts  # GENERATED ingredient seed (run `npm run gen:ingredients`)
   icons.ts        # SVG icon generation + amount formatting
   csv.ts          # CSV serialize/parse (RFC-4180-ish)
   render.ts       # grouping/sorting + DOM rendering + chip layout

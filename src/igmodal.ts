@@ -1,5 +1,6 @@
 import { state, setIngredientOverride, resetIngredientOverride } from './state';
-import { buildCatalog, CATEGORY_ORDER, CATEGORY_LABEL } from './ingredients';
+import { CATEGORY_ORDER, CATEGORY_LABEL } from './ingredients';
+import { runtimeCatalog, isKnownKey, isSeedKey } from './catalog';
 import { icon } from './icons';
 import { titleCase } from './parser';
 import { render } from './render';
@@ -57,24 +58,38 @@ function renderBuilder(): void {
     + SHAPES.map(s => tile(s, icon(s, editingColor))).join('');
 }
 
-export function openIgModal(key: string): void {
-  const entry = buildCatalog(state.records).entries.find(e => e.key === key);
-  if (!entry) return;
-  editingKey = key;
-  editingShape = entry.shape;
-  editingColor = entry.color;
-  $('#igTitle').textContent = `Edit ${entry.disp}`;
-  $<HTMLInputElement>('#igName').value = entry.disp;
-  // The category may be one the select doesn't list (rare fall-through cat) — add it.
+/** Open the modal to edit an existing ingredient (key) or add a new one (null). */
+export function openIgModal(key: string | null): void {
   const sel = $<HTMLSelectElement>('#igCat');
-  if (![...sel.options].some(o => o.value === entry.cat)) {
-    const o = document.createElement('option');
-    o.value = entry.cat; o.textContent = CATEGORY_LABEL[entry.cat] || titleCase(entry.cat);
-    sel.appendChild(o);
+  if (key === null) {
+    editingKey = null;
+    editingShape = null;
+    editingColor = '#C99A5B';
+    $('#igTitle').textContent = 'Add ingredient';
+    $<HTMLInputElement>('#igName').value = '';
+    sel.value = CATEGORY_ORDER[0]!;
+    $<HTMLElement>('#igRemove').style.display = 'none';
+    $<HTMLElement>('#igReset').style.display = 'none';
+  } else {
+    const entry = runtimeCatalog(state.records).entries.find(e => e.key === key);
+    if (!entry) return;
+    editingKey = key;
+    editingShape = entry.shape;
+    editingColor = entry.color;
+    $('#igTitle').textContent = `Edit ${entry.disp}`;
+    $<HTMLInputElement>('#igName').value = entry.disp;
+    // The category may be one the select doesn't list (rare fall-through cat) — add it.
+    if (![...sel.options].some(o => o.value === entry.cat)) {
+      const o = document.createElement('option');
+      o.value = entry.cat; o.textContent = CATEGORY_LABEL[entry.cat] || titleCase(entry.cat);
+      sel.appendChild(o);
+    }
+    sel.value = entry.cat;
+    $<HTMLElement>('#igRemove').style.display = 'block';
+    // Reset only applies to seed ingredients with an edit (added ones use Remove).
+    $<HTMLElement>('#igReset').style.display = (isSeedKey(key) && state.ingredients[key]) ? 'block' : 'none';
   }
-  sel.value = entry.cat;
   renderBuilder();
-  $<HTMLElement>('#igReset').style.display = state.ingredients[key] ? 'block' : 'none';
   $('#igOverlay').classList.add('open');
   $<HTMLInputElement>('#igName').focus();
 }
@@ -82,15 +97,17 @@ export function openIgModal(key: string): void {
 export function closeIgModal(): void { $('#igOverlay').classList.remove('open'); editingKey = null; }
 
 export function saveIgModal(): void {
-  if (!editingKey) return;
   const disp = $<HTMLInputElement>('#igName').value.trim();
-  if (!disp) return;
-  setIngredientOverride(editingKey, {
-    disp,
-    cat: $<HTMLSelectElement>('#igCat').value,
-    color: editingColor,
-    shape: editingShape,
-  });
+  if (!disp) { flashName(); return; }
+  const patch = { disp, cat: $<HTMLSelectElement>('#igCat').value, color: editingColor, shape: editingShape };
+  if (editingKey) {
+    setIngredientOverride(editingKey, patch);
+  } else {
+    // New ingredient: key from the name; block if it collides with an existing one.
+    const key = disp.toLowerCase().replace(/\s+juice$/, '').trim();
+    if (isKnownKey(key)) { flashName(); return; }
+    setIngredientOverride(key, patch);
+  }
   closeIgModal();
   render();
 }
@@ -100,4 +117,19 @@ export function resetIgModal(): void {
   resetIngredientOverride(editingKey);
   closeIgModal();
   render();
+}
+
+/** Remove a seed ingredient (tombstone so it stays hidden) or delete an added one. */
+export function removeIgModal(): void {
+  if (!editingKey) return;
+  if (isSeedKey(editingKey)) setIngredientOverride(editingKey, { removed: true });
+  else resetIngredientOverride(editingKey);
+  closeIgModal();
+  render();
+}
+
+function flashName(): void {
+  const w = $<HTMLInputElement>('#igName');
+  w.style.borderColor = '#e88';
+  setTimeout(() => w.style.borderColor = '', 600);
 }

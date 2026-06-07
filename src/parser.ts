@@ -87,7 +87,11 @@ const RULES: Rule[] = [
 ];
 
 export const titleCase = (s: string): string => s.replace(/\b\w/g, c => c.toUpperCase());
+export const sentenceCase = (s: string): string => { s = s.toLowerCase(); return s.charAt(0).toUpperCase() + s.slice(1); };
 
+/** The full regex classifier. Build-time only in production: the generator uses it
+ *  to bake the ingredient seed, and the app swaps in a seed-backed classifier at
+ *  startup (see setClassifier). Tests use this default. */
 export function classify(name: string): Classified {
   const ls = name.toLowerCase();
   for (const r of RULES) {
@@ -95,6 +99,11 @@ export function classify(name: string): Classified {
   }
   return { cat: 'other', shape: 'circle', color: '#8C857A', abv: 0, disp: titleCase(name) };
 }
+
+/** The classifier parseIngredient uses. Swappable so the app can resolve ingredients
+ *  from the precomputed seed instead of running the regex table at runtime. */
+let activeClassifier: (name: string) => Classified = classify;
+export function setClassifier(fn: (name: string) => Classified): void { activeClassifier = fn; }
 
 const FRAC: Record<string, number> = { '1/2': .5, '1/4': .25, '3/4': .75, '1/3': 1 / 3, '2/3': 2 / 3, '1/6': 1 / 6, '1/8': .125, '3/2': 1.5, '5/2': 2.5 };
 
@@ -105,8 +114,6 @@ export function parseNum(t: string): number | null {
   if (/^\d+(\.\d+)?$/.test(t)) return parseFloat(t);
   return null;
 }
-
-function sentenceCase(s: string): string { s = s.toLowerCase(); return s.charAt(0).toUpperCase() + s.slice(1); }
 
 export function parseIngredient(raw: string): Ingredient {
   let s = raw.trim();
@@ -122,7 +129,7 @@ export function parseIngredient(raw: string): Ingredient {
   const um = s.match(/^(oz|tsp|tbsp|ml|cl)\s+/i);
   if (um) { unit = um[1]!.toLowerCase(); s = s.slice(um[0].length); }
   const name = s.trim();
-  const info = classify(name);
+  const info = activeClassifier(name);
   const lname = name.toLowerCase();
   const isCount = /\bwedges?\b/.test(lname);
   const isPeel = /\b(peel|wheel|twist)\b/.test(lname);

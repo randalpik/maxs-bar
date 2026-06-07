@@ -1,9 +1,11 @@
 import './styles.css';
+import { setClassifier } from './parser';
+import { seedClassify } from './catalog';
 import { state, load, save, seedRecords, toggleStock } from './state';
 import { toCSV } from './csv';
 import { fillKeySel, render, layoutCards, updateIngredientChip } from './render';
 import { openModal, closeModal, saveModal, updatePreview, deleteEditing } from './modal';
-import { openIgModal, closeIgModal, saveIgModal, resetIgModal, fillIgCat, initIgBuilder } from './igmodal';
+import { openIgModal, closeIgModal, saveIgModal, resetIgModal, removeIgModal, fillIgCat, initIgBuilder } from './igmodal';
 import { download, exportTXT, importTXT, importCSV, exportIngredientsCSV } from './io';
 import { $ } from './dom';
 
@@ -35,6 +37,7 @@ $('#modeSeg').addEventListener('click', e => {
 $<HTMLSelectElement>('#keySel').addEventListener('change', e => { state.key = (e.target as HTMLSelectElement).value; render(); });
 $<HTMLInputElement>('#search').addEventListener('input', e => { state.query = (e.target as HTMLInputElement).value; render(); });
 $('#addBtn').addEventListener('click', () => openModal(null));
+$('#addIgBtn').addEventListener('click', () => openIgModal(null));
 $('#main').addEventListener('click', e => {
   const t = e.target as HTMLElement;
   // Find button (on every chip): jump to Recipes filtered by that ingredient.
@@ -67,6 +70,7 @@ $('#fRecipe').addEventListener('input', updatePreview);
 $('#igCancel').addEventListener('click', closeIgModal);
 $('#igSave').addEventListener('click', saveIgModal);
 $('#igReset').addEventListener('click', resetIgModal);
+$('#igRemove').addEventListener('click', removeIgModal);
 $('#igOverlay').addEventListener('click', e => { if (e.target === $('#igOverlay')) closeIgModal(); });
 document.addEventListener('keydown', e => { if (e.key === 'Escape') { closeModal(); closeIgModal(); } });
 
@@ -101,4 +105,5 @@ window.addEventListener('resize', () => {
 if (document.fonts && document.fonts.ready) document.fonts.ready.then(layoutCards);
 
 /* init */
+setClassifier(seedClassify); // resolve recipe ingredients from the seed, not the regex
 load(); fillKeySel(); fillIgCat(); initIgBuilder(); render();

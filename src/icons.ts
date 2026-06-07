@@ -47,6 +47,7 @@ export function fmtOz(v: number): string {
 }
 
 export function iconFor(i: Ingredient): string | null {
+  if (i.cat === 'unknown') return null; // unrecognised recipe ingredient -> no icon
   // Extracts, solutions and tinctures get the dropper bottle regardless of category.
   if (/\b(extract|solution|tincture)\b/i.test(i.disp)) return 'dropper';
   const d = i.disp.toLowerCase();

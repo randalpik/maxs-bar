@@ -58,6 +58,9 @@ header.page-ingredients #modeSeg, header.page-syrups #modeSeg,
 header.page-ingredients #keySel, header.page-syrups #keySel,
 header.page-ingredients .search, header.page-syrups .search,
 header.page-ingredients #addBtn, header.page-syrups #addBtn{display:none}
+/* the ingredient add button mirrors the recipe one, but only on the ingredients page */
+#addIgBtn{display:none}
+header.page-ingredients #addIgBtn{display:inline-flex}
 select,.btn,.search input{
   font-family:var(--mono); font-size:12px; color:var(--text);
   background:var(--surface); border:1px solid var(--line2); border-radius:9px;

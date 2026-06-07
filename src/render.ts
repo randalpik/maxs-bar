@@ -3,10 +3,11 @@ import { state, derive } from './state';
 import { SPIRIT_LABEL, SPIRIT_ORDER, METHOD_ORDER, titleCase } from './parser';
 import { icon, amountTag } from './icons';
 import {
-  buildCatalog, buildStockCtx, isAvailable, missingCount, ingredientKey, effectiveChip,
+  buildStockCtx, isAvailable, missingCount, ingredientKey, effectiveChip,
   CATEGORY_ORDER, CATEGORY_LABEL,
 } from './ingredients';
 import type { StockCtx, IngredientEntry } from './ingredients';
+import { runtimeCatalog } from './catalog';
 import { parseSyrups } from './syrups';
 import type { Syrup } from './syrups';
 import { $ } from './dom';
@@ -111,7 +112,7 @@ export function render(): void {
   $('#count').textContent = state.records.length + ' recipes';
   if (!data.length) { main.innerHTML = '<div class="empty">No recipes match.</div>'; return; }
 
-  const ctx = buildStockCtx(buildCatalog(state.records), state.stocked);
+  const ctx = buildStockCtx(runtimeCatalog(state.records), state.stocked);
 
   if (state.mode === 'sort') {
     const arr = [...data];
@@ -208,7 +209,7 @@ function igChipHTML(e: IngredientEntry, stocked: boolean): string {
 }
 
 export function renderIngredients(): void {
-  const { entries } = buildCatalog(state.records);
+  const { entries } = runtimeCatalog(state.records);
   const total = entries.length;
   const stockedCount = entries.reduce((n, e) => n + (state.stocked.has(e.key) ? 1 : 0), 0);
   $('#count').textContent = `${stockedCount} of ${total} stocked`;
