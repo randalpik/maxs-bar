@@ -22,6 +22,13 @@ export function icon(shape: string, color: string): string {
     case 'bottle': inner = `<rect x="13" y="4.5" width="6" height="3" rx="1" fill="${color}" ${w}/><path d="M14.5 7.5 h3 v2.5 h-3 z" fill="${color}" ${w}/><rect x="9" y="10" width="14" height="17" rx="4.5" fill="${color}" ${w}/><path d="M23 14 c4.5 1.2,4.5 5.6,0 6.8" fill="none" ${w}/>`; break;
     case 'dropper': inner = `<rect x="11.5" y="3" width="9" height="7" rx="3.5" fill="${color}" ${w}/><rect x="12.5" y="9.3" width="7" height="3" rx="0.8" fill="${color}" ${w}/><path d="M10.5 12.8 h11 v10.7 a3.5 3.5 0 0 1 -3.5 3.5 h-4 a3.5 3.5 0 0 1 -3.5 -3.5 z" fill="${color}" ${w}/>`; break;
     case 'triangle': inner = `<path d="M16 8.5 L23.5 22.5 L8.5 22.5 Z" fill="${color}" ${w}/>`; break;
+    case 'egg': inner = `<path d="M16 4 C11 4 8 11 8 17.5 C8 23 11.5 28 16 28 C20.5 28 24 23 24 17.5 C24 11 21 4 16 4 Z" fill="${color}" ${w}/>`; break;
+    case 'cube': inner = `<rect x="9.5" y="9.5" width="13" height="13" rx="3" fill="${color}" ${w}/>`; break;
+    case 'sprig': inner = `<path d="M16 28 C16 22 15 16 16 9" fill="none" stroke="${color}" stroke-width="2" stroke-linecap="round"/><path d="M16 19 C10 18 8 13 11 10 C16 12 16 16 16 19 Z" fill="${color}" ${w}/><path d="M16 15 C22 14 24 9 21 6 C16 8 16 12 16 15 Z" fill="${color}" ${w}/>`; break;
+    case 'seed': inner = `<ellipse cx="16" cy="16" rx="8" ry="10" fill="${color}" ${w}/><path d="M16 7 V25" fill="none" stroke="${S}" stroke-width="1" opacity=".55"/><path d="M11.5 12 q4.5 4 0 8 M20.5 12 q-4.5 4 0 8" fill="none" stroke="${S}" stroke-width=".9" opacity=".4"/>`; break;
+    case 'cherry': inner = `<circle cx="14" cy="20.5" r="6.8" fill="${color}" ${w}/><path d="M16.5 14 C19 9 22 7 25 6.5" fill="none" stroke="${S}" stroke-width="1.4" stroke-linecap="round"/><path d="M24.5 6.8 C27 5 29 6.5 28.5 6.5 C28 9 25.5 9 24.5 6.8 Z" fill="${color}" ${w}/>`; break;
+    case 'berry': inner = [[13.5, 13.5], [18.5, 13.5], [11.5, 18], [16, 18], [20.5, 18], [14, 22.5], [18, 22.5]].map(([x, y]) => `<circle cx="${x}" cy="${y}" r="2.7" fill="${color}" ${w}/>`).join(''); break;
+    case 'twist': inner = `<path d="M21.5 16 a5.5 5.5 0 1 1 -5.5 -5.5 a8.5 8.5 0 1 0 8 8.5" fill="none" stroke="${color}" stroke-width="2.4" stroke-linecap="round"/>`; break;
     default: inner = `<circle cx="16" cy="16" r="10" fill="${color}" ${w}/>`;
   }
   return `<svg viewBox="0 0 32 32" xmlns="http://www.w3.org/2000/svg">${inner}</svg>`;
@@ -41,16 +48,28 @@ export function fmtOz(v: number): string {
 export function iconFor(i: Ingredient): string | null {
   // Extracts, solutions and tinctures get the dropper bottle regardless of category.
   if (/\b(extract|solution|tincture)\b/i.test(i.disp)) return 'dropper';
+  const d = i.disp.toLowerCase();
+  const liquid = i.role === 'pour' || i.role === 'float' || i.role === 'measure' || i.role === 'dash' || i.role === 'top';
   switch (i.cat) {
     case 'spirit': return 'squircle';
     case 'liqueur': return 'hexagon';
     case 'fortified': return 'glass';
     case 'syrup': return 'bottle';
     case 'bitters': return 'triangle';
-    case 'soda': return 'droplet';
-    case 'citrus': return (i.role === 'pour' || i.role === 'float' || i.role === 'measure' || i.role === 'dash') ? 'circle' : null;
-    case 'fruit': return (i.role === 'pour' || i.role === 'float' || i.role === 'measure' || i.role === 'dash') ? 'droplet' : null;
-    default: return null; // egg, sugar, saline, herb, spice, dairy, garnish, other -> iconless
+    case 'egg': return 'egg';
+    case 'sugar': return 'cube';
+    case 'herb': return 'sprig';
+    case 'spice': return 'seed';
+    case 'citrus':
+      if (liquid || /wheel/.test(d)) return 'circle'; // juice & wheels: plain colored circle
+      if (/peel|twist/.test(d)) return 'twist';       // peels & twists: spiral curl
+      return null;                                    // wedges etc. stay iconless
+    case 'fruit':
+      if (/cherry/.test(d)) return 'cherry';
+      if (/raspberr/.test(d)) return 'berry';
+      return liquid ? 'droplet' : null;
+    // Soda, dairy, espresso, and any other non-alcoholic, non-citrus liquid → droplet.
+    default: return (i.cat === 'soda' || liquid) ? 'droplet' : null;
   }
 }
 
