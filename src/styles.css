@@ -150,7 +150,7 @@ main{position:relative; z-index:1; max-width:1180px; margin:0 auto; padding:26px
 }
 .chip:hover .find{opacity:1}
 .chip .find:hover{opacity:1; color:var(--accent); background:var(--accent-dim)}
-.chip svg,.chip .ph{width:30px; height:30px; display:block; flex:none}
+.chip>svg,.chip>.ph{width:30px; height:30px; display:block; flex:none}
 .chip .nm{font-size:10.5px; color:var(--text); text-align:center; line-height:1.2; word-break:break-word}
 .chip .qwrap{display:flex; flex-direction:column; align-items:center; gap:1px}
 .chip .q{font-family:var(--sans); font-size:16px; font-weight:600; color:var(--accent); line-height:1.05; white-space:nowrap}
