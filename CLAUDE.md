@@ -45,10 +45,10 @@ This is the most subtle subsystem. It derives a deduped, canonical ingredient ca
 
 ## Conventions & constraints
 
-- **[docs/backlog.md](docs/backlog.md) is Max's document.** It is the source of truth for product intent. Never edit it (not even to check off completed items) without explicitly asking — this rule is stated in the file itself.
+- [docs/backlog.md](docs/backlog.md) (known as "the backlog") **is Max's document.** It is the source of truth for product intent. Never edit it (not even to check off completed items) without explicitly asking — this rule is stated in the file itself.
 - **styles.css is global**, with CSS variables in `:root` for the dark theme; chips share one base `.chip` with `.unstocked` (red) as the only state flag. Reuse existing variables/classes rather than introducing new color literals.
 - Keep new logic out of the test-covered `parser.ts` when it belongs in the `ingredients.ts` catalog layer.
-- The dev server runs on port 5180 and may already be running locally; don't assume the port is free.
+- The dev server runs on port 5180 and may already be running locally; don't assume the port is free. Test on the existing server if you find it. **Never** stop an existing server you did not start.
 
 
 ## Working with Max
