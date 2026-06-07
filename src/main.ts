@@ -3,6 +3,7 @@ import { state, load, save, seedRecords, toggleStock } from './state';
 import { toCSV } from './csv';
 import { fillKeySel, render, layoutCards, updateIngredientChip } from './render';
 import { openModal, closeModal, saveModal, updatePreview, deleteEditing } from './modal';
+import { openIgModal, closeIgModal, saveIgModal, resetIgModal, fillIgCat } from './igmodal';
 import { download, exportTXT, importTXT, importCSV, exportIngredientsCSV } from './io';
 import { $ } from './dom';
 
@@ -46,6 +47,8 @@ $('#main').addEventListener('click', e => {
     return;
   }
   if (state.page === 'ingredients') {
+    const editIg = t.closest<HTMLElement>('[data-ig-edit]');
+    if (editIg) { openIgModal(editIg.dataset.igEdit!); return; }
     const ing = t.closest<HTMLElement>('[data-ing]');
     if (ing) { toggleStock(ing.dataset.ing!); updateIngredientChip(ing); }
     return;
@@ -60,7 +63,12 @@ $('#mDelete').addEventListener('click', deleteEditing);
 $('#overlay').addEventListener('click', e => { if (e.target === $('#overlay')) closeModal(); });
 $('#fName').addEventListener('input', updatePreview);
 $('#fRecipe').addEventListener('input', updatePreview);
-document.addEventListener('keydown', e => { if (e.key === 'Escape') closeModal(); });
+
+$('#igCancel').addEventListener('click', closeIgModal);
+$('#igSave').addEventListener('click', saveIgModal);
+$('#igReset').addEventListener('click', resetIgModal);
+$('#igOverlay').addEventListener('click', e => { if (e.target === $('#igOverlay')) closeIgModal(); });
+document.addEventListener('keydown', e => { if (e.key === 'Escape') { closeModal(); closeIgModal(); } });
 
 const menu = $('#menu');
 $('#menuBtn').addEventListener('click', e => { e.stopPropagation(); menu.classList.toggle('open'); });
@@ -93,4 +101,4 @@ window.addEventListener('resize', () => {
 if (document.fonts && document.fonts.ready) document.fonts.ready.then(layoutCards);
 
 /* init */
-load(); fillKeySel(); render();
+load(); fillKeySel(); fillIgCat(); render();

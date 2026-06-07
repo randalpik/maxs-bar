@@ -65,6 +65,30 @@
     </div>
   </div>
 </div>
+<!-- edit ingredient modal -->
+<div class="overlay" id="igOverlay">
+  <div class="modal ig-modal">
+    <h3 id="igTitle">Edit ingredient</h3>
+    <p class="hint">Changes how this ingredient appears across the app. Your recipes are unchanged.</p>
+    <div class="ig-edit">
+      <div class="ig-iconpanel">
+        <div class="plbl">Icon</div>
+        <div class="ig-iconbox" id="igIconPrev"></div>
+        <div class="ig-iconnote">Builder coming soon</div>
+      </div>
+      <div class="ig-fields">
+        <div class="field"><label>Name</label><input id="igName" autocomplete="off"></div>
+        <div class="field"><label>Category</label><select id="igCat"></select></div>
+      </div>
+    </div>
+    <div class="actions">
+      <button class="btn danger-text warn" id="igReset" style="display:none">Reset to default</button>
+      <span class="spacer"></span>
+      <button class="btn" id="igCancel">Cancel</button>
+      <button class="btn primary" id="igSave">Save</button>
+    </div>
+  </div>
+</div>
 <input type="file" id="fileIn" accept=".txt,.csv,text/plain,text/csv" style="display:none">
 
 <script type="module" src="/src/main.ts"></script>

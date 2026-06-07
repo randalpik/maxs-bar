@@ -70,6 +70,17 @@ export interface Recipe {
   author: string;
 }
 
+/** User edits to a derived ingredient, keyed by ingredientKey and persisted in
+ *  localStorage. Absent fields fall back to the parser-derived defaults. The key
+ *  itself (stock identity) is never overridden. color/shape are reserved for the
+ *  icon builder. */
+export interface IngredientOverride {
+  disp?: string;
+  cat?: string;
+  color?: string;
+  shape?: string | null;
+}
+
 /** A record paired with its parsed/derived data for rendering. */
 export interface Derived {
   rec: Recipe;

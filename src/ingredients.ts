@@ -1,5 +1,5 @@
 import type { Ingredient, Recipe } from './types';
-import { derive } from './state';
+import { state, derive } from './state';
 import { iconFor } from './icons';
 import { titleCase } from './parser';
 
@@ -41,6 +41,17 @@ export const CATEGORY_LABEL: Record<string, string> = {
 export function ingredientKey(i: Ingredient): string {
   if (i.cat === 'citrus' && i.citrus) return i.citrus;
   return i.disp.toLowerCase().replace(/\s+juice$/, '');
+}
+
+/** Resolve the display name, colour and icon shape for a recipe-chip ingredient,
+ *  applying the user's saved override (if any) over the parser-derived defaults. */
+export function effectiveChip(i: Ingredient): { disp: string; color: string; shape: string | null } {
+  const ov = state.ingredients[ingredientKey(i)];
+  return {
+    disp: ov?.disp ?? i.disp,
+    color: ov?.color ?? i.color,
+    shape: ov && ov.shape !== undefined ? ov.shape : iconFor(i),
+  };
 }
 
 /** Broader family used for generic→family matching. */
@@ -121,14 +132,15 @@ export function buildCatalog(records: Recipe[]): Catalog {
       const shp = citrus ? 'circle' : iconFor(i);
       const ex = map.get(key);
       if (ex) { ex.count++; if (!ex.shape && shp) ex.shape = shp; continue; }
+      const ov = state.ingredients[key];
       map.set(key, {
         key,
         // Citrus folds to the bare fruit; other fruits keep "juice" so e.g.
         // "Cranberry juice" reads distinctly from the sodas beside it in Mixers.
-        disp: citrus ? titleCase(i.citrus!) : i.disp,
-        cat: displayCat(i),
-        color: i.color,
-        shape: shp,
+        disp: ov?.disp ?? (citrus ? titleCase(i.citrus!) : i.disp),
+        cat: ov?.cat ?? displayCat(i),
+        color: ov?.color ?? i.color,
+        shape: ov && ov.shape !== undefined ? ov.shape : shp,
         umbrella: umbrellaKey(i),
         count: 1,
       });

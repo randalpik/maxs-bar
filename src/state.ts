@@ -1,4 +1,4 @@
-import type { Recipe, Derived } from './types';
+import type { Recipe, Derived, IngredientOverride } from './types';
 import { parseLine, baseSpirit, estAlcoholOz } from './parser';
 import { toCSV, parseCSV } from './csv';
 import { SEED_TXT } from './seed';
@@ -9,6 +9,7 @@ import { nowISO } from './util';
    ============================================================ */
 export const KEY = 'backbar.csv.v2';
 export const STOCK_KEY = 'backbar.stock.v1';
+export const INGREDIENTS_KEY = 'backbar.ingredients.v1';
 
 /** Shared, mutable app state — replaces the prototype's module-level globals. */
 export const state: {
@@ -18,6 +19,8 @@ export const state: {
   query: string;
   page: 'recipes' | 'ingredients' | 'syrups';
   stocked: Set<string>;
+  /** Per-ingredient edits, keyed by ingredientKey; layered over parser defaults. */
+  ingredients: Record<string, IngredientOverride>;
 } = {
   records: [],
   mode: 'group',
@@ -25,6 +28,7 @@ export const state: {
   query: '',
   page: 'recipes',
   stocked: new Set(),
+  ingredients: {},
 };
 
 export function seedRecords(): Recipe[] {
@@ -37,6 +41,7 @@ export function seedRecords(): Recipe[] {
 
 export function load(): void {
   loadStock();
+  loadIngredients();
   const raw = localStorage.getItem(KEY);
   if (raw) {
     try { state.records = parseCSV(raw); if (state.records.length) return; } catch { /* fall through to seed */ }
@@ -63,6 +68,34 @@ export function toggleStock(key: string): void {
   if (state.stocked.has(key)) state.stocked.delete(key);
   else state.stocked.add(key);
   saveStock();
+}
+
+/** Per-ingredient overrides, persisted separately from recipes and stock. */
+export function loadIngredients(): void {
+  try {
+    const raw = localStorage.getItem(INGREDIENTS_KEY);
+    if (!raw) return;
+    const obj = JSON.parse(raw);
+    if (obj && typeof obj === 'object') state.ingredients = obj;
+  } catch { /* keep empty */ }
+}
+
+export function saveIngredients(): void {
+  localStorage.setItem(INGREDIENTS_KEY, JSON.stringify(state.ingredients));
+}
+
+/** Merge a patch into an ingredient's override (dropping keys set back to undefined). */
+export function setIngredientOverride(key: string, patch: IngredientOverride): void {
+  const next = { ...state.ingredients[key], ...patch };
+  for (const k of Object.keys(next) as (keyof IngredientOverride)[]) if (next[k] === undefined) delete next[k];
+  if (Object.keys(next).length) state.ingredients[key] = next;
+  else delete state.ingredients[key];
+  saveIngredients();
+}
+
+export function resetIngredientOverride(key: string): void {
+  delete state.ingredients[key];
+  saveIngredients();
 }
 
 export function derive(rec: Recipe): Derived {

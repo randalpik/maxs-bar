@@ -1,9 +1,9 @@
 import type { Derived, Ingredient } from './types';
 import { state, derive } from './state';
 import { SPIRIT_LABEL, SPIRIT_ORDER, METHOD_ORDER, titleCase } from './parser';
-import { icon, iconFor, amountTag } from './icons';
+import { icon, amountTag } from './icons';
 import {
-  buildCatalog, buildStockCtx, isAvailable, missingCount, ingredientKey,
+  buildCatalog, buildStockCtx, isAvailable, missingCount, ingredientKey, effectiveChip,
   CATEGORY_ORDER, CATEGORY_LABEL,
 } from './ingredients';
 import type { StockCtx, IngredientEntry } from './ingredients';
@@ -52,18 +52,18 @@ export function findBtn(key: string, label: string): string {
 }
 
 export function chipHTML(i: Ingredient, ctx?: StockCtx, searchable = false): string {
-  const shp = iconFor(i);
+  const { disp, color, shape } = effectiveChip(i);
   const { amount, tag } = amountTag(i);
   // Available/stocked chips stay plain; only flag what's missing (no ctx -> plain, e.g. modal preview).
   const cls = ctx && !isAvailable(i, ctx) ? ' unstocked' : '';
   return `<div class="chip${cls}">`
-    + (shp ? icon(shp, i.color) : '<span class="ph"></span>')
-    + `<span class="nm">${esc(i.disp)}</span>`
+    + (shape ? icon(shape, color) : '<span class="ph"></span>')
+    + `<span class="nm">${esc(disp)}</span>`
     + `<span class="qwrap">`
     + (tag ? `<span class="tag">${tag}</span>` : '')
     + (amount ? `<span class="q">${esc(amount)}</span>` : '')
     + `</span>`
-    + (searchable ? findBtn(ingredientKey(i), i.disp) : '')
+    + (searchable ? findBtn(ingredientKey(i), disp) : '')
     + `</div>`;
 }
 
@@ -198,6 +198,8 @@ function igChipHTML(e: IngredientEntry, stocked: boolean): string {
   const cls = 'chip ig' + (stocked ? '' : ' unstocked');
   const title = stocked ? IG_TITLE.stocked : IG_TITLE.out;
   return `<div class="${cls}" data-ing="${esc(e.key)}" title="${esc(title)}">`
+    + `<button type="button" class="ig-edit-btn" data-ig-edit="${esc(e.key)}" title="Edit ${esc(e.disp)}" tabindex="-1">`
+    + `<svg width="15" height="15" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4"><path d="M11 2l3 3-8 8-4 1 1-4z"/></svg></button>`
     + (e.shape ? icon(e.shape, e.color) : '<span class="ph"></span>')
     + `<span class="nm">${esc(e.disp)}</span>`
     + `<span class="qwrap"><span class="tag">${e.count} use${e.count === 1 ? '' : 's'}</span></span>`
