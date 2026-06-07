@@ -1,5 +1,5 @@
 import './styles.css';
-import { state, load, save, seedRecords } from './state';
+import { state, load, save, seedRecords, toggleStock } from './state';
 import { toCSV } from './csv';
 import { fillKeySel, render, layoutCards } from './render';
 import { openModal, closeModal, saveModal, updatePreview, deleteEditing } from './modal';
@@ -9,6 +9,15 @@ import { $ } from './dom';
 /* ============================================================
    Wire up
    ============================================================ */
+const tabs = $('#tabs');
+tabs.addEventListener('click', e => {
+  const b = (e.target as HTMLElement).closest('button');
+  if (!b) return;
+  state.page = b.dataset.page as 'recipes' | 'ingredients';
+  [...tabs.children].forEach(x => x.classList.toggle('on', x === b));
+  $('.bar').classList.toggle('page-ingredients', state.page === 'ingredients');
+  render();
+});
 $('#modeSeg').addEventListener('click', e => {
   const b = (e.target as HTMLElement).closest('button');
   if (!b) return;
@@ -20,7 +29,13 @@ $<HTMLSelectElement>('#keySel').addEventListener('change', e => { state.key = (e
 $<HTMLInputElement>('#search').addEventListener('input', e => { state.query = (e.target as HTMLInputElement).value; render(); });
 $('#addBtn').addEventListener('click', () => openModal(null));
 $('#main').addEventListener('click', e => {
-  const b = (e.target as HTMLElement).closest<HTMLElement>('[data-edit]');
+  const t = e.target as HTMLElement;
+  if (state.page === 'ingredients') {
+    const ing = t.closest<HTMLElement>('[data-ing]');
+    if (ing) { toggleStock(ing.dataset.ing!); render(); }
+    return;
+  }
+  const b = t.closest<HTMLElement>('[data-edit]');
   if (b) openModal(b.dataset.edit!);
 });
 

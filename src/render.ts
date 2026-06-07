@@ -2,6 +2,11 @@ import type { Derived, Ingredient } from './types';
 import { state, derive } from './state';
 import { SPIRIT_LABEL, SPIRIT_ORDER, METHOD_ORDER, titleCase } from './parser';
 import { icon, iconFor, amountTag } from './icons';
+import {
+  buildCatalog, buildStockCtx, isAvailable,
+  CATEGORY_ORDER, CATEGORY_LABEL,
+} from './ingredients';
+import type { StockCtx, IngredientEntry } from './ingredients';
 import { $ } from './dom';
 
 /* ============================================================
@@ -36,10 +41,12 @@ export function esc(s: unknown): string {
   return String(s).replace(/[&<>]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;' }[c]!));
 }
 
-export function chipHTML(i: Ingredient): string {
+export function chipHTML(i: Ingredient, ctx?: StockCtx): string {
   const shp = iconFor(i);
   const { amount, tag } = amountTag(i);
-  return `<div class="chip">`
+  // Available/stocked chips stay plain; only flag what's missing (no ctx -> plain, e.g. modal preview).
+  const cls = ctx && !isAvailable(i, ctx) ? ' unstocked' : '';
+  return `<div class="chip${cls}">`
     + (shp ? icon(shp, i.color) : '<span class="ph"></span>')
     + `<span class="nm">${esc(i.disp)}</span>`
     + `<span class="qwrap">`
@@ -49,7 +56,7 @@ export function chipHTML(i: Ingredient): string {
     + `</div>`;
 }
 
-function cardHTML(d: Derived, idx: number): string {
+function cardHTML(d: Derived, idx: number, ctx?: StockCtx): string {
   const baseL = d.base ? SPIRIT_LABEL[d.base] || titleCase(d.base) : '—';
   const drinks = +(d.alc / 0.6).toFixed(2);
   const meta = [
@@ -60,7 +67,7 @@ function cardHTML(d: Derived, idx: number): string {
   return `<article class="card" style="animation-delay:${Math.min(idx * 28, 420)}ms">`
     + `<button class="edit" data-edit="${esc(d.rec.name)}" title="edit"><svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4"><path d="M11 2l3 3-8 8-4 1 1-4z"/></svg></button>`
     + `<div class="head"><h2>${esc(d.rec.name)}</h2><div class="meta">${meta}</div></div>`
-    + d.p.ingredients.map(chipHTML).join('')
+    + d.p.ingredients.map(i => chipHTML(i, ctx)).join('')
     + `</article>`;
 }
 
@@ -86,9 +93,13 @@ function groupSortKeys(): string[] | null {
 }
 
 export function render(): void {
+  if (state.page === 'ingredients') { renderIngredients(); return; }
+
   const data = state.records.map(derive).filter(matchQuery);
   $('#count').textContent = state.records.length + ' recipes';
   if (!data.length) { main.innerHTML = '<div class="empty">No recipes match.</div>'; return; }
+
+  const ctx = buildStockCtx(buildCatalog(state.records), state.stocked);
 
   if (state.mode === 'sort') {
     const arr = [...data];
@@ -100,7 +111,7 @@ export function render(): void {
     }
     const lbl = KEY_OPTS.sort.find(o => o[0] === state.key)![1];
     main.innerHTML = `<div class="grouphead"><span class="lbl">Sorted · ${lbl}</span><span class="cnt">${arr.length}</span><span class="rule"></span></div>`
-      + `<div class="grid">${arr.map((d, i) => cardHTML(d, i)).join('')}</div>`;
+      + `<div class="grid">${arr.map((d, i) => cardHTML(d, i, ctx)).join('')}</div>`;
     requestAnimationFrame(layoutCards);
     return;
   }
@@ -126,7 +137,58 @@ export function render(): void {
   for (const g of keys) {
     const items = map.get(g)!.sort((a, b) => a.rec.name.localeCompare(b.rec.name));
     html += `<div class="grouphead"><span class="lbl">${esc(groupLabel(g))}</span><span class="cnt">${items.length}</span><span class="rule"></span></div>`;
-    html += `<div class="grid">${items.map(d => cardHTML(d, gi++)).join('')}</div>`;
+    html += `<div class="grid">${items.map(d => cardHTML(d, gi++, ctx)).join('')}</div>`;
+  }
+  main.innerHTML = html;
+  requestAnimationFrame(layoutCards);
+}
+
+/* ---------- ingredients page ---------- */
+
+function igChipHTML(e: IngredientEntry, stocked: boolean): string {
+  const cls = 'chip ig' + (stocked ? '' : ' unstocked');
+  const title = stocked ? 'In stock — click to mark out' : 'Out of stock — click to mark stocked';
+  return `<div class="${cls}" data-ing="${esc(e.key)}" title="${esc(title)}">`
+    + (e.shape ? icon(e.shape, e.color) : '<span class="ph"></span>')
+    + `<span class="nm">${esc(e.disp)}</span>`
+    + `<span class="qwrap"><span class="tag">${e.count} use${e.count === 1 ? '' : 's'}</span></span>`
+    + `</div>`;
+}
+
+export function renderIngredients(): void {
+  const { entries } = buildCatalog(state.records);
+  const total = entries.length;
+  const stockedCount = entries.reduce((n, e) => n + (state.stocked.has(e.key) ? 1 : 0), 0);
+  $('#count').textContent = `${stockedCount} of ${total} stocked`;
+  if (!total) { main.innerHTML = '<div class="empty">No ingredients yet.</div>'; return; }
+
+  const byCat = new Map<string, IngredientEntry[]>();
+  for (const e of entries) {
+    let arr = byCat.get(e.cat);
+    if (!arr) { arr = []; byCat.set(e.cat, arr); }
+    arr.push(e);
+  }
+  const cats = [...CATEGORY_ORDER, ...[...byCat.keys()].filter(c => !CATEGORY_ORDER.includes(c))];
+
+  // An umbrella is a real group only when it has more than one member; lone
+  // items (their own "self:" umbrella, or a family with no siblings) are singletons.
+  const umbCount = new Map<string, number>();
+  for (const e of entries) umbCount.set(e.umbrella, (umbCount.get(e.umbrella) ?? 0) + 1);
+  const grouped = (e: IngredientEntry) => (umbCount.get(e.umbrella) ?? 0) > 1;
+
+  let html = '';
+  for (const cat of cats) {
+    const items = byCat.get(cat);
+    if (!items || !items.length) continue;
+    // Grouped items first (clustered by umbrella), then singletons; alpha within each.
+    items.sort((a, b) => {
+      const ga = grouped(a), gb = grouped(b);
+      if (ga !== gb) return ga ? -1 : 1;
+      if (ga && a.umbrella !== b.umbrella) return a.umbrella.localeCompare(b.umbrella);
+      return a.disp.localeCompare(b.disp);
+    });
+    html += `<div class="grouphead"><span class="lbl">${esc(CATEGORY_LABEL[cat] || titleCase(cat))}</span><span class="cnt">${items.length}</span><span class="rule"></span></div>`;
+    html += `<div class="ig-grid">${items.map(e => igChipHTML(e, state.stocked.has(e.key))).join('')}</div>`;
   }
   main.innerHTML = html;
   requestAnimationFrame(layoutCards);
@@ -146,16 +208,20 @@ function chipNeededWidth(c: HTMLElement): number {
   return Math.ceil(w + extra + 0.5);
 }
 
+/** Fit each chip in a container to its widest wrapped line, then equalize heights. */
+function layoutChipGroup(container: HTMLElement): void {
+  const chips = [...container.querySelectorAll<HTMLElement>('.chip')];
+  if (!chips.length) return;
+  chips.forEach(c => { c.style.height = ''; c.style.width = ''; });
+  // Shrink each chip to its widest wrapped line — no dead horizontal space.
+  const widths = chips.map(chipNeededWidth);
+  chips.forEach((c, k) => { c.style.width = widths[k] + 'px'; });
+  // Equalize every chip to the tallest; CSS distributes contents top-to-bottom.
+  const maxH = Math.max(...chips.map(c => c.offsetHeight));
+  chips.forEach(c => { c.style.height = maxH + 'px'; });
+}
+
 export function layoutCards(): void {
-  document.querySelectorAll<HTMLElement>('#main .card').forEach(card => {
-    const chips = [...card.querySelectorAll<HTMLElement>('.chip')];
-    if (!chips.length) return;
-    chips.forEach(c => { c.style.height = ''; c.style.width = ''; });
-    // Shrink each chip to its widest wrapped line — no dead horizontal space.
-    const widths = chips.map(chipNeededWidth);
-    chips.forEach((c, k) => { c.style.width = widths[k] + 'px'; });
-    // Equalize every chip to the tallest; CSS distributes contents top-to-bottom.
-    const maxH = Math.max(...chips.map(c => c.offsetHeight));
-    chips.forEach(c => { c.style.height = maxH + 'px'; });
-  });
+  // Recipe cards and ingredient-category grids both get the same chip fitting.
+  document.querySelectorAll<HTMLElement>('#main .card, #main .ig-grid').forEach(layoutChipGroup);
 }

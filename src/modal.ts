@@ -33,7 +33,7 @@ export function updatePreview(): void {
   const rc = $<HTMLTextAreaElement>('#fRecipe').value.trim();
   const p = parseLine(`${nm}: ${rc}`);
   $('#pvChips').innerHTML = (p && p.ingredients.length)
-    ? p.ingredients.map(chipHTML).join('')
+    ? p.ingredients.map(i => chipHTML(i)).join('')
     : '<span style="color:var(--faint);font-size:11px">…</span>';
 }
 
