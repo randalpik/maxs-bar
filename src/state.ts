@@ -31,7 +31,7 @@ export function seedRecords(): Recipe[] {
   return SEED_TXT.split('\n').map(l => l.trim()).filter(Boolean).map(line => {
     const p = parseLine(line)!;
     const t = nowISO();
-    return { name: p.name, recipe: p.body + (p.hasMethod ? ` (${p.method})` : ''), created: t, edited: t };
+    return { name: p.name, recipe: p.body + (p.hasMethod ? ` (${p.method})` : ''), created: t, edited: t, author: '' };
   });
 }
 

@@ -66,7 +66,7 @@ function cardHTML(d: Derived, idx: number, ctx?: StockCtx): string {
   ].join('');
   return `<article class="card" style="animation-delay:${Math.min(idx * 28, 420)}ms">`
     + `<button class="edit" data-edit="${esc(d.rec.name)}" title="edit"><svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4"><path d="M11 2l3 3-8 8-4 1 1-4z"/></svg></button>`
-    + `<div class="head"><h2>${esc(d.rec.name)}</h2><div class="meta">${meta}</div></div>`
+    + `<div class="head"><h2>${esc(d.rec.name)}${d.rec.author ? ` <span class="byline">${esc(d.rec.author)}</span>` : ''}</h2><div class="meta">${meta}</div></div>`
     + d.p.ingredients.map(i => chipHTML(i, ctx)).join('')
     + `</article>`;
 }

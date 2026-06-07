@@ -10,8 +10,8 @@ function csvField(s: unknown): string {
 }
 
 export function toCSV(recs: Recipe[]): string {
-  const head = 'name,recipe,created,edited';
-  return head + '\n' + recs.map(r => [r.name, r.recipe, r.created, r.edited].map(csvField).join(',')).join('\n');
+  const head = 'name,recipe,created,edited,author';
+  return head + '\n' + recs.map(r => [r.name, r.recipe, r.created, r.edited, r.author].map(csvField).join(',')).join('\n');
 }
 
 export function parseCSV(text: string): Recipe[] {
@@ -36,5 +36,5 @@ export function parseCSV(text: string): Recipe[] {
   rows.shift(); // header
   return rows
     .filter(r => r.length >= 2 && r[0])
-    .map(r => ({ name: r[0]!, recipe: r[1]!, created: r[2] || nowISO(), edited: r[3] || nowISO() }));
+    .map(r => ({ name: r[0]!, recipe: r[1]!, created: r[2] || nowISO(), edited: r[3] || nowISO(), author: r[4] || '' }));
 }

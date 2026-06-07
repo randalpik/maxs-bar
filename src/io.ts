@@ -28,7 +28,7 @@ export function importTXT(text: string): void {
     if (!p || !p.name) continue;
     const recipe = p.body + (p.hasMethod ? ` (${p.method})` : '');
     const ex = state.records.find(x => x.name.toLowerCase() === p.name.toLowerCase());
-    if (ex) { ex.recipe = recipe; ex.edited = t; } else state.records.push({ name: p.name, recipe, created: t, edited: t });
+    if (ex) { ex.recipe = recipe; ex.edited = t; } else state.records.push({ name: p.name, recipe, created: t, edited: t, author: '' });
   }
   save(); render();
 }
@@ -43,8 +43,8 @@ export function importCSV(text: string): void {
   for (const r of recs) {
     if (!r.name) continue;
     const ex = state.records.find(x => x.name.toLowerCase() === r.name.toLowerCase());
-    if (ex) { ex.recipe = r.recipe; ex.edited = r.edited || t; }
-    else state.records.push({ name: r.name, recipe: r.recipe, created: r.created || t, edited: r.edited || t });
+    if (ex) { ex.recipe = r.recipe; ex.edited = r.edited || t; ex.author = r.author || ex.author; }
+    else state.records.push({ name: r.name, recipe: r.recipe, created: r.created || t, edited: r.edited || t, author: r.author || '' });
   }
   save(); render();
 }

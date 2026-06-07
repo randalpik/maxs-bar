@@ -66,6 +66,8 @@ export interface Recipe {
   recipe: string;
   created: string;
   edited: string;
+  /** Drink author/creator. Blank for classics; set for originals. */
+  author: string;
 }
 
 /** A record paired with its parsed/derived data for rendering. */

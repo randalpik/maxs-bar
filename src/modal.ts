@@ -16,9 +16,11 @@ export function openModal(name: string | null): void {
   if (name) {
     const r = state.records.find(x => x.name === name)!;
     $<HTMLInputElement>('#fName').value = r.name;
+    $<HTMLInputElement>('#fAuthor').value = r.author;
     $<HTMLTextAreaElement>('#fRecipe').value = r.recipe;
   } else {
     $<HTMLInputElement>('#fName').value = '';
+    $<HTMLInputElement>('#fAuthor').value = '';
     $<HTMLTextAreaElement>('#fRecipe').value = '';
   }
   updatePreview();
@@ -39,15 +41,16 @@ export function updatePreview(): void {
 
 export function saveModal(): void {
   const name = $<HTMLInputElement>('#fName').value.trim();
+  const author = $<HTMLInputElement>('#fAuthor').value.trim();
   const recipe = $<HTMLTextAreaElement>('#fRecipe').value.trim();
   if (!name || !recipe) { flash(); return; }
   const t = nowISO();
   if (editingName) {
     const r = state.records.find(x => x.name === editingName)!;
-    r.name = name; r.recipe = recipe; r.edited = t;
+    r.name = name; r.recipe = recipe; r.author = author; r.edited = t;
   } else {
     const ex = state.records.find(x => x.name.toLowerCase() === name.toLowerCase());
-    if (ex) { ex.recipe = recipe; ex.edited = t; } else state.records.push({ name, recipe, created: t, edited: t });
+    if (ex) { ex.recipe = recipe; ex.author = author; ex.edited = t; } else state.records.push({ name, recipe, created: t, edited: t, author });
   }
   save(); closeModal(); render();
 }

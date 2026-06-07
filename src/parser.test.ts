@@ -117,10 +117,14 @@ describe('baseSpirit & estAlcoholOz', () => {
 describe('CSV round-trip', () => {
   it('preserves fields containing commas, quotes, and newlines', () => {
     const recs: Recipe[] = [
-      { name: 'Daiquiri', recipe: '2 rum, 3/4 lime, 3/4 syrup', created: '2020-01-01T00:00:00.000Z', edited: '2020-01-01T00:00:00.000Z' },
-      { name: 'Quote "Test"', recipe: 'a, b, "c"\nd', created: '2021-01-01T00:00:00.000Z', edited: '2021-01-01T00:00:00.000Z' },
+      { name: 'Daiquiri', recipe: '2 rum, 3/4 lime, 3/4 syrup', created: '2020-01-01T00:00:00.000Z', edited: '2020-01-01T00:00:00.000Z', author: '' },
+      { name: 'Quote "Test"', recipe: 'a, b, "c"\nd', created: '2021-01-01T00:00:00.000Z', edited: '2021-01-01T00:00:00.000Z', author: 'Max' },
     ];
     const round = parseCSV(toCSV(recs));
     expect(round).toEqual(recs);
+  });
+  it('defaults author to empty for legacy 4-column CSV', () => {
+    const legacy = 'name,recipe,created,edited\nDaiquiri,"2 rum, 3/4 lime",2020-01-01T00:00:00.000Z,2020-01-01T00:00:00.000Z';
+    expect(parseCSV(legacy)[0]!.author).toBe('');
   });
 });

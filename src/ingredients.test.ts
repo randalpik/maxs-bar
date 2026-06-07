@@ -3,7 +3,7 @@ import { buildCatalog, buildStockCtx, missingCount } from './ingredients';
 import { derive } from './state';
 import type { Recipe } from './types';
 
-const rec = (name: string, recipe: string): Recipe => ({ name, recipe, created: '', edited: '' });
+const rec = (name: string, recipe: string): Recipe => ({ name, recipe, created: '', edited: '', author: '' });
 
 describe('missingCount', () => {
   it('counts every distinct ingredient when nothing is stocked', () => {
