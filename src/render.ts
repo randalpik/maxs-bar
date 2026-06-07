@@ -47,7 +47,7 @@ export function esc(s: unknown): string {
  *  term fed into the recipe filter; `label` is the human name for the tooltip. */
 export function findBtn(key: string, label: string): string {
   return `<button type="button" class="find" data-find="${esc(key)}" title="Find recipes with ${esc(label)}" tabindex="-1">`
-    + `<svg width="11" height="11" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6"><circle cx="7" cy="7" r="5"/><path d="M11 11l3.5 3.5"/></svg>`
+    + `<svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4"><circle cx="7" cy="7" r="5"/><path d="M11 11l3.5 3.5"/></svg>`
     + `</button>`;
 }
 
