@@ -20,6 +20,7 @@ export function icon(shape: string, color: string): string {
     case 'diamond': inner = `<path d="M16 5 L26 16 L16 27 L6 16 Z" fill="${color}" ${w}/>`; break;
     case 'leaf': inner = `<path d="M16 4 C26 10,26 22,16 28 C6 22,6 10,16 4 Z" fill="${color}" ${w}/><path d="M16 6 L16 26" fill="none" stroke="${S}" stroke-width="1.1" opacity=".7"/>`; break;
     case 'bottle': inner = `<rect x="13" y="4.5" width="6" height="3" rx="1" fill="${color}" ${w}/><path d="M14.5 7.5 h3 v2.5 h-3 z" fill="${color}" ${w}/><rect x="9" y="10" width="14" height="17" rx="4.5" fill="${color}" ${w}/><path d="M23 14 c4.5 1.2,4.5 5.6,0 6.8" fill="none" ${w}/>`; break;
+    case 'dropper': inner = `<rect x="11.5" y="3" width="9" height="7" rx="3.5" fill="${color}" ${w}/><rect x="12.5" y="9.3" width="7" height="3" rx="0.8" fill="${color}" ${w}/><path d="M10.5 12.8 h11 v10.7 a3.5 3.5 0 0 1 -3.5 3.5 h-4 a3.5 3.5 0 0 1 -3.5 -3.5 z" fill="${color}" ${w}/>`; break;
     case 'triangle': inner = `<path d="M16 8.5 L23.5 22.5 L8.5 22.5 Z" fill="${color}" ${w}/>`; break;
     default: inner = `<circle cx="16" cy="16" r="10" fill="${color}" ${w}/>`;
   }
@@ -38,6 +39,8 @@ export function fmtOz(v: number): string {
 }
 
 export function iconFor(i: Ingredient): string | null {
+  // Extracts, solutions and tinctures get the dropper bottle regardless of category.
+  if (/\b(extract|solution|tincture)\b/i.test(i.disp)) return 'dropper';
   switch (i.cat) {
     case 'spirit': return 'squircle';
     case 'liqueur': return 'hexagon';
