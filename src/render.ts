@@ -84,7 +84,7 @@ function cardHTML(d: Derived, idx: number, ctx?: StockCtx): string {
 }
 
 function groupsFor(d: Derived): string[] {
-  if (state.key === 'spirit') { const s = [...new Set(d.p.ingredients.filter(i => i.cat === 'spirit').map(i => i.fam))]; return s.length ? (s as string[]) : ['—']; }
+  if (state.key === 'spirit') { const s = [...new Set(d.p.ingredients.filter(i => i.cat === 'spirit' || (i.cat === 'fortified' && i.fam)).map(i => i.fam))]; return s.length ? (s as string[]) : ['—']; }
   if (state.key === 'citrus') { const s = [...new Set(d.p.ingredients.filter(i => i.cat === 'citrus').map(i => i.citrus))]; return s.length ? (s as string[]) : ['—']; }
   if (state.key === 'syrup') { const s = [...new Set(d.p.ingredients.filter(i => i.cat === 'syrup').map(i => i.syrup))]; return s.length ? (s as string[]) : ['—']; }
   if (state.key === 'liqueur') { const s = [...new Set(d.p.ingredients.filter(i => i.cat === 'liqueur').map(i => i.disp))]; return s.length ? s : ['—']; }

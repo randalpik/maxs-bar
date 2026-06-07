@@ -4,10 +4,10 @@ import type { Classified, Ingredient, ParsedLine, Role, Rule } from './types';
    Cocktail shorthand parser  (validated headless against drinks.txt)
    ============================================================ */
 
-export const SPIRIT_ORDER = ['rum', 'whiskey', 'tequila', 'gin', 'brandy', 'cachaça', 'absinthe', 'aquavit', 'neutral'];
+export const SPIRIT_ORDER = ['rum', 'whiskey', 'tequila', 'gin', 'brandy', 'cachaça', 'absinthe', 'aquavit', 'wine', 'neutral'];
 export const SPIRIT_LABEL: Record<string, string> = {
   rum: 'Rum', whiskey: 'Whiskey', tequila: 'Tequila', gin: 'Gin', brandy: 'Brandy',
-  cachaça: 'Cachaça', absinthe: 'Absinthe', aquavit: 'Aquavit', neutral: 'Neutral spirit',
+  cachaça: 'Cachaça', absinthe: 'Absinthe', aquavit: 'Aquavit', wine: 'Wine', neutral: 'Neutral spirit',
 };
 export const METHOD_ORDER = ['shaken', 'stirred', 'built'];
 
@@ -29,6 +29,7 @@ const RULES: Rule[] = [
   { re: /sugar/, cat: 'sugar', shape: 'diamond', color: '#D8C9A0', abv: 0 },
   { re: /saline/, cat: 'other', shape: 'diamond', color: '#DDE6EC', abv: 0, disp: 'Saline solution' },
   { re: /espresso|cold brew/, cat: 'other', shape: 'droplet', color: '#3A2417', abv: 0, disp: 'Espresso' },
+  { re: /coconut/, cat: 'other', shape: 'droplet', color: '#F2EAD8', abv: 0, disp: 'Coconut cream' },
   { re: /luxardo|maraschino/, cat: 'liqueur', shape: 'hexagon', color: '#E7E1D2', abv: 0.32, disp: 'Luxardo' },
   { re: /curaçao|curacao|triple sec|cointreau/, cat: 'liqueur', shape: 'hexagon', color: '#E0892B', abv: 0.40, disp: 'Orange Curaçao' },
   { re: /violette|violet/, cat: 'liqueur', shape: 'hexagon', color: '#7A4FA3', abv: 0.20, disp: 'Crème de violette' },
@@ -37,18 +38,21 @@ const RULES: Rule[] = [
   { re: /bailey/, cat: 'liqueur', shape: 'hexagon', color: '#CBA980', abv: 0.17, disp: "Bailey's" },
   { re: /cacao/, cat: 'liqueur', shape: 'hexagon', color: '#5A3A29', abv: 0.24, disp: 'Crème de cacao' },
   { re: /amaretto/, cat: 'liqueur', shape: 'hexagon', color: '#9B5A2A', abv: 0.24, disp: 'Amaretto' },
+  { re: /falernum/, cat: 'liqueur', shape: 'hexagon', color: '#D9C28A', abv: 0.11, disp: 'Falernum' },
+  { re: /passion ?fruit/, cat: 'liqueur', shape: 'hexagon', color: '#E8852B', abv: 0.18, disp: 'Passion fruit liqueur' },
+  { re: /aperol/, cat: 'liqueur', shape: 'hexagon', color: '#F4531E', abv: 0.11, disp: 'Aperol' },
   { re: /bénédictine|benedictine/, cat: 'liqueur', shape: 'hexagon', color: '#C8902E', abv: 0.40, disp: 'Bénédictine' },
   { re: /yellow chartreuse/, cat: 'liqueur', shape: 'hexagon', color: '#D7C23A', abv: 0.40, disp: 'Yellow Chartreuse' },
   { re: /green chartreuse/, cat: 'liqueur', shape: 'hexagon', color: '#3E7A33', abv: 0.55, disp: 'Green Chartreuse' },
   { re: /chartreuse/, cat: 'liqueur', shape: 'hexagon', color: '#4E7B36', abv: 0.40, disp: 'Chartreuse' },
   { re: /campari/, cat: 'liqueur', shape: 'hexagon', color: '#C3122E', abv: 0.24, disp: 'Campari' },
   { re: /blackberry|mûre|mure|cassis/, cat: 'liqueur', shape: 'hexagon', color: '#4A2540', abv: 0.20, disp: 'Blackberry liqueur' },
-  { re: /sweet vermouth/, cat: 'fortified', shape: 'glass', color: '#7A2E2E', abv: 0.17, disp: 'Sweet vermouth' },
-  { re: /dry vermouth/, cat: 'fortified', shape: 'glass', color: '#D7D1A0', abv: 0.17, disp: 'Dry vermouth' },
-  { re: /vermouth/, cat: 'fortified', shape: 'glass', color: '#B0734A', abv: 0.17, disp: 'Vermouth' },
-  { re: /lillet/, cat: 'fortified', shape: 'glass', color: '#E6D98A', abv: 0.17, disp: 'Lillet Blanc' },
-  { re: /champagne|sparkling|prosecco/, cat: 'fortified', shape: 'glass', color: '#E8E2B0', abv: 0.12, disp: 'Champagne' },
-  { re: /wine/, cat: 'fortified', shape: 'glass', color: '#6E1F2E', abv: 0.13, disp: 'Red wine' },
+  { re: /sweet vermouth/, cat: 'fortified', shape: 'glass', color: '#7A2E2E', abv: 0.17, fam: 'wine', disp: 'Sweet vermouth' },
+  { re: /dry vermouth/, cat: 'fortified', shape: 'glass', color: '#D7D1A0', abv: 0.17, fam: 'wine', disp: 'Dry vermouth' },
+  { re: /vermouth/, cat: 'fortified', shape: 'glass', color: '#B0734A', abv: 0.17, fam: 'wine', disp: 'Vermouth' },
+  { re: /lillet/, cat: 'fortified', shape: 'glass', color: '#E6D98A', abv: 0.17, fam: 'wine', disp: 'Lillet Blanc' },
+  { re: /champagne|sparkling|prosecco/, cat: 'fortified', shape: 'glass', color: '#E8E2B0', abv: 0.12, fam: 'wine', disp: 'Champagne' },
+  { re: /wine/, cat: 'fortified', shape: 'glass', color: '#6E1F2E', abv: 0.13, fam: 'wine', disp: 'Red wine' },
   { re: /simple/, cat: 'syrup', shape: 'droplet', color: '#DDE2E6', abv: 0, disp: 'Simple syrup', syrup: 'simple' },
   { re: /honey/, cat: 'syrup', shape: 'droplet', color: '#D6A93B', abv: 0, disp: 'Honey syrup', syrup: 'honey' },
   { re: /cinnamon/, cat: 'syrup', shape: 'droplet', color: '#8A4B2A', abv: 0, disp: 'Cinnamon syrup', syrup: 'cinnamon' },
@@ -56,6 +60,7 @@ const RULES: Rule[] = [
   { re: /orgeat/, cat: 'syrup', shape: 'bottle', color: '#E6DAB8', abv: 0, disp: 'Orgeat', syrup: 'orgeat' },
   { re: /syrup/, cat: 'syrup', shape: 'droplet', color: '#C9B98A', abv: 0, disp: 'Syrup', syrup: 'generic' },
   { re: /arugula/, cat: 'herb', shape: 'leaf', color: '#6B8F3F', abv: 0, disp: 'Arugula extract' },
+  { re: /ginger extract/, cat: 'other', shape: 'droplet', color: '#C99A3B', abv: 0, disp: 'Ginger extract' },
   { re: /mint/, cat: 'herb', shape: 'leaf', color: '#6FAE4B', abv: 0, disp: 'Mint' },
   { re: /grapefruit/, cat: 'citrus', shape: 'circle', color: '#E8806B', abv: 0, disp: 'Grapefruit', citrus: 'grapefruit' },
   { re: /lime/, cat: 'citrus', shape: 'circle', color: '#8FBF3F', abv: 0, disp: 'Lime', citrus: 'lime' },
@@ -65,6 +70,7 @@ const RULES: Rule[] = [
   { re: /cranberry/, cat: 'fruit', shape: 'circle', color: '#B5293A', abv: 0, disp: 'Cranberry' },
   { re: /raspberry/, cat: 'fruit', shape: 'circle', color: '#B02A4A', abv: 0, disp: 'Raspberry' },
   { re: /cherry/, cat: 'fruit', shape: 'circle', color: '#B5293A', abv: 0, disp: 'Cherry' },
+  { re: /pineapple/, cat: 'fruit', shape: 'circle', color: '#E8C13A', abv: 0, disp: 'Pineapple' },
   { re: /nutmeg/, cat: 'spice', shape: 'diamond', color: '#8A5A2A', abv: 0, disp: 'Nutmeg' },
   { re: /absinthe/, cat: 'spirit', shape: 'squircle', color: '#9FCB3B', abv: 0.62, fam: 'absinthe', disp: 'Absinthe' },
   { re: /apple brandy|calvados/, cat: 'spirit', shape: 'squircle', color: '#B86A2A', abv: 0.40, fam: 'brandy', disp: 'Apple brandy' },
@@ -191,7 +197,9 @@ export const estAlcoholOz = (r: ParsedLine): number => r.ingredients.reduce((t, 
 
 export function baseSpirit(r: ParsedLine): string | null {
   const sp = r.ingredients.filter(i => i.cat === 'spirit');
-  if (!sp.length) return null;
-  sp.sort((a, b) => volOz(b) - volOz(a));
-  return sp[0]!.fam;
+  if (sp.length) { sp.sort((a, b) => volOz(b) - volOz(a)); return sp[0]!.fam; }
+  // No true spirit — fall back to the largest-pour fortified wine (e.g. an Aperol Spritz).
+  const fz = r.ingredients.filter(i => i.cat === 'fortified' && i.fam);
+  if (fz.length) { fz.sort((a, b) => volOz(b) - volOz(a)); return fz[0]!.fam; }
+  return null;
 }

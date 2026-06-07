@@ -38,6 +38,14 @@ export const INGREDIENT_SEED: SeedEntry[] = [
     "umbrella": "bitters"
   },
   {
+    "key": "aperol",
+    "disp": "Aperol",
+    "cat": "liqueur",
+    "color": "#F4531E",
+    "shape": "hexagon",
+    "umbrella": "self:aperol"
+  },
+  {
     "key": "apple brandy",
     "disp": "Apple brandy",
     "cat": "spirit",
@@ -110,6 +118,14 @@ export const INGREDIENT_SEED: SeedEntry[] = [
     "umbrella": "self:campari"
   },
   {
+    "key": "candied ginger",
+    "disp": "Candied Ginger",
+    "cat": "other",
+    "color": "#8C857A",
+    "shape": null,
+    "umbrella": "self:candied ginger"
+  },
+  {
     "key": "cardamom bitters",
     "disp": "Cardamom bitters",
     "cat": "bitters",
@@ -148,6 +164,14 @@ export const INGREDIENT_SEED: SeedEntry[] = [
     "color": "#8A4B2A",
     "shape": "bottle",
     "umbrella": "syrup"
+  },
+  {
+    "key": "coconut cream",
+    "disp": "Coconut cream",
+    "cat": "other",
+    "color": "#F2EAD8",
+    "shape": "droplet",
+    "umbrella": "self:coconut cream"
   },
   {
     "key": "cognac",
@@ -222,6 +246,14 @@ export const INGREDIENT_SEED: SeedEntry[] = [
     "umbrella": "self:espresso"
   },
   {
+    "key": "falernum",
+    "disp": "Falernum",
+    "cat": "liqueur",
+    "color": "#D9C28A",
+    "shape": "hexagon",
+    "umbrella": "self:falernum"
+  },
+  {
     "key": "gin",
     "disp": "Gin",
     "cat": "spirit",
@@ -236,6 +268,14 @@ export const INGREDIENT_SEED: SeedEntry[] = [
     "color": "#C9A24B",
     "shape": "droplet",
     "umbrella": "self:ginger beer"
+  },
+  {
+    "key": "ginger extract",
+    "disp": "Ginger extract",
+    "cat": "extract",
+    "color": "#C99A3B",
+    "shape": "dropper",
+    "umbrella": "self:ginger extract"
   },
   {
     "key": "grapefruit",
@@ -382,12 +422,36 @@ export const INGREDIENT_SEED: SeedEntry[] = [
     "umbrella": "syrup"
   },
   {
+    "key": "passion fruit liqueur",
+    "disp": "Passion fruit liqueur",
+    "cat": "liqueur",
+    "color": "#E8852B",
+    "shape": "hexagon",
+    "umbrella": "self:passion fruit liqueur"
+  },
+  {
     "key": "peach bitters",
     "disp": "Peach bitters",
     "cat": "bitters",
     "color": "#E6A968",
     "shape": "triangle",
     "umbrella": "bitters"
+  },
+  {
+    "key": "peychaud bitters",
+    "disp": "Peychaud bitters",
+    "cat": "bitters",
+    "color": "#D14B3A",
+    "shape": "triangle",
+    "umbrella": "bitters"
+  },
+  {
+    "key": "pineapple",
+    "disp": "Pineapple juice",
+    "cat": "fruit",
+    "color": "#E8C13A",
+    "shape": "droplet",
+    "umbrella": "self:pineapple"
   },
   {
     "key": "pomegranate",
@@ -520,6 +584,13 @@ export const INGREDIENT_CLASS: Record<string, Classified> = {
     "abv": 0.44,
     "disp": "Angostura Bitters"
   },
+  "aperol": {
+    "cat": "liqueur",
+    "shape": "hexagon",
+    "color": "#F4531E",
+    "abv": 0.11,
+    "disp": "Aperol"
+  },
   "apple brandy": {
     "cat": "spirit",
     "shape": "squircle",
@@ -601,6 +672,13 @@ export const INGREDIENT_CLASS: Record<string, Classified> = {
     "abv": 0.24,
     "disp": "Campari"
   },
+  "candied ginger": {
+    "cat": "other",
+    "shape": "circle",
+    "color": "#8C857A",
+    "abv": 0,
+    "disp": "Candied Ginger"
+  },
   "cardamom bitters": {
     "cat": "bitters",
     "shape": "triangle",
@@ -613,7 +691,8 @@ export const INGREDIENT_CLASS: Record<string, Classified> = {
     "shape": "glass",
     "color": "#E8E2B0",
     "abv": 0.12,
-    "disp": "Champagne"
+    "disp": "Champagne",
+    "fam": "wine"
   },
   "cherry": {
     "cat": "fruit",
@@ -636,6 +715,13 @@ export const INGREDIENT_CLASS: Record<string, Classified> = {
     "abv": 0,
     "disp": "Cinnamon syrup",
     "syrup": "cinnamon"
+  },
+  "coconut cream": {
+    "cat": "other",
+    "shape": "droplet",
+    "color": "#F2EAD8",
+    "abv": 0,
+    "disp": "Coconut cream"
   },
   "cognac": {
     "cat": "spirit",
@@ -679,7 +765,8 @@ export const INGREDIENT_CLASS: Record<string, Classified> = {
     "shape": "glass",
     "color": "#D7D1A0",
     "abv": 0.17,
-    "disp": "Dry vermouth"
+    "disp": "Dry vermouth",
+    "fam": "wine"
   },
   "egg": {
     "cat": "egg",
@@ -702,6 +789,13 @@ export const INGREDIENT_CLASS: Record<string, Classified> = {
     "abv": 0,
     "disp": "Espresso"
   },
+  "falernum": {
+    "cat": "liqueur",
+    "shape": "hexagon",
+    "color": "#D9C28A",
+    "abv": 0.11,
+    "disp": "Falernum"
+  },
   "gin": {
     "cat": "spirit",
     "shape": "squircle",
@@ -716,6 +810,13 @@ export const INGREDIENT_CLASS: Record<string, Classified> = {
     "color": "#C9A24B",
     "abv": 0,
     "disp": "Ginger beer"
+  },
+  "ginger extract": {
+    "cat": "other",
+    "shape": "droplet",
+    "color": "#C99A3B",
+    "abv": 0,
+    "disp": "Ginger extract"
   },
   "grapefruit": {
     "cat": "citrus",
@@ -784,7 +885,8 @@ export const INGREDIENT_CLASS: Record<string, Classified> = {
     "shape": "glass",
     "color": "#E6D98A",
     "abv": 0.17,
-    "disp": "Lillet Blanc"
+    "disp": "Lillet Blanc",
+    "fam": "wine"
   },
   "lime": {
     "cat": "citrus",
@@ -852,12 +954,33 @@ export const INGREDIENT_CLASS: Record<string, Classified> = {
     "disp": "Orgeat",
     "syrup": "orgeat"
   },
+  "passion fruit liqueur": {
+    "cat": "liqueur",
+    "shape": "hexagon",
+    "color": "#E8852B",
+    "abv": 0.18,
+    "disp": "Passion fruit liqueur"
+  },
   "peach bitters": {
     "cat": "bitters",
     "shape": "triangle",
     "color": "#E6A968",
     "abv": 0.44,
     "disp": "Peach Bitters"
+  },
+  "peychaud bitters": {
+    "cat": "bitters",
+    "shape": "triangle",
+    "color": "#D14B3A",
+    "abv": 0.44,
+    "disp": "Peychaud Bitters"
+  },
+  "pineapple": {
+    "cat": "fruit",
+    "shape": "circle",
+    "color": "#E8C13A",
+    "abv": 0,
+    "disp": "Pineapple"
   },
   "pomegranate": {
     "cat": "fruit",
@@ -878,7 +1001,8 @@ export const INGREDIENT_CLASS: Record<string, Classified> = {
     "shape": "glass",
     "color": "#6E1F2E",
     "abv": 0.13,
-    "disp": "Red wine"
+    "disp": "Red wine",
+    "fam": "wine"
   },
   "rum": {
     "cat": "spirit",
@@ -939,7 +1063,8 @@ export const INGREDIENT_CLASS: Record<string, Classified> = {
     "shape": "glass",
     "color": "#7A2E2E",
     "abv": 0.17,
-    "disp": "Sweet vermouth"
+    "disp": "Sweet vermouth",
+    "fam": "wine"
   },
   "syrup": {
     "cat": "syrup",
@@ -986,6 +1111,7 @@ export const INGREDIENT_ALIASES: Record<string, string> = {
   "absinthe": "absinthe",
   "amaretto": "amaretto",
   "angostura bitters": "angostura bitters",
+  "aperol": "aperol",
   "apple brandy": "apple brandy",
   "arugula extract": "arugula extract",
   "bailey's": "bailey's",
@@ -998,11 +1124,13 @@ export const INGREDIENT_ALIASES: Record<string, string> = {
   "cacao": "crème de cacao",
   "cachaça": "cachaça",
   "campari": "campari",
+  "candied ginger": "candied ginger",
   "cardamom bitters": "cardamom bitters",
   "champagne": "champagne",
   "cherry": "cherry",
   "chocolate bitters": "chocolate bitters",
   "cinnamon": "cinnamon syrup",
+  "coconut cream": "coconut cream",
   "cognac": "cognac",
   "cranberry": "cranberry",
   "curaçao": "orange curaçao",
@@ -1011,8 +1139,10 @@ export const INGREDIENT_ALIASES: Record<string, string> = {
   "egg white": "egg",
   "elderflower liqueur": "elderflower liqueur",
   "espresso": "espresso",
+  "falernum": "falernum",
   "gin": "gin",
   "ginger beer": "ginger beer",
+  "ginger extract": "ginger extract",
   "grapefruit": "grapefruit",
   "grapefruit juice": "grapefruit",
   "grapefruit peel": "grapefruit",
@@ -1054,8 +1184,12 @@ export const INGREDIENT_ALIASES: Record<string, string> = {
   "orange wedges": "orange",
   "orange wheel": "orange",
   "orgeat": "orgeat",
+  "passionfruit liqueur": "passion fruit liqueur",
   "peach bitters": "peach bitters",
+  "peychaud bitters": "peychaud bitters",
+  "pineapple": "pineapple",
   "pomegranate": "pomegranate",
+  "prosecco": "champagne",
   "raspberry": "raspberry",
   "red wine": "red wine",
   "rum": "rum",
@@ -1079,21 +1213,26 @@ export const ACTIVE_UMBRELLAS: string[] = [
   "bitters",
   "chartreuse",
   "self:amaretto",
+  "self:aperol",
   "self:arugula extract",
   "self:bailey's",
   "self:blackberry liqueur",
   "self:brown sugar",
   "self:bénédictine",
   "self:campari",
+  "self:candied ginger",
   "self:champagne",
   "self:cherry",
+  "self:coconut cream",
   "self:cranberry",
   "self:crème de cacao",
   "self:crème de violette",
   "self:egg",
   "self:elderflower liqueur",
   "self:espresso",
+  "self:falernum",
   "self:ginger beer",
+  "self:ginger extract",
   "self:grapefruit",
   "self:kahlúa",
   "self:lemon",
@@ -1105,6 +1244,8 @@ export const ACTIVE_UMBRELLAS: string[] = [
   "self:nutmeg",
   "self:orange",
   "self:orange curaçao",
+  "self:passion fruit liqueur",
+  "self:pineapple",
   "self:pomegranate",
   "self:raspberry",
   "self:red wine",
