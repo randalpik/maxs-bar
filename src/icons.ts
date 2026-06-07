@@ -28,7 +28,8 @@ export function icon(shape: string, color: string): string {
     case 'seed': inner = `<ellipse cx="16" cy="16" rx="8" ry="10" fill="${color}" ${w}/><path d="M16 7 V25" fill="none" stroke="${S}" stroke-width="1" opacity=".55"/><path d="M11.5 12 q4.5 4 0 8 M20.5 12 q-4.5 4 0 8" fill="none" stroke="${S}" stroke-width=".9" opacity=".4"/>`; break;
     case 'cherry': inner = `<circle cx="14" cy="20.5" r="6.8" fill="${color}" ${w}/><path d="M16.5 14 C19 9 22 7 25 6.5" fill="none" stroke="${S}" stroke-width="1.4" stroke-linecap="round"/><path d="M24.5 6.8 C27 5 29 6.5 28.5 6.5 C28 9 25.5 9 24.5 6.8 Z" fill="${color}" ${w}/>`; break;
     case 'berry': inner = [[13.5, 13.5], [18.5, 13.5], [11.5, 18], [16, 18], [20.5, 18], [14, 22.5], [18, 22.5]].map(([x, y]) => `<circle cx="${x}" cy="${y}" r="2.7" fill="${color}" ${w}/>`).join(''); break;
-    case 'twist': inner = `<path d="M21.5 16 a5.5 5.5 0 1 1 -5.5 -5.5 a8.5 8.5 0 1 0 8 8.5" fill="none" stroke="${color}" stroke-width="2.4" stroke-linecap="round"/>`; break;
+    case 'twist': inner = `<path d="M9 10 C18 3 28 11 22 18.5 C17.5 24 10.5 20 13 14.5" fill="none" stroke="${color}" stroke-width="2.5" stroke-linecap="round"/>`; break;
+    case 'wheel': inner = `<circle cx="16" cy="16" r="9.5" fill="none" stroke="${color}" stroke-width="2.4"/>`; break;
     default: inner = `<circle cx="16" cy="16" r="10" fill="${color}" ${w}/>`;
   }
   return `<svg viewBox="0 0 32 32" xmlns="http://www.w3.org/2000/svg">${inner}</svg>`;
@@ -61,9 +62,10 @@ export function iconFor(i: Ingredient): string | null {
     case 'herb': return 'sprig';
     case 'spice': return 'seed';
     case 'citrus':
-      if (liquid || /wheel/.test(d)) return 'circle'; // juice & wheels: plain colored circle
-      if (/peel|twist/.test(d)) return 'twist';       // peels & twists: spiral curl
-      return null;                                    // wedges etc. stay iconless
+      if (liquid) return 'circle';                // juice: filled colored circle
+      if (/wheel/.test(d)) return 'wheel';        // wheel: hollow colored ring
+      if (/peel|twist/.test(d)) return 'twist';   // peel/twist: curl
+      return null;                                // wedges etc. stay iconless
     case 'fruit':
       if (/cherry/.test(d)) return 'cherry';
       if (/raspberr/.test(d)) return 'berry';

@@ -19,9 +19,9 @@ describe('iconFor mapping', () => {
     expect(shapeOf('cherry')).toBe('cherry');
     expect(shapeOf('muddled raspberry')).toBe('berry');
   });
-  it('citrus: juice & wheel are circles, peel & twist are spirals, wedges iconless', () => {
+  it('citrus: juice = circle, wheel = ring, peel/twist = curl, wedges iconless', () => {
     expect(shapeOf('3/4 lime')).toBe('circle');
-    expect(shapeOf('lemon wheel')).toBe('circle');
+    expect(shapeOf('lemon wheel')).toBe('wheel');
     expect(shapeOf('orange peel')).toBe('twist');
     expect(shapeOf('lemon twist')).toBe('twist');
     expect(shapeOf('2 lime wedges')).toBeNull();
