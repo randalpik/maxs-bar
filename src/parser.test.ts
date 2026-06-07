@@ -63,6 +63,11 @@ describe('parseIngredient roles & units', () => {
   it('trailing muddled → muddled role', () => {
     expect(parseIngredient('2 tsp brown sugar muddled').role).toBe('muddled');
   });
+  it('peel/wheel/twist garnishes render in sentence case', () => {
+    expect(parseIngredient('orange peel').disp).toBe('Orange peel');
+    expect(parseIngredient('lemon wheel').disp).toBe('Lemon wheel');
+    expect(parseIngredient('lemon twist').disp).toBe('Lemon twist');
+  });
 });
 
 describe('parseLine', () => {

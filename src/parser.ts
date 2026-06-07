@@ -140,7 +140,7 @@ export function parseIngredient(raw: string): Ingredient {
     const w = lname.split(/\s+/).filter(x => x && x !== 'egg');
     eggMod = w[0] || 'whole'; disp = 'Egg';
   } else if (isPeel) {
-    disp = titleCase(name);
+    disp = sentenceCase(name);
   } else if (info.cat === 'bitters') {
     disp = sentenceCase(name);
   } else if ((info.cat === 'citrus' || info.cat === 'fruit') && liquid) {
