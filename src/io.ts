@@ -1,5 +1,6 @@
 import { state, save } from './state';
 import { parseLine } from './parser';
+import { parseCSV } from './csv';
 import { nowISO } from './util';
 import { render } from './render';
 
@@ -28,6 +29,22 @@ export function importTXT(text: string): void {
     const recipe = p.body + (p.hasMethod ? ` (${p.method})` : '');
     const ex = state.records.find(x => x.name.toLowerCase() === p.name.toLowerCase());
     if (ex) { ex.recipe = recipe; ex.edited = t; } else state.records.push({ name: p.name, recipe, created: t, edited: t });
+  }
+  save(); render();
+}
+
+/** Import recipes from a CSV in the same shape we export (name,recipe,created,edited).
+ *  Existing recipes (matched case-insensitively by name) are updated in place;
+ *  created/edited timestamps from the file are preserved so a round-trip is lossless. */
+export function importCSV(text: string): void {
+  let recs;
+  try { recs = parseCSV(text); } catch { return; }
+  const t = nowISO();
+  for (const r of recs) {
+    if (!r.name) continue;
+    const ex = state.records.find(x => x.name.toLowerCase() === r.name.toLowerCase());
+    if (ex) { ex.recipe = r.recipe; ex.edited = r.edited || t; }
+    else state.records.push({ name: r.name, recipe: r.recipe, created: r.created || t, edited: r.edited || t });
   }
   save(); render();
 }

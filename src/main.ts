@@ -3,7 +3,7 @@ import { state, load, save, seedRecords, toggleStock } from './state';
 import { toCSV } from './csv';
 import { fillKeySel, render, layoutCards } from './render';
 import { openModal, closeModal, saveModal, updatePreview, deleteEditing } from './modal';
-import { download, exportTXT, importTXT } from './io';
+import { download, exportTXT, importTXT, importCSV } from './io';
 import { $ } from './dom';
 
 /* ============================================================
@@ -57,14 +57,15 @@ menu.querySelector('.pop')!.addEventListener('click', e => {
   menu.classList.remove('open');
   if (act === 'exp-csv') download('drinks.csv', toCSV(state.records), 'text/csv');
   else if (act === 'exp-txt') exportTXT();
-  else if (act === 'imp-txt') $('#fileIn').click();
+  else if (act === 'imp-txt' || act === 'imp-csv') $('#fileIn').click();
   else if (act === 'reset') { if (confirm('Reset to the original seed list? Local changes will be lost.')) { state.records = seedRecords(); save(); render(); } }
 });
 $<HTMLInputElement>('#fileIn').addEventListener('change', e => {
   const f = (e.target as HTMLInputElement).files?.[0];
   if (!f) return;
   const r = new FileReader();
-  r.onload = () => { importTXT(r.result as string); (e.target as HTMLInputElement).value = ''; };
+  const isCsv = /\.csv$/i.test(f.name);
+  r.onload = () => { (isCsv ? importCSV : importTXT)(r.result as string); (e.target as HTMLInputElement).value = ''; };
   r.readAsText(f);
 });
 
