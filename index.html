@@ -70,15 +70,18 @@
   <div class="modal ig-modal">
     <h3 id="igTitle">Edit ingredient</h3>
     <p class="hint">Changes how this ingredient appears across the app. Your recipes are unchanged.</p>
-    <div class="ig-edit">
-      <div class="ig-iconpanel">
-        <div class="plbl">Icon</div>
-        <div class="ig-iconbox" id="igIconPrev"></div>
-        <div class="ig-iconnote">Builder coming soon</div>
+    <div class="ig-fields">
+      <div class="field"><label>Name</label><input id="igName" autocomplete="off"></div>
+      <div class="field"><label>Category</label><select id="igCat"></select></div>
+    </div>
+    <div class="ig-builder">
+      <div class="ig-builder-head">
+        <span class="plbl">Icon</span>
+        <label class="ig-color"><span>Color</span><input type="color" id="igColor"></label>
       </div>
-      <div class="ig-fields">
-        <div class="field"><label>Name</label><input id="igName" autocomplete="off"></div>
-        <div class="field"><label>Category</label><select id="igCat"></select></div>
+      <div class="ig-builder-body">
+        <div class="ig-iconbox" id="igIconPrev"></div>
+        <div class="ig-shapes" id="igShapes"></div>
       </div>
     </div>
     <div class="actions">

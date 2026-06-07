@@ -3,7 +3,7 @@ import { state, load, save, seedRecords, toggleStock } from './state';
 import { toCSV } from './csv';
 import { fillKeySel, render, layoutCards, updateIngredientChip } from './render';
 import { openModal, closeModal, saveModal, updatePreview, deleteEditing } from './modal';
-import { openIgModal, closeIgModal, saveIgModal, resetIgModal, fillIgCat } from './igmodal';
+import { openIgModal, closeIgModal, saveIgModal, resetIgModal, fillIgCat, initIgBuilder } from './igmodal';
 import { download, exportTXT, importTXT, importCSV, exportIngredientsCSV } from './io';
 import { $ } from './dom';
 
@@ -101,4 +101,4 @@ window.addEventListener('resize', () => {
 if (document.fonts && document.fonts.ready) document.fonts.ready.then(layoutCards);
 
 /* init */
-load(); fillKeySel(); fillIgCat(); render();
+load(); fillKeySel(); fillIgCat(); initIgBuilder(); render();

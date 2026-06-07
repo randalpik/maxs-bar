@@ -44,4 +44,16 @@ describe('ingredient overrides', () => {
     expect(eff.color).toBe('#ffffff');
     expect(eff.shape).toBe('squircle'); // shape not overridden -> parser default
   });
+
+  it('an explicit null shape override hides the icon', () => {
+    state.ingredients = { rum: { shape: null } };
+    expect(effectiveChip(parseIngredient('2 rum')).shape).toBeNull();
+  });
+
+  it('a shape/colour override drives the catalog entry', () => {
+    state.ingredients = { rum: { shape: 'hexagon', color: '#123456' } };
+    const e = buildCatalog([rec('Daiquiri', '2 rum, 3/4 lime, 3/4 syrup')]).entries.find(x => x.key === 'rum')!;
+    expect(e.shape).toBe('hexagon');
+    expect(e.color).toBe('#123456');
+  });
 });
