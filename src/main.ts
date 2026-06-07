@@ -13,9 +13,11 @@ const tabs = $('#tabs');
 tabs.addEventListener('click', e => {
   const b = (e.target as HTMLElement).closest('button');
   if (!b) return;
-  state.page = b.dataset.page as 'recipes' | 'ingredients';
+  state.page = b.dataset.page as 'recipes' | 'ingredients' | 'syrups';
   [...tabs.children].forEach(x => x.classList.toggle('on', x === b));
-  $('.bar').classList.toggle('page-ingredients', state.page === 'ingredients');
+  const bar = $('.bar');
+  bar.classList.toggle('page-ingredients', state.page === 'ingredients');
+  bar.classList.toggle('page-syrups', state.page === 'syrups');
   render();
 });
 $('#modeSeg').addEventListener('click', e => {

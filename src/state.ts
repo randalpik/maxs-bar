@@ -16,7 +16,7 @@ export const state: {
   mode: 'group' | 'sort';
   key: string;
   query: string;
-  page: 'recipes' | 'ingredients';
+  page: 'recipes' | 'ingredients' | 'syrups';
   stocked: Set<string>;
 } = {
   records: [],

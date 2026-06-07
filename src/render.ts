@@ -7,6 +7,8 @@ import {
   CATEGORY_ORDER, CATEGORY_LABEL,
 } from './ingredients';
 import type { StockCtx, IngredientEntry } from './ingredients';
+import { parseSyrups } from './syrups';
+import type { Syrup } from './syrups';
 import { $ } from './dom';
 
 /* ============================================================
@@ -94,6 +96,7 @@ function groupSortKeys(): string[] | null {
 
 export function render(): void {
   if (state.page === 'ingredients') { renderIngredients(); return; }
+  if (state.page === 'syrups') { renderSyrups(); return; }
 
   const data = state.records.map(derive).filter(matchQuery);
   $('#count').textContent = state.records.length + ' recipes';
@@ -143,6 +146,23 @@ export function render(): void {
   }
   main.innerHTML = html;
   requestAnimationFrame(layoutCards);
+}
+
+/* ---------- syrups page (read-only reference) ---------- */
+
+function syrupCardHTML(s: Syrup, idx: number): string {
+  return `<article class="card syrup" style="animation-delay:${Math.min(idx * 28, 420)}ms">`
+    + `<div class="head"><h2>${esc(s.name)}</h2></div>`
+    + `<ol class="steps">${s.steps.map(t => `<li>${esc(t)}</li>`).join('')}</ol>`
+    + `</article>`;
+}
+
+export function renderSyrups(): void {
+  const syrups = parseSyrups();
+  $('#count').textContent = `${syrups.length} syrup${syrups.length === 1 ? '' : 's'}`;
+  if (!syrups.length) { main.innerHTML = '<div class="empty">No syrups.</div>'; return; }
+  main.innerHTML = `<div class="grouphead"><span class="lbl">Syrups</span><span class="cnt">${syrups.length}</span><span class="rule"></span></div>`
+    + `<div class="grid">${syrups.map((s, i) => syrupCardHTML(s, i)).join('')}</div>`;
 }
 
 /* ---------- ingredients page ---------- */
