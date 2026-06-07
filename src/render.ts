@@ -3,7 +3,7 @@ import { state, derive } from './state';
 import { SPIRIT_LABEL, SPIRIT_ORDER, METHOD_ORDER, titleCase } from './parser';
 import { icon, iconFor, amountTag } from './icons';
 import {
-  buildCatalog, buildStockCtx, isAvailable,
+  buildCatalog, buildStockCtx, isAvailable, missingCount,
   CATEGORY_ORDER, CATEGORY_LABEL,
 } from './ingredients';
 import type { StockCtx, IngredientEntry } from './ingredients';
@@ -16,7 +16,7 @@ const main = $('#main');
 
 const KEY_OPTS: Record<'group' | 'sort', [string, string][]> = {
   group: [['spirit', 'By spirit'], ['citrus', 'By citrus'], ['syrup', 'By syrup'], ['liqueur', 'By liqueur'], ['method', 'By method']],
-  sort: [['base', 'Base spirit'], ['name', 'Name'], ['alcohol', 'Alcohol (est.)']],
+  sort: [['base', 'Base spirit'], ['name', 'Name'], ['alcohol', 'Alcohol (est.)'], ['missing', 'Missing ingredients'], ['edited', 'Last modified']],
 };
 
 export function fillKeySel(): void {
@@ -105,6 +105,8 @@ export function render(): void {
     const arr = [...data];
     if (state.key === 'name') arr.sort((a, b) => a.rec.name.localeCompare(b.rec.name));
     else if (state.key === 'alcohol') arr.sort((a, b) => b.alc - a.alc);
+    else if (state.key === 'missing') arr.sort((a, b) => missingCount(a.p.ingredients, ctx) - missingCount(b.p.ingredients, ctx) || a.rec.name.localeCompare(b.rec.name));
+    else if (state.key === 'edited') arr.sort((a, b) => (b.rec.edited || '').localeCompare(a.rec.edited || '') || a.rec.name.localeCompare(b.rec.name));
     else { // base spirit
       const oi = (f: string | null) => { const x = SPIRIT_ORDER.indexOf(f as string); return x < 0 ? 99 : x; };
       arr.sort((a, b) => oi(a.base) - oi(b.base) || a.rec.name.localeCompare(b.rec.name));

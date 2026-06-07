@@ -157,3 +157,11 @@ export function isAvailable(i: Ingredient, ctx: StockCtx): boolean {
   if (isGeneric(i, ctx.active)) return ctx.stockedUmbrellas.has(umbrellaKey(i));
   return false;
 }
+
+/** Distinct unstocked ingredients in a recipe, deduped by stock identity so e.g.
+ *  lime juice + lime wedge (both folding to "lime") count once. */
+export function missingCount(ings: Ingredient[], ctx: StockCtx): number {
+  const missing = new Set<string>();
+  for (const i of ings) if (!isAvailable(i, ctx)) missing.add(ingredientKey(i));
+  return missing.size;
+}
