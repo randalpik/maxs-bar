@@ -33,7 +33,10 @@ header.bar{
   padding:14px 22px;
   display:flex; align-items:center; gap:18px; flex-wrap:wrap;
 }
-.brand{display:flex; flex-direction:column; gap:1px; line-height:1.04}
+/* fixed min-width so the changing count line ("NN of NN stocked", "Syrups", …)
+   never resizes the title area and shifts the tab toggle beside it */
+.brand{display:flex; flex-direction:column; gap:1px; line-height:1.04; min-width:140px}
+.brand .sub{white-space:nowrap}
 /* tab toggle sits beside the title; the auto margin pushes the rest right */
 #tabs{margin-right:auto}
 .brand .mark{
@@ -135,6 +138,7 @@ main{position:relative; z-index:1; max-width:1180px; margin:0 auto; padding:26px
   display:flex; flex-direction:column; align-items:center; justify-content:space-between; gap:3px;
   border:1px solid var(--line); border-radius:11px; padding:8px 9px;
   min-width:60px; max-width:104px; background:rgba(244,239,230,.06);
+  user-select:none;
 }
 .chip svg,.chip .ph{width:30px; height:30px; display:block; flex:none}
 .chip .nm{font-size:10.5px; color:var(--text); text-align:center; line-height:1.2; word-break:break-word}
@@ -153,8 +157,8 @@ main{position:relative; z-index:1; max-width:1180px; margin:0 auto; padding:26px
 
 /* ---------- ingredients page ---------- */
 .ig-grid{display:flex; flex-wrap:wrap; gap:8px}
-.chip.ig{cursor:pointer; transition:border-color .14s, background .14s, transform .14s}
-.chip.ig:hover{transform:translateY(-2px); border-color:var(--line2)}
+.chip.ig{cursor:pointer; transition:background .1s}
+.chip.ig:hover{border-color:var(--line2)}
 .chip.ig .tag{color:var(--faint)}
 
 .empty{color:var(--faint); text-align:center; padding:70px 0; font-size:13px}

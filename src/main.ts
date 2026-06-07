@@ -1,7 +1,7 @@
 import './styles.css';
 import { state, load, save, seedRecords, toggleStock } from './state';
 import { toCSV } from './csv';
-import { fillKeySel, render, layoutCards } from './render';
+import { fillKeySel, render, layoutCards, updateIngredientChip } from './render';
 import { openModal, closeModal, saveModal, updatePreview, deleteEditing } from './modal';
 import { download, exportTXT, importTXT, importCSV, exportIngredientsCSV } from './io';
 import { $ } from './dom';
@@ -34,7 +34,7 @@ $('#main').addEventListener('click', e => {
   const t = e.target as HTMLElement;
   if (state.page === 'ingredients') {
     const ing = t.closest<HTMLElement>('[data-ing]');
-    if (ing) { toggleStock(ing.dataset.ing!); render(); }
+    if (ing) { toggleStock(ing.dataset.ing!); updateIngredientChip(ing); }
     return;
   }
   const b = t.closest<HTMLElement>('[data-edit]');

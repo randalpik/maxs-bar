@@ -167,9 +167,27 @@ export function renderSyrups(): void {
 
 /* ---------- ingredients page ---------- */
 
+const IG_TITLE = {
+  stocked: 'In stock — click to mark out',
+  out: 'Out of stock — click to mark stocked',
+} as const;
+
+/** Toggle one ingredient chip in place after its stock state changed, and refresh
+ *  the header count — avoids rebuilding #main (which jumps the scroll position).
+ *  Safe because on the ingredients page each catalog key maps to exactly one chip
+ *  and stocking one item never changes another's display. */
+export function updateIngredientChip(el: HTMLElement): void {
+  const stocked = state.stocked.has(el.dataset.ing!);
+  el.classList.toggle('unstocked', !stocked);
+  el.title = stocked ? IG_TITLE.stocked : IG_TITLE.out;
+  const chips = main.querySelectorAll<HTMLElement>('.chip.ig');
+  const n = [...chips].filter(c => !c.classList.contains('unstocked')).length;
+  $('#count').textContent = `${n} of ${chips.length} stocked`;
+}
+
 function igChipHTML(e: IngredientEntry, stocked: boolean): string {
   const cls = 'chip ig' + (stocked ? '' : ' unstocked');
-  const title = stocked ? 'In stock — click to mark out' : 'Out of stock — click to mark stocked';
+  const title = stocked ? IG_TITLE.stocked : IG_TITLE.out;
   return `<div class="${cls}" data-ing="${esc(e.key)}" title="${esc(title)}">`
     + (e.shape ? icon(e.shape, e.color) : '<span class="ph"></span>')
     + `<span class="nm">${esc(e.disp)}</span>`
