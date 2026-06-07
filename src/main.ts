@@ -1,11 +1,12 @@
 import './styles.css';
 import { setClassifier } from './parser';
 import { seedClassify } from './catalog';
-import { state, load, save, seedRecords, toggleStock } from './state';
+import { state, load, toggleStock, hasSeed, resetAll } from './state';
 import { toCSV } from './csv';
 import { fillKeySel, render, layoutCards, updateIngredientChip } from './render';
 import { openModal, closeModal, saveModal, updatePreview, deleteEditing } from './modal';
 import { openIgModal, closeIgModal, saveIgModal, resetIgModal, removeIgModal, fillIgCat, initIgBuilder } from './igmodal';
+import { openSeedModal, closeSeedModal, confirmSeed, seedModalForced } from './seedmodal';
 import { download, exportTXT, importTXT, importCSV, exportIngredientsCSV } from './io';
 import { $ } from './dom';
 
@@ -72,7 +73,11 @@ $('#igSave').addEventListener('click', saveIgModal);
 $('#igReset').addEventListener('click', resetIgModal);
 $('#igRemove').addEventListener('click', removeIgModal);
 $('#igOverlay').addEventListener('click', e => { if (e.target === $('#igOverlay')) closeIgModal(); });
-document.addEventListener('keydown', e => { if (e.key === 'Escape') { closeModal(); closeIgModal(); } });
+
+$('#seedConfirm').addEventListener('click', confirmSeed);
+$('#seedCancel').addEventListener('click', closeSeedModal);
+$('#seedOverlay').addEventListener('click', e => { if (e.target === $('#seedOverlay')) closeSeedModal(); });
+document.addEventListener('keydown', e => { if (e.key === 'Escape' && !seedModalForced()) { closeModal(); closeIgModal(); closeSeedModal(); } });
 
 const menu = $('#menu');
 $('#menuBtn').addEventListener('click', e => { e.stopPropagation(); menu.classList.toggle('open'); });
@@ -86,7 +91,14 @@ menu.querySelector('.pop')!.addEventListener('click', e => {
   else if (act === 'exp-txt') exportTXT();
   else if (act === 'exp-ing') exportIngredientsCSV();
   else if (act === 'imp-txt' || act === 'imp-csv') $('#fileIn').click();
-  else if (act === 'reset') { if (confirm('Reset to the original seed list? Local changes will be lost.')) { state.records = seedRecords(); save(); render(); } }
+  else if (act === 'switch-seed') openSeedModal({ forced: false });
+  else if (act === 'reset') {
+    if (confirm('Reset everything? This clears your recipes, ingredient edits, and stock, then asks you to pick a starter list again.')) {
+      resetAll();
+      render();
+      openSeedModal({ forced: true });
+    }
+  }
 });
 $<HTMLInputElement>('#fileIn').addEventListener('change', e => {
   const f = (e.target as HTMLInputElement).files?.[0];
@@ -107,3 +119,4 @@ if (document.fonts && document.fonts.ready) document.fonts.ready.then(layoutCard
 /* init */
 setClassifier(seedClassify); // resolve recipe ingredients from the seed, not the regex
 load(); fillKeySel(); fillIgCat(); initIgBuilder(); render();
+if (!hasSeed()) openSeedModal({ forced: true });

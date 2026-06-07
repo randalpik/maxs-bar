@@ -83,6 +83,22 @@ export interface IngredientOverride {
   removed?: boolean;
 }
 
+/** A user diff against the resolved recipe seed, keyed by lowercased name and
+ *  persisted in localStorage. An *addition* (name absent from the seed) or an
+ *  *edit* stores the full recipe; a *removal* is a `{ removed: true }` tombstone.
+ *  Storing the full recipe (not a field patch) lets edits survive a seed switch
+ *  even when the underlying base recipe changes. */
+export interface RecipeOverride {
+  /** Display name (preserves case; the map key is lowercased). */
+  name?: string;
+  recipe?: string;
+  author?: string;
+  created?: string;
+  edited?: string;
+  /** A removed seed recipe — dropped from the derived list. */
+  removed?: boolean;
+}
+
 /** A record paired with its parsed/derived data for rendering. */
 export interface Derived {
   rec: Recipe;

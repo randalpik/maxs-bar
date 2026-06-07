@@ -1,7 +1,8 @@
 import { describe, it, expect } from 'vitest';
 import { parseNum, parseIngredient, parseLine, baseSpirit, estAlcoholOz, classify } from './parser';
 import { toCSV, parseCSV } from './csv';
-import { SEED_TXT } from './seed';
+import { classicsText } from './seeds/classics';
+import { maxsText } from './seeds/maxs-list';
 import type { Recipe } from './types';
 
 describe('parseNum', () => {
@@ -88,7 +89,7 @@ describe('parseLine', () => {
   });
 
   it('parses every seed line into a named recipe with ingredients', () => {
-    const lines = SEED_TXT.split('\n').map(l => l.trim()).filter(Boolean);
+    const lines = (classicsText + '\n' + maxsText).split('\n').map(l => l.trim()).filter(Boolean);
     expect(lines.length).toBeGreaterThan(30);
     for (const line of lines) {
       const p = parseLine(line);

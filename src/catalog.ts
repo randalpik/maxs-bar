@@ -1,7 +1,7 @@
 import type { Classified, Recipe } from './types';
 import { state, derive } from './state';
 import { sentenceCase, titleCase } from './parser';
-import { ingredientKey } from './ingredients';
+import { ingredientKey, umbrellaForAdd } from './ingredients';
 import type { Catalog, IngredientEntry } from './ingredients';
 import { INGREDIENT_CLASS, INGREDIENT_ALIASES, INGREDIENT_SEED, ACTIVE_UMBRELLAS } from './ingredients-seed';
 
@@ -59,13 +59,15 @@ export function runtimeCatalog(records: Recipe[]): Catalog {
   // User-added ingredients: override keys absent from the seed (and not removed).
   for (const [key, ov] of Object.entries(state.ingredients)) {
     if (ov.removed || map.has(key)) continue;
+    const disp = ov.disp ?? titleCase(key);
+    const cat = ov.cat ?? 'other';
     map.set(key, {
       key,
-      disp: ov.disp ?? titleCase(key),
-      cat: ov.cat ?? 'other',
+      disp,
+      cat,
       color: ov.color ?? FALLBACK_COLOR,
       shape: ov.shape ?? null,
-      umbrella: 'self:' + key,
+      umbrella: umbrellaForAdd(key, cat, disp),
       count: 0,
     });
   }

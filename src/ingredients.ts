@@ -65,13 +65,27 @@ export function umbrellaKey(i: Ingredient): string {
   return 'self:' + ingredientKey(i);
 }
 
+/** Umbrella for a *user-added* ingredient, derived from its catalog category so a
+ *  generic recipe ingredient (e.g. "syrup") matches when this is stocked. Mirrors the
+ *  umbrella names umbrellaKey() assigns, but from the category the user picked. Spirits
+ *  stay self-scoped — we capture no family when adding, so a lone added spirit shouldn't
+ *  blanket-satisfy every recipe calling for the generic "spirit". */
+export function umbrellaForAdd(key: string, cat: string, disp: string): string {
+  if (cat === 'syrup') return 'syrup';
+  if (cat === 'bitters') return 'bitters';
+  const d = disp.toLowerCase();
+  if (/vermouth/.test(d)) return 'vermouth';
+  if (/chartreuse/.test(d)) return 'chartreuse';
+  return 'self:' + key;
+}
+
 /** Catalog category for an ingredient — regroups a few parser categories for the
- *  stock list without touching the parser: extracts split out, cranberry/pomegranate
- *  juices treated as store-bought mixers, herbs+spices and dairy+egg merged. */
+ *  stock list without touching the parser: extracts split out, cranberry/pomegranate/
+ *  pineapple juices treated as store-bought mixers, herbs+spices and dairy+egg merged. */
 export function displayCat(i: Ingredient): string {
   if (/extract/i.test(i.disp)) return 'extract';
   const key = ingredientKey(i);
-  if (i.cat === 'fruit' && (key === 'cranberry' || key === 'pomegranate')) return 'mixer';
+  if (i.cat === 'fruit' && (key === 'cranberry' || key === 'pomegranate' || key === 'pineapple')) return 'mixer';
   if (i.cat === 'soda') return 'mixer';
   if (i.cat === 'herb' || i.cat === 'spice') return 'herbspice';
   if (i.cat === 'dairy' || i.cat === 'egg') return 'dairyegg';

@@ -41,7 +41,9 @@
         <div class="div"></div>
         <button data-act="imp-txt">Import .txt</button>
         <button data-act="imp-csv">Import CSV</button>
-        <button data-act="reset" class="danger">Reset to seed</button>
+        <button data-act="switch-seed">Switch seed…</button>
+        <div class="div"></div>
+        <button data-act="reset" class="danger">Reset everything…</button>
       </div>
     </div>
   </div>
@@ -91,6 +93,19 @@
       <span class="spacer"></span>
       <button class="btn" id="igCancel">Cancel</button>
       <button class="btn primary" id="igSave">Save</button>
+    </div>
+  </div>
+</div>
+<!-- choose / switch seed modal -->
+<div class="overlay" id="seedOverlay">
+  <div class="modal seed-modal">
+    <h3 id="seedTitle">Choose a starter list</h3>
+    <p class="hint">Pick a set of recipes to start from. <strong>Classics</strong> is the canonical cocktail list; <strong>Max's List</strong> adds Max's originals on top; <strong>Empty</strong> starts blank. Your own added &amp; edited recipes carry over when you switch.</p>
+    <div class="field"><label>Starter list</label><select id="seedSel"></select></div>
+    <div class="actions">
+      <span class="spacer"></span>
+      <button class="btn" id="seedCancel">Cancel</button>
+      <button class="btn primary" id="seedConfirm">Use this list</button>
     </div>
   </div>
 </div>

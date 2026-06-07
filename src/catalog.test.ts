@@ -36,6 +36,15 @@ describe('runtimeCatalog', () => {
     expect(e.disp).toBe('Yuzu');
     expect(e.shape).toBe('wheel');
   });
+  it('derives a user-added ingredient\'s umbrella from its category', () => {
+    state.ingredients = {
+      'agave syrup': { disp: 'Agave syrup', cat: 'syrup' },   // contributes to the syrup umbrella
+      'shrub x': { disp: 'Shrub X', cat: 'mixer' },           // no umbrella -> self-scoped
+    };
+    const cat = runtimeCatalog([]);
+    expect(cat.entries.find(x => x.key === 'agave syrup')!.umbrella).toBe('syrup');
+    expect(cat.entries.find(x => x.key === 'shrub x')!.umbrella).toBe('self:shrub x');
+  });
 });
 
 describe('isKnownKey', () => {

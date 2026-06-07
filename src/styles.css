@@ -188,6 +188,12 @@ main{position:relative; z-index:1; max-width:1180px; margin:0 auto; padding:26px
   width:min(620px,100%); background:var(--bg2); border:1px solid var(--line2);
   border-radius:16px; padding:22px; box-shadow:0 30px 80px rgba(0,0,0,.6);
 }
+.seed-modal{width:min(440px,100%)}
+.seed-modal .field select{
+  width:100%; font-family:var(--mono); font-size:14px; color:var(--text);
+  background-color:var(--surface); border:1px solid var(--line2); border-radius:9px; padding:11px 12px; outline:none;
+}
+.seed-modal .field select:focus{border-color:var(--accent)}
 .modal h3{font-family:var(--disp); font-weight:500; font-size:24px; margin:0 0 4px}
 .modal .hint{color:var(--faint); font-size:11px; line-height:1.6; margin:0 0 16px}
 .modal .hint code{color:var(--muted)}
