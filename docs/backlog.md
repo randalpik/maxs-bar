@@ -24,3 +24,6 @@ Skeleton roadmap:
 - Sort recipes by number of missing ingredients
 - Button on each ingredient to populate filter with that ingredient
 - One-off icon designs for common items without icons
+- Allow import from csv
+- Split the seed into an actual csv file source in the repo; allow user to opt into using Max's recipes as the base, but default to blank
+- Add third readonly tab for syrup recipe reference (the remaining info in my original drinks document)
