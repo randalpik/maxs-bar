@@ -12,7 +12,14 @@ export const SPIRIT_LABEL: Record<string, string> = {
 export const METHOD_ORDER = ['shaken', 'stirred', 'built'];
 
 const RULES: Rule[] = [
-  { re: /bitters/, cat: 'bitters', shape: 'droplet', color: '#5A3320', abv: 0.44 },
+  // Specific bitters first (own colours); the generic /bitters/ below is the fallback.
+  { re: /angostura/, cat: 'bitters', shape: 'triangle', color: '#A8412E', abv: 0.44 },
+  { re: /peychaud/, cat: 'bitters', shape: 'triangle', color: '#D14B3A', abv: 0.44 },
+  { re: /orange bitters/, cat: 'bitters', shape: 'triangle', color: '#E0892B', abv: 0.44 },
+  { re: /peach bitters/, cat: 'bitters', shape: 'triangle', color: '#E6A968', abv: 0.44 },
+  { re: /chocolate bitters/, cat: 'bitters', shape: 'triangle', color: '#5A3520', abv: 0.44 },
+  { re: /cardamom bitters/, cat: 'bitters', shape: 'triangle', color: '#7E8B4A', abv: 0.44 },
+  { re: /bitters/, cat: 'bitters', shape: 'triangle', color: '#8A5A33', abv: 0.44 },
   { re: /ginger beer/, cat: 'soda', shape: 'soda', color: '#C9A24B', abv: 0, disp: 'Ginger beer' },
   { re: /tonic/, cat: 'soda', shape: 'soda', color: '#DCE8EE', abv: 0, disp: 'Tonic water' },
   { re: /soda|seltzer/, cat: 'soda', shape: 'soda', color: '#DCE8EE', abv: 0, disp: 'Soda water' },
