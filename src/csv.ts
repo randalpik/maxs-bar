@@ -4,7 +4,7 @@ import { nowISO } from './util';
 /* ============================================================
    CSV  (RFC-4180-ish: quote fields containing , " or newline)
    ============================================================ */
-function csvField(s: unknown): string {
+export function csvField(s: unknown): string {
   const v = String(s ?? '');
   return /[",\n]/.test(v) ? '"' + v.replace(/"/g, '""') + '"' : v;
 }

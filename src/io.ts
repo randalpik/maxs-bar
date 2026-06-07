@@ -1,6 +1,7 @@
 import { state, save } from './state';
 import { parseLine } from './parser';
-import { parseCSV } from './csv';
+import { parseCSV, csvField } from './csv';
+import { buildCatalog, CATEGORY_ORDER } from './ingredients';
 import { nowISO } from './util';
 import { render } from './render';
 
@@ -18,6 +19,21 @@ export function download(filename: string, text: string, type: string): void {
 export function exportTXT(): void {
   const txt = state.records.map(r => `${r.name}: ${r.recipe}`).join('\n\n') + '\n';
   download('drinks.txt', txt, 'text/plain');
+}
+
+/** Export the derived ingredient catalog as CSV (one row per stockable item),
+ *  ordered by category then name. Intended as a backup / a starting point for a
+ *  future editable ingredient store or seed. Columns: key is the stock identity. */
+export function exportIngredientsCSV(): void {
+  const { entries } = buildCatalog(state.records);
+  const ord = (c: string) => { const i = CATEGORY_ORDER.indexOf(c); return i < 0 ? 99 : i; };
+  const rows = [...entries].sort((a, b) => ord(a.cat) - ord(b.cat) || a.disp.localeCompare(b.disp));
+  const head = ['key', 'name', 'category', 'color', 'shape', 'stocked', 'uses'];
+  const body = rows.map(e => [
+    e.key, e.disp, e.cat, e.color, e.shape || '', state.stocked.has(e.key) ? 'yes' : 'no', String(e.count),
+  ]);
+  const csv = [head, ...body].map(r => r.map(csvField).join(',')).join('\n') + '\n';
+  download('ingredients.csv', csv, 'text/csv');
 }
 
 export function importTXT(text: string): void {

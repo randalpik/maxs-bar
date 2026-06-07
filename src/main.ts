@@ -3,7 +3,7 @@ import { state, load, save, seedRecords, toggleStock } from './state';
 import { toCSV } from './csv';
 import { fillKeySel, render, layoutCards } from './render';
 import { openModal, closeModal, saveModal, updatePreview, deleteEditing } from './modal';
-import { download, exportTXT, importTXT, importCSV } from './io';
+import { download, exportTXT, importTXT, importCSV, exportIngredientsCSV } from './io';
 import { $ } from './dom';
 
 /* ============================================================
@@ -57,6 +57,7 @@ menu.querySelector('.pop')!.addEventListener('click', e => {
   menu.classList.remove('open');
   if (act === 'exp-csv') download('drinks.csv', toCSV(state.records), 'text/csv');
   else if (act === 'exp-txt') exportTXT();
+  else if (act === 'exp-ing') exportIngredientsCSV();
   else if (act === 'imp-txt' || act === 'imp-csv') $('#fileIn').click();
   else if (act === 'reset') { if (confirm('Reset to the original seed list? Local changes will be lost.')) { state.records = seedRecords(); save(); render(); } }
 });
