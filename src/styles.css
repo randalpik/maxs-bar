@@ -222,6 +222,12 @@ html.ready body{animation:reveal .2s ease}
   border-radius:16px; padding:22px; box-shadow:0 30px 80px rgba(0,0,0,.6);
 }
 .seed-modal{width:min(440px,100%)}
+/* confirmation modal — stacks above any open overlay */
+.confirm-overlay{z-index:60; align-items:center}
+.confirm-modal{width:min(420px,100%)}
+.confirm-modal .cf-msg{color:var(--muted); font-size:13px; line-height:1.6; margin:0 0 20px}
+.btn.danger{background:rgba(200,60,60,.16); border-color:rgba(200,60,60,.4); color:#e88}
+.btn.danger:hover{border-color:#e88}
 .seed-modal .field select{
   width:100%; font-family:var(--mono); font-size:14px; color:var(--text);
   background-color:var(--surface); border:1px solid var(--line2); border-radius:9px; padding:11px 12px; outline:none;

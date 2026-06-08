@@ -6,6 +6,7 @@ import { fillKeySel, render, layoutCards, updateIngredientChip } from './ui/rend
 import { openModal, closeModal, saveModal, updatePreview, deleteEditing } from './ui/modal';
 import { openIgModal, closeIgModal, saveIgModal, resetIgModal, removeIgModal, fillIgCat, initIgBuilder } from './ui/igmodal';
 import { openSeedModal, closeSeedModal, confirmSeed, seedModalForced } from './ui/seedmodal';
+import { confirmModal } from './ui/confirm';
 import {
   exportRecipesJSON, exportIngredientsJSON, exportStockJSON,
   importRecipes, importIngredientsJSON, importStockJSON,
@@ -124,7 +125,7 @@ $('#main').addEventListener('click', e => {
 
 $('#mCancel').addEventListener('click', closeModal);
 $('#mSave').addEventListener('click', saveModal);
-$('#mDelete').addEventListener('click', deleteEditing);
+$('#mDelete').addEventListener('click', () => { void deleteEditing(); });
 $('#overlay').addEventListener('click', e => { if (e.target === $('#overlay')) closeModal(); });
 $('#fName').addEventListener('input', updatePreview);
 $('#fRecipe').addEventListener('input', updatePreview);
@@ -166,11 +167,19 @@ menu.querySelector('.pop')!.addEventListener('click', e => {
   else if (act === 'account') openAcctModal();
   else if (act === 'switch-seed') openSeedModal({ forced: false });
   else if (act === 'reset') {
-    if (confirm('Reset everything? This clears your recipes, ingredient edits, and stock, then asks you to pick a starter list again.')) {
-      resetAll();
-      render();
-      openSeedModal({ forced: true });
-    }
+    void (async () => {
+      const ok = await confirmModal({
+        title: 'Reset everything',
+        message: 'This clears your recipes, ingredient edits, and stock, then asks you to pick a starter list again.',
+        confirmText: 'Reset everything',
+        danger: true,
+      });
+      if (ok) {
+        resetAll();
+        render();
+        openSeedModal({ forced: true });
+      }
+    })();
   }
 });
 

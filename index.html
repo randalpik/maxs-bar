@@ -162,6 +162,18 @@
     </div>
   </div>
 </div>
+<!-- confirmation modal (stacks above any open modal) -->
+<div class="overlay confirm-overlay" id="confirmOverlay">
+  <div class="modal confirm-modal">
+    <h3 id="cfTitle">Confirm</h3>
+    <p class="cf-msg" id="cfMsg"></p>
+    <div class="actions">
+      <span class="spacer"></span>
+      <button class="btn" id="cfCancel">Cancel</button>
+      <button class="btn primary" id="cfOk">OK</button>
+    </div>
+  </div>
+</div>
 <input type="file" id="fileIn" accept=".txt,.csv,text/plain,text/csv" style="display:none">
 
 <script type="module" src="/src/main.ts"></script>

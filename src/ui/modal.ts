@@ -2,6 +2,7 @@ import { state, save } from '../core/state';
 import { parseLine } from '../parser/parser';
 import { nowISO } from '../core/util';
 import { render, chipHTML } from './render';
+import { confirmModal } from './confirm';
 import { $ } from '../core/dom';
 
 /* ============================================================
@@ -56,8 +57,15 @@ export function saveModal(): void {
 }
 
 /** Delete the record currently open in the modal (after confirm). */
-export function deleteEditing(): void {
-  if (editingName && confirm(`Delete "${editingName}"?`)) {
+export async function deleteEditing(): Promise<void> {
+  if (!editingName) return;
+  const ok = await confirmModal({
+    title: 'Delete recipe',
+    message: `Delete “${editingName}”? This can't be undone.`,
+    confirmText: 'Delete',
+    danger: true,
+  });
+  if (ok) {
     state.records = state.records.filter(x => x.name !== editingName);
     save(); closeModal(); render();
   }

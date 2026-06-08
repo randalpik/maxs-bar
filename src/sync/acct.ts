@@ -1,5 +1,6 @@
 import { hasLocalData } from '../core/state';
 import { signUp, signIn, signOut, currentAccount } from './sync';
+import { confirmModal } from '../ui/confirm';
 import { $ } from '../core/dom';
 
 /* ============================================================
@@ -8,7 +9,7 @@ import { $ } from '../core/dom';
    ============================================================ */
 
 const SIGN_IN_WARNING =
-  "Signing in replaces this device's data with the account's. Your local recipes, stock and ingredient edits will be lost unless you've exported a backup first. Continue?";
+  "Signing in replaces this device's data with the account's. Your local recipes, stock and ingredient edits will be lost unless you've exported a backup first.";
 
 function setMsg(text: string, isError = true): void {
   const m = $('#acctMsg');
@@ -56,7 +57,10 @@ export async function createAccount(): Promise<void> {
 export async function doSignIn(): Promise<void> {
   const { name, pass } = creds();
   if (!name || !pass) { setMsg('Enter your account name and password.'); return; }
-  if (hasLocalData() && !confirm(SIGN_IN_WARNING)) return;   // destructive — adopts the account exactly
+  // destructive — adopts the account exactly, discarding local data
+  if (hasLocalData() && !await confirmModal({
+    title: 'Sign in', message: SIGN_IN_WARNING, confirmText: 'Sign in & replace', danger: true,
+  })) return;
   busy(true); setMsg('Signing in…', false);
   try { await signIn(name, pass); closeAcctModal(); }
   catch (e) { setMsg(friendly(e)); }
