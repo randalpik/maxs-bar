@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { parseNum, parseIngredient, parseLine, baseSpirit, estAlcoholOz, classify } from './parser';
+import { parseNum, parseIngredient, parseLine, baseSpirit, estAlcoholOz } from './parser';
 import { toCSV, parseCSV } from './csv';
 import { classicsText } from './seeds/classics';
 import { maxsText } from './seeds/maxs-list';
@@ -97,15 +97,6 @@ describe('parseLine', () => {
       expect(p!.name.length, line).toBeGreaterThan(0);
       expect(p!.ingredients.length, line).toBeGreaterThan(0);
     }
-  });
-});
-
-describe('bitters colours', () => {
-  it('gives each bitters type a distinct colour', () => {
-    const names = ['angostura bitters', 'orange bitters', 'peach bitters', 'chocolate bitters', 'cardamom bitters', 'bitters'];
-    const colors = names.map(n => classify(n).color);
-    expect(new Set(colors).size).toBe(colors.length);
-    expect(names.every(n => classify(n).cat === 'bitters')).toBe(true);
   });
 });
 

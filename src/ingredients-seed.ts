@@ -1,11 +1,9 @@
-// MAINTAINED by scripts/gen-ingredients.ts — run `npm run gen:ingredients`.
-// Canonical ingredient list shipped with the app, and the SINGLE source for the stock list,
-// recipe-chip classification, aliases, and umbrella grouping (all derived in catalog.ts).
-// SAFE to hand-edit: the generator is append-only — it adds ingredients newly seen in recipes
-// and never overwrites or removes existing entries. Hand-add a shelf ingredient (e.g. a syrup
-// no recipe uses) here and it survives regeneration; to re-sync one from the parser, delete it.
+// The canonical, hand-maintained ingredient list — the SINGLE source of truth for the
+// stock list, recipe-chip classification, aliases, and umbrella grouping (all derived in
+// catalog.ts). Edit freely. A recipe ingredient not found here renders as a plain,
+// icon-less chip until you add it.
 //
-//   cat      — parser category (drives icon default + stock grouping via displayCat)
+//   cat      — category (drives icon default + stock grouping via displayCat)
 //   aliases  — extra recipe-text names that resolve to this ingredient (identity + citrus
 //              juice/peel/wheel forms are derived, so list only real shorthands here)
 //   umbrellas— parent ids this is a CHILD of; a key referenced here is an effective generic,
@@ -147,7 +145,7 @@ export const INGREDIENTS: SeedIngredient[] = [
     color: "#E1DBAE",
     shape: "squircle",
     abv: 0.4,
-    fam: "cachaça",
+    fam: "rum",
     aliases: ["cachaca"],
   },
   {

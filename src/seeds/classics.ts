@@ -1,6 +1,6 @@
 /** Canonical, well-known cocktails. The base seed that "Max's List" inherits from.
- *  Shorthand recipe lines — see parseLine(). Edit freely; re-run
- *  `npm run gen:ingredients` if you add ingredients the catalog doesn't yet know. */
+ *  Shorthand recipe lines — see parseLine(). Edit freely; if you use an ingredient the
+ *  catalog doesn't know yet, add it to src/ingredients-seed.ts (else it renders plain). */
 export const classicsText = `Daiquiri: 2 rum, 3/4 lime, 3/4 syrup
 
 Dark and Stormy: 2 dark rum, 1/2 lime, cardamom bitters, top ginger beer (built)

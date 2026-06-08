@@ -26,21 +26,26 @@ npm run preview    # serve the built dist/ locally
 ```
 index.html        # markup + Vite module entry
 src/
-  main.ts         # event wiring + init
-  state.ts        # shared state + localStorage load/save (key: backbar.csv.v2)
-  parser.ts       # shorthand parser + ingredient classification rules (regex; build-time)
-  catalog.ts      # runtime ingredient catalog (seed + overrides) + seed-backed classifier
-  ingredients-seed.ts  # GENERATED ingredient seed (run `npm run gen:ingredients`)
+  main.ts         # event wiring + init (injects the seed-backed classifier)
+  state.ts        # shared state; recipe seed + overrides in localStorage
+  seeds/          # recipe seeds (classics, maxs-list⊂classics, empty) + resolveSeed()
+  parser.ts       # shorthand parser (structure only); classification is injected
+  ingredients-seed.ts  # canonical, hand-maintained ingredient list (single source of truth)
+  catalog.ts      # runtime catalog from the seed + overrides + seed-backed classifier
+  ingredients.ts  # ingredient keys, umbrellas, stock availability, buildCatalog
   icons.ts        # SVG icon generation + amount formatting
   csv.ts          # CSV serialize/parse (RFC-4180-ish)
   render.ts       # grouping/sorting + DOM rendering + chip layout
-  modal.ts        # add / edit / delete modal
+  modal.ts        # add / edit / delete recipe modal
+  igmodal.ts      # edit-ingredient modal (icon builder + overrides)
+  seedmodal.ts    # choose / switch recipe seed modal
+  syrups.ts       # syrup reference tab data
   io.ts           # .txt / .csv import & export
-  seed.ts         # embedded authoritative base list
   types.ts        # shared types
   util.ts         # nowISO()
   dom.ts          # typed querySelector helper
   styles.css      # styles (verbatim from the prototype)
+  test-setup.ts   # vitest: install the seed-backed classifier
 ```
 
 ## Deploy (Netlify)

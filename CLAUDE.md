@@ -21,23 +21,23 @@ npm run preview                  # serve the built dist/ locally
 Vanilla TypeScript + direct DOM manipulation — **no framework, no runtime dependencies**. State lives in a single mutable `state` object ([src/state.ts](src/state.ts)); any change is followed by a call to `render()`, which rebuilds `#main` via `innerHTML`. See [README.md](README.md) for the file-by-file layout.
 
 ### The recipe string is the only source of truth
-A `Recipe` stores just `{ name, recipe, created, edited }` where `recipe` is the shorthand string (`2 rum, 3/4 lime, 3/4 syrup (built)`). **Ingredients, base spirit, and alcohol estimate are never stored** — `derive()` re-parses the string on every render through `parseLine` → `parseIngredient` → `classify`. This re-parse is cheap and central: if you need structured data about a recipe, derive it, don't cache it.
+A `Recipe` stores just `{ name, recipe, created, edited, author }` where `recipe` is the shorthand string (`2 rum, 3/4 lime, 3/4 syrup (built)`). **Ingredients, base spirit, and alcohol estimate are never stored** — `derive()` re-parses the string on every render through `parseLine` → `parseIngredient` → the injected classifier. This re-parse is cheap and central: if you need structured data about a recipe, derive it, don't cache it.
 
-### Two localStorage keys, loaded on startup
-- `backbar.csv.v2` — recipes, serialized as RFC-4180-ish CSV ([src/csv.ts](src/csv.ts)). Empty/corrupt → falls back to the embedded seed ([src/seed.ts](src/seed.ts)).
-- `backbar.stock.v1` — a JSON array of stocked ingredient *keys* (see below). Default empty = nothing stocked.
+### Seeds + overrides, loaded on startup ([src/state.ts](src/state.ts))
+Both recipes and ingredients follow the same shape: a committed seed in the repo + a user override layer in localStorage, merged at runtime.
+- **Recipes**: chosen seed (`backbar.seed.v1`) resolved from [src/seeds/](src/seeds/) — `classics`, `maxs-list` (inherits classics), `empty` — then user diffs (`backbar.recipes.v1`: adds/edits/removals by name) applied. `deriveRecords()` produces `state.records`; `save()` re-diffs against the seed. `backbar.csv.v2` is a legacy flat store, read once for migration. CSV in [src/csv.ts](src/csv.ts).
+- **Ingredients**: the catalog comes from [src/ingredients-seed.ts](src/ingredients-seed.ts) + per-ingredient overrides (`backbar.ingredients.v1`). Stocked keys are a JSON array in `backbar.stock.v1`.
 
-### Classification is an ordered rule table
-[src/parser.ts](src/parser.ts) holds `RULES`, a regex table scanned **top-to-bottom; first match wins**. Order is load-bearing — specific patterns (`light rum`, `green chartreuse`) must precede generic ones (`rum`, `chartreuse`). `classify()` returns category, icon color, family (`fam`), ABV, and a canonical display name. This file is covered by [src/parser.test.ts](src/parser.test.ts); changing rule order or output can break tests and the whole UI — edit deliberately.
+### Classification comes from the ingredient seed, not the parser
+[src/parser.ts](src/parser.ts) only turns shorthand into structure (quantities, units, roles, methods) — it does **not** classify. Classification is injected via `setClassifier`: the app (and tests) install `seedClassify` ([src/catalog.ts](src/catalog.ts)), which resolves a name against [src/ingredients-seed.ts](src/ingredients-seed.ts) — **the single source of truth for ingredient data** (category, colour, ABV, family, display name, aliases, umbrellas). A name the seed doesn't know renders as a plain, icon-less, sentence-cased chip. The seed is **hand-maintained** (there is no generator); edit it directly.
 
-### The ingredient / stock model ([src/ingredients.ts](src/ingredients.ts))
-This is the most subtle subsystem. It derives a deduped, canonical ingredient catalog from the recipes and decides whether each recipe chip is "available" given the stocked set.
+### The ingredient / stock model ([src/ingredients.ts](src/ingredients.ts) + [src/catalog.ts](src/catalog.ts))
+`runtimeCatalog()` builds the stockable list from the seed + overrides and decides whether each recipe chip is "available" given the stocked set.
 
 - **`ingredientKey(i)`** is the stock identity (what `backbar.stock.v1` stores). Citrus folds to the bare fruit (`lemon` covers lemon juice/peel/wheel); otherwise it's the canonical display name lowercased.
-- **Two kinds of umbrella:**
-  - *Generic umbrellas* (`UMBRELLA_NAMES`: rum, whiskey, brandy, tequila, vermouth, chartreuse, syrup, spirit, bitters) — the generic term is **hidden** from the stock list, its specific members shown; a recipe asking for the generic matches if any member is stocked. **Data-driven:** a name only behaves as an umbrella when a specific sibling actually appears in the recipes (`buildCatalog`'s `active` set), so e.g. `Tequila` with no sub-types stays a normal stockable item.
-  - *Ingredient-side umbrella* (citrus) — the parent is **shown** and its derivatives **hidden**; stocking `Lemon` guarantees juice + peel. Implemented purely via `ingredientKey` folding.
-- **`displayCat(i)`** regroups parser categories for the stock list *without touching the parser* (extracts split out, cranberry/pomegranate → Mixers, herb+spice and dairy+egg merged). `CATEGORY_ORDER`/`CATEGORY_LABEL` drive page order and labels.
+- **Umbrellas are explicit, per-ingredient.** Each seed entry's `umbrellas` lists the parent ids it's a CHILD of (e.g. Light rum → `["rum"]`; overlap allowed). A key referenced as a parent is an **effective generic**: hidden from the stock list, and a recipe asking for it is satisfied when any child is stocked. "Active" umbrellas and the hidden set are *derived* from the `umbrellas` lists in [src/catalog.ts](src/catalog.ts) — no separate table.
+- **Citrus** is the other kind: the parent is **shown** and its derivatives **hidden**; stocking `Lemon` covers juice/peel/wheel. Pure `ingredientKey` folding.
+- **`displayCat(cat, disp, key)`** regroups categories for the stock list (extracts split out, cranberry/pomegranate/pineapple → Mixers, herb+spice and dairy+egg merged). `CATEGORY_ORDER`/`CATEGORY_LABEL` drive page order and labels.
 - `isAvailable(i, ctx)` is consumed by both tabs; `chipHTML` flags missing ingredients with the `unstocked` class.
 
 ### Rendering & chip layout ([src/render.ts](src/render.ts))
@@ -47,7 +47,7 @@ This is the most subtle subsystem. It derives a deduped, canonical ingredient ca
 
 - [docs/backlog.md](docs/backlog.md) (known as "the backlog") **is Max's document.** It is the source of truth for product intent. Never edit it (not even to check off completed items) without explicitly asking — this rule is stated in the file itself.
 - **styles.css is global**, with CSS variables in `:root` for the dark theme; chips share one base `.chip` with `.unstocked` (red) as the only state flag. Reuse existing variables/classes rather than introducing new color literals.
-- Keep new logic out of the test-covered `parser.ts` when it belongs in the `ingredients.ts` catalog layer.
+- Ingredient *data* (names, colours, categories, aliases, umbrellas) belongs in [src/ingredients-seed.ts](src/ingredients-seed.ts), the single source of truth — not in `parser.ts` (parsing only) or the catalog layer (derivation only).
 - The dev server runs on port 5180 and may already be running locally; don't assume the port is free. Test on the existing server if you find it. **Never** stop an existing server you did not start.
 
 

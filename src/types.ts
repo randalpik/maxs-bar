@@ -10,20 +10,7 @@ export type Role =
   | 'top'
   | 'garnish';
 
-/** A classification rule from the RULES table. */
-export interface Rule {
-  re: RegExp;
-  cat: string;
-  shape: string;
-  color: string;
-  abv: number;
-  disp?: string;
-  fam?: string;
-  syrup?: string;
-  citrus?: string;
-}
-
-/** Result of classify() — a rule resolved against an ingredient name. */
+/** Result of the classifier — a category/colour/abv resolved against a name. */
 export interface Classified {
   cat: string;
   shape: string;
