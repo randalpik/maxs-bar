@@ -1,6 +1,6 @@
 import './styles.css';
 import { setClassifier } from './parser';
-import { seedClassify } from './catalog';
+import { seedClassify, runtimeCatalog } from './catalog';
 import { state, load, toggleStock, hasSeed, resetAll } from './state';
 import { toCSV } from './csv';
 import { fillKeySel, render, layoutCards, updateIngredientChip } from './render';
@@ -22,6 +22,25 @@ function selectPage(page: 'recipes' | 'ingredients' | 'syrups'): void {
   bar.classList.toggle('page-ingredients', page === 'ingredients');
   bar.classList.toggle('page-syrups', page === 'syrups');
 }
+/** Jump from a recipe chip to the Ingredients page: scroll to the matching stock
+ *  chip (or, for an effective generic like "rum", its first child), flashing it.
+ *  If nothing in the list matches (e.g. an ingredient from a user-added recipe),
+ *  open the add-ingredient modal prefilled with the chip's name. */
+function jumpToIngredient(key: string, label: string): void {
+  selectPage('ingredients');
+  render();
+  requestAnimationFrame(() => {
+    const main = $('#main');
+    const chips = [...main.querySelectorAll<HTMLElement>('.chip.ig')];
+    const child = runtimeCatalog(state.records).entries.find(e => e.umbrellas.includes(key));
+    const target = chips.find(c => c.dataset.ing === key) ?? chips.find(c => c.dataset.ing === child?.key);
+    if (!target) { openIgModal(null, label); return; }
+    target.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    target.classList.add('flash');
+    setTimeout(() => target.classList.remove('flash'), 1300);
+  });
+}
+
 tabs.addEventListener('click', e => {
   const b = (e.target as HTMLElement).closest('button');
   if (!b) return;
@@ -45,6 +64,13 @@ $('#addBtn').addEventListener('click', () => openModal(null));
 $('#addIgBtn').addEventListener('click', () => openIgModal(null));
 $('#main').addEventListener('click', e => {
   const t = e.target as HTMLElement;
+  // Goto button (recipe chips): jump to the ingredient on the Ingredients page.
+  const gotoEl = t.closest<HTMLElement>('[data-goto-ig]');
+  if (gotoEl) {
+    const label = gotoEl.closest('.chip')?.querySelector('.nm')?.textContent || gotoEl.dataset.gotoIg!;
+    jumpToIngredient(gotoEl.dataset.gotoIg!, label);
+    return;
+  }
   // Find button (on every chip): jump to Recipes filtered by that ingredient.
   const find = t.closest<HTMLElement>('[data-find]');
   if (find) {

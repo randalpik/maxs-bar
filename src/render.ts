@@ -52,6 +52,15 @@ export function findBtn(key: string, label: string): string {
     + `</button>`;
 }
 
+/** Inset top-left "open this ingredient on the Ingredients page" button (recipe
+ *  chips only). `key` is the stock identity; `label` is the human name. */
+export function gotoBtn(key: string, label: string): string {
+  return `<button type="button" class="goto-ig" data-goto-ig="${esc(key)}" title="Open ${esc(label)} in ingredients" tabindex="-1">`
+    + `<svg width="15" height="15" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round">`
+    + `<path d="M6 3.5h8M6 8h8M6 12.5h8"/><circle cx="2.6" cy="3.5" r="1.1" fill="currentColor" stroke="none"/><circle cx="2.6" cy="8" r="1.1" fill="currentColor" stroke="none"/><circle cx="2.6" cy="12.5" r="1.1" fill="currentColor" stroke="none"/>`
+    + `</svg></button>`;
+}
+
 export function chipHTML(i: Ingredient, ctx?: StockCtx, searchable = false): string {
   const { disp, color, shape } = effectiveChip(i);
   const { amount, tag } = amountTag(i);
@@ -64,7 +73,7 @@ export function chipHTML(i: Ingredient, ctx?: StockCtx, searchable = false): str
     + (tag ? `<span class="tag">${tag}</span>` : '')
     + (amount ? `<span class="q">${esc(amount)}</span>` : '')
     + `</span>`
-    + (searchable ? findBtn(ingredientKey(i), disp) : '')
+    + (searchable ? gotoBtn(ingredientKey(i), disp) + findBtn(ingredientKey(i), disp) : '')
     + `</div>`;
 }
 

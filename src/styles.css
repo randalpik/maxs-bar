@@ -158,17 +158,20 @@ main{position:relative; z-index:1; max-width:1180px; margin:0 auto; padding:26px
   min-width:76px; max-width:104px; background:rgba(244,239,230,.06);
   user-select:none;
 }
-/* inset chip buttons: find (top-right) + edit ingredient (top-left), clear of the icon */
-.chip .find, .chip .ig-edit-btn{
+/* inset chip buttons: find (top-right) + edit/goto ingredient (top-left), clear of the icon */
+.chip .find, .chip .ig-edit-btn, .chip .goto-ig{
   position:absolute; top:4px; width:18px; height:18px; padding:0;
   display:grid; place-items:center; border:0; border-radius:5px;
   background:transparent; color:var(--faint); cursor:pointer;
   opacity:.5; transition:opacity .1s, color .1s, background .1s;
 }
 .chip .find{right:4px}
-.chip .ig-edit-btn{left:4px}
-.chip:hover .find, .chip:hover .ig-edit-btn{opacity:1}
-.chip .find:hover, .chip .ig-edit-btn:hover{opacity:1; color:var(--accent); background:var(--accent-dim)}
+.chip .ig-edit-btn, .chip .goto-ig{left:4px}
+.chip:hover .find, .chip:hover .ig-edit-btn, .chip:hover .goto-ig{opacity:1}
+.chip .find:hover, .chip .ig-edit-btn:hover, .chip .goto-ig:hover{opacity:1; color:var(--accent); background:var(--accent-dim)}
+/* brief highlight when jumped to from a recipe chip */
+@keyframes igflash{0%,70%{border-color:var(--accent); box-shadow:0 0 0 2px var(--accent-dim)}100%{}}
+.chip.ig.flash{animation:igflash 1.2s ease-out}
 .chip>svg,.chip>.ph{width:30px; height:30px; display:block; flex:none}
 .chip .nm{font-size:10.5px; color:var(--text); text-align:center; line-height:1.2; word-break:break-word}
 .chip .qwrap{display:flex; flex-direction:column; align-items:center; gap:1px}

@@ -58,15 +58,17 @@ function renderBuilder(): void {
     + SHAPES.map(s => tile(s, icon(s, editingColor))).join('');
 }
 
-/** Open the modal to edit an existing ingredient (key) or add a new one (null). */
-export function openIgModal(key: string | null): void {
+/** Open the modal to edit an existing ingredient (key) or add a new one (null).
+ *  `prefillName` seeds the name field of a new ingredient (e.g. when jumping from
+ *  a recipe chip that nothing in the list matches). */
+export function openIgModal(key: string | null, prefillName = ''): void {
   const sel = $<HTMLSelectElement>('#igCat');
   if (key === null) {
     editingKey = null;
     editingShape = null;
     editingColor = '#C99A5B';
     $('#igTitle').textContent = 'Add ingredient';
-    $<HTMLInputElement>('#igName').value = '';
+    $<HTMLInputElement>('#igName').value = prefillName;
     sel.value = CATEGORY_ORDER[0]!;
     $<HTMLElement>('#igRemove').style.display = 'none';
     $<HTMLElement>('#igReset').style.display = 'none';
