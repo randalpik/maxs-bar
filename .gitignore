@@ -3,5 +3,6 @@ dist
 .netlify
 *.local
 .DS_Store
+.codegraph/
 
 docs/
