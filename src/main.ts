@@ -2,12 +2,14 @@ import './styles.css';
 import { setClassifier } from './parser';
 import { seedClassify, runtimeCatalog, isSeedKey } from './catalog';
 import { state, load, toggleStock, hasSeed, resetAll } from './state';
-import { toCSV } from './csv';
 import { fillKeySel, render, layoutCards, updateIngredientChip } from './render';
 import { openModal, closeModal, saveModal, updatePreview, deleteEditing } from './modal';
 import { openIgModal, closeIgModal, saveIgModal, resetIgModal, removeIgModal, fillIgCat, initIgBuilder } from './igmodal';
 import { openSeedModal, closeSeedModal, confirmSeed, seedModalForced } from './seedmodal';
-import { download, exportTXT, importTXT, importCSV, exportIngredientsJSON } from './io';
+import {
+  exportRecipesJSON, exportIngredientsJSON, exportStockJSON,
+  importRecipes, importIngredientsJSON, importStockJSON,
+} from './io';
 import { $ } from './dom';
 
 /* ============================================================
@@ -144,10 +146,12 @@ menu.querySelector('.pop')!.addEventListener('click', e => {
   if (!b) return;
   const act = b.dataset.act;
   menu.classList.remove('open');
-  if (act === 'exp-csv') download('drinks.csv', toCSV(state.records), 'text/csv');
-  else if (act === 'exp-txt') exportTXT();
+  if (act === 'exp-recipes') exportRecipesJSON();
   else if (act === 'exp-ing') exportIngredientsJSON();
-  else if (act === 'imp-txt' || act === 'imp-csv') $('#fileIn').click();
+  else if (act === 'exp-stock') exportStockJSON();
+  else if (act === 'imp-recipes') startImport('recipes');
+  else if (act === 'imp-ing') startImport('ingredients');
+  else if (act === 'imp-stock') startImport('stock');
   else if (act === 'switch-seed') openSeedModal({ forced: false });
   else if (act === 'reset') {
     if (confirm('Reset everything? This clears your recipes, ingredient edits, and stock, then asks you to pick a starter list again.')) {
@@ -157,12 +161,29 @@ menu.querySelector('.pop')!.addEventListener('click', e => {
     }
   }
 });
+
+// Single hidden file input, retargeted per import kind. Recipes accept the
+// human-readable formats too; ingredients and stock are JSON only.
+let pendingImport: 'recipes' | 'ingredients' | 'stock' = 'recipes';
+function startImport(kind: typeof pendingImport): void {
+  pendingImport = kind;
+  const inp = $<HTMLInputElement>('#fileIn');
+  inp.accept = kind === 'recipes'
+    ? '.txt,.csv,.json,text/plain,text/csv,application/json'
+    : '.json,application/json';
+  inp.click();
+}
 $<HTMLInputElement>('#fileIn').addEventListener('change', e => {
   const f = (e.target as HTMLInputElement).files?.[0];
   if (!f) return;
   const r = new FileReader();
-  const isCsv = /\.csv$/i.test(f.name);
-  r.onload = () => { (isCsv ? importCSV : importTXT)(r.result as string); (e.target as HTMLInputElement).value = ''; };
+  r.onload = () => {
+    const text = r.result as string;
+    if (pendingImport === 'recipes') importRecipes(text, f.name);
+    else if (pendingImport === 'ingredients') importIngredientsJSON(text);
+    else importStockJSON(text);
+    (e.target as HTMLInputElement).value = '';
+  };
   r.readAsText(f);
 });
 

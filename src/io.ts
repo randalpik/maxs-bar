@@ -1,12 +1,21 @@
-import { state, save } from './state';
+import { state, save, saveIngredients, saveStock, deriveRecords, SEED_KEY, RECIPES_KEY } from './state';
 import { parseLine } from './parser';
 import { parseCSV } from './csv';
-import { buildIngredientsExport } from './ingredients-export';
+import { runtimeCatalog } from './catalog';
+import {
+  buildRecipesExport, parseRecipesImport, isRecipesExport,
+  buildIngredientsExport, parseIngredientsImport, isIngredientsExport,
+  buildStockExport, parseStockImport,
+} from './transfer';
 import { nowISO } from './util';
 import { render } from './render';
 
 /* ============================================================
-   Import / export
+   Import / export — DOM + persistence wrappers around transfer.ts.
+
+   JSON is the canonical format: seed + override diffs for recipes and ingredients,
+   a flat key list for stock. .txt / .csv remain accepted on recipe IMPORT only,
+   for human-readable intake (an additive merge, not a full replace).
    ============================================================ */
 export function download(filename: string, text: string, type: string): void {
   const b = new Blob([text], { type });
@@ -16,18 +25,52 @@ export function download(filename: string, text: string, type: string): void {
   URL.revokeObjectURL(u);
 }
 
-export function exportTXT(): void {
-  const txt = state.records.map(r => `${r.name}: ${r.recipe}`).join('\n\n') + '\n';
-  download('drinks.txt', txt, 'text/plain');
+const json = (v: unknown): string => JSON.stringify(v, null, 2) + '\n';
+
+/* ---------- exports ---------- */
+
+/** Recipes as a seed-relative diff (the canonical format). */
+export function exportRecipesJSON(): void {
+  download('recipes.json', json(buildRecipesExport()), 'application/json');
 }
 
-/** Export the user's ingredient overrides as JSON in the canonical seed format, so
- *  hand-created/edited entries can be reconciled into ingredients-seed.ts. The diff
- *  assembly lives in ingredients-export.ts (pure / unit-tested). */
+/** Ingredient overrides as a seed-format diff, for reconciling into the seed. */
 export function exportIngredientsJSON(): void {
-  download('ingredients.json', JSON.stringify(buildIngredientsExport(), null, 2) + '\n', 'application/json');
+  download('ingredients.json', json(buildIngredientsExport()), 'application/json');
 }
 
+/** Stocked keys as a flat list. */
+export function exportStockJSON(): void {
+  download('stock.json', json(buildStockExport()), 'application/json');
+}
+
+/* ---------- recipe import (json | csv | txt) ---------- */
+
+/** Full-replace the recipe override layer (and seed) from a recipes-export JSON. */
+function applyRecipesImport(data: Parameters<typeof parseRecipesImport>[0]): void {
+  const { seed, overrides } = parseRecipesImport(data);
+  state.recipeOverrides = overrides;
+  if (seed) { state.seedId = seed; localStorage.setItem(SEED_KEY, seed); }
+  localStorage.setItem(RECIPES_KEY, JSON.stringify(overrides));
+  state.records = deriveRecords();
+  render();
+}
+
+/** Import recipes from a .json (full replace), or .csv / .txt (additive merge for
+ *  human-readable intake). The format is sniffed from the content, then filename. */
+export function importRecipes(text: string, filename = ''): void {
+  const trimmed = text.trim();
+  if (trimmed.startsWith('{')) {
+    try {
+      const data = JSON.parse(trimmed);
+      if (isRecipesExport(data)) { applyRecipesImport(data); return; }
+    } catch { /* not our JSON — fall through to csv/txt */ }
+  }
+  if (/\.csv$/i.test(filename) || /^name\s*,\s*recipe/i.test(trimmed)) importCSV(text);
+  else importTXT(text);
+}
+
+/** Additive merge from `Name: recipe` lines (upsert by case-insensitive name). */
 export function importTXT(text: string): void {
   const lines = text.split('\n').map(l => l.trim()).filter(l => l && l.includes(':'));
   const t = nowISO();
@@ -41,9 +84,7 @@ export function importTXT(text: string): void {
   save(); render();
 }
 
-/** Import recipes from a CSV in the same shape we export (name,recipe,created,edited).
- *  Existing recipes (matched case-insensitively by name) are updated in place;
- *  created/edited timestamps from the file are preserved so a round-trip is lossless. */
+/** Additive merge from CSV (name,recipe,created,edited,author), upsert by name. */
 export function importCSV(text: string): void {
   let recs;
   try { recs = parseCSV(text); } catch { return; }
@@ -55,4 +96,26 @@ export function importCSV(text: string): void {
     else state.records.push({ name: r.name, recipe: r.recipe, created: r.created || t, edited: r.edited || t, author: r.author || '' });
   }
   save(); render();
+}
+
+/* ---------- ingredient import (json, full replace) ---------- */
+
+export function importIngredientsJSON(text: string): void {
+  let data;
+  try { data = JSON.parse(text); } catch { return; }
+  if (!isIngredientsExport(data)) return;
+  state.ingredients = parseIngredientsImport(data);
+  saveIngredients();
+  render();
+}
+
+/* ---------- stock import (json flat list, unknown keys ignored) ---------- */
+
+export function importStockJSON(text: string): void {
+  let data;
+  try { data = JSON.parse(text); } catch { return; }
+  const known = new Set(runtimeCatalog(state.records).entries.map(e => e.key));
+  state.stocked = parseStockImport(data, known);
+  saveStock();
+  render();
 }
