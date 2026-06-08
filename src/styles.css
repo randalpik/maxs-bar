@@ -258,7 +258,8 @@ main{position:relative; z-index:1; max-width:1180px; margin:0 auto; padding:26px
 
 /* umbrella + alias editors */
 .ig-rels{display:flex; flex-direction:column; gap:14px; margin-bottom:18px}
-.rel-row{display:flex; flex-wrap:wrap; align-items:center; gap:7px}
+/* chips on top, the add control (dropdown / text field) on its own line below */
+.rel-row{display:flex; flex-direction:column; align-items:flex-start; gap:8px}
 .rel-chips{display:flex; flex-wrap:wrap; gap:6px}
 .rel-chip{
   display:inline-flex; align-items:center; gap:4px; padding:5px 5px 5px 10px;

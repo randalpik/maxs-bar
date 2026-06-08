@@ -74,6 +74,23 @@ describe('runtimeCatalog', () => {
     expect(isAvailable(parseIngredient('1 red wine'), verm)).toBe(false);  // a specific other wine
   });
 
+  it('a UI-assigned umbrella ("spirit") hides the generic and matches its children', () => {
+    // No seed entry references "spirit" as a parent, so it shows by default…
+    expect(new Set(runtimeCatalog([]).entries.map(e => e.key)).has('spirit')).toBe(true);
+    // …until the user assigns children to it via overrides, exactly as Max plans.
+    state.ingredients = {
+      'light rum': { umbrellas: ['rum', 'spirit'] },
+      gin: { umbrellas: ['spirit'] },
+    };
+    const keys = new Set(runtimeCatalog([]).entries.map(e => e.key));
+    expect(keys.has('spirit')).toBe(false);     // generic now hidden
+    expect(keys.has('light rum')).toBe(true);   // children still shown
+    expect(keys.has('gin')).toBe(true);
+    const ctx = buildStockCtx(runtimeCatalog([]), new Set(['gin']));
+    expect(isAvailable(parseIngredient('2 spirit'), ctx)).toBe(true);   // matched by a child
+    expect(seedClassify('light rum').fam).toBe('rum');                  // family still rum, not spirit
+  });
+
   it('the generic "wine" is hidden from the stock list but matched by any wine child', () => {
     const keys = new Set(runtimeCatalog([]).entries.map(e => e.key));
     expect(keys.has('wine')).toBe(false);       // generic parent hidden

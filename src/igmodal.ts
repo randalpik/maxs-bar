@@ -89,7 +89,7 @@ function renderRelations(): void {
     ? editingUmbrellas.map(u => relChip(u, umbLabel(u), 'umb')).join('')
     : '<span class="rel-empty">none</span>';
   const sel = $<HTMLSelectElement>('#igUmbSel');
-  const avail = UMBRELLA_PARENTS.filter(p => !editingUmbrellas.includes(p));
+  const avail = UMBRELLA_PARENTS.filter(p => p !== editingKey && !editingUmbrellas.includes(p));
   sel.innerHTML = '<option value="">+ umbrella…</option>'
     + avail.map(p => `<option value="${esc(p)}">${esc(umbLabel(p))}</option>`).join('');
   sel.disabled = !avail.length;

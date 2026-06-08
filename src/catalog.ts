@@ -32,9 +32,11 @@ for (const ing of INGREDIENTS) {
  *  list and satisfied when any child is stocked. */
 const HIDDEN = new Set<string>(INGREDIENTS.flatMap(i => i.umbrellas ?? []));
 
-/** Existing umbrella parents, offered in the edit modal's umbrella dropdown (new
- *  umbrella creation is seed-only / out of scope for the UI). */
-export const UMBRELLA_PARENTS: string[] = [...HIDDEN].sort();
+/** Umbrella parents offered in the edit modal's dropdown: the seed's existing parents
+ *  plus every base-spirit family (so e.g. "spirit", "gin" are assignable even before any
+ *  ingredient is a child of them — assigning a child then makes the parent an effective
+ *  generic). New umbrella *names* still can't be invented in the UI. */
+export const UMBRELLA_PARENTS: string[] = [...new Set([...HIDDEN, ...SPIRIT_FAMILIES])].sort();
 
 /** Stockable committed keys (everything that isn't an effective generic). */
 export const SEED_KEYS = new Set(INGREDIENTS.filter(i => !HIDDEN.has(i.key)).map(i => i.key));
@@ -103,8 +105,23 @@ export function seedClassify(name: string): Classified {
 export function runtimeCatalog(records: Recipe[]): Catalog {
   const map = new Map<string, IngredientEntry>();
 
+  // Effective generics (hidden from the stock list) are computed from the *live*
+  // umbrella references — seed lists with the user's overrides applied, plus added
+  // ingredients — so assigning a child to e.g. "spirit" in the UI hides the generic
+  // "Spirit" entry, exactly as a seed-declared parent would.
+  const parents = new Set<string>();
   for (const s of INGREDIENTS) {
-    if (HIDDEN.has(s.key)) continue;
+    const ov = state.ingredients[s.key];
+    if (ov?.removed) continue;
+    for (const u of (ov?.umbrellas ?? s.umbrellas ?? [])) parents.add(u);
+  }
+  for (const [key, ov] of Object.entries(state.ingredients)) {
+    if (ov.removed || byKey.has(key)) continue;
+    for (const u of (ov.umbrellas ?? umbrellasForCat(ov.cat ?? 'other', ov.disp ?? titleCase(key)))) parents.add(u);
+  }
+
+  for (const s of INGREDIENTS) {
+    if (parents.has(s.key)) continue;
     const ov = state.ingredients[s.key];
     if (ov?.removed) continue;
     const umbrellas = ov?.umbrellas ?? s.umbrellas ?? [];
@@ -124,7 +141,7 @@ export function runtimeCatalog(records: Recipe[]): Catalog {
 
   // User-added ingredients: override keys absent from the committed list (and not removed).
   for (const [key, ov] of Object.entries(state.ingredients)) {
-    if (ov.removed || map.has(key) || byKey.has(key)) continue;
+    if (ov.removed || map.has(key) || byKey.has(key) || parents.has(key)) continue;
     const disp = ov.disp ?? titleCase(key);
     const cat = ov.cat ?? 'other';
     const umbrellas = ov.umbrellas ?? umbrellasForCat(cat, disp);
