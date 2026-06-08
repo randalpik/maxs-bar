@@ -58,7 +58,9 @@ describe('deriveRecords + diffRecords round-trip', () => {
     const noDaiquiri = recs.filter(r => r.name !== 'Daiquiri');
 
     const ov = diffRecords(noDaiquiri, base);
-    expect(ov['daiquiri']).toEqual({ removed: true });
+    // Tombstones now carry an `edited` timestamp so a deletion can win a sync merge.
+    expect(ov['daiquiri']?.removed).toBe(true);
+    expect(typeof ov['daiquiri']?.edited).toBe('string');
     expect(ov['negroni']?.recipe).toContain('lemon peel');
     expect(ov['test original']?.author).toBe('Me');
     expect(Object.keys(ov)).toHaveLength(3);

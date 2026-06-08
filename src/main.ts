@@ -10,6 +10,8 @@ import {
   exportRecipesJSON, exportIngredientsJSON, exportStockJSON,
   importRecipes, importIngredientsJSON, importStockJSON,
 } from './io';
+import { initSync, syncNow } from './sync';
+import { openAcctModal, closeAcctModal, createAccount, doSignIn, doSignOut } from './acct';
 import { $ } from './dom';
 
 /* ============================================================
@@ -136,7 +138,16 @@ $('#igOverlay').addEventListener('click', e => { if (e.target === $('#igOverlay'
 $('#seedConfirm').addEventListener('click', confirmSeed);
 $('#seedCancel').addEventListener('click', closeSeedModal);
 $('#seedOverlay').addEventListener('click', e => { if (e.target === $('#seedOverlay')) closeSeedModal(); });
-document.addEventListener('keydown', e => { if (e.key === 'Escape' && !seedModalForced()) { closeModal(); closeIgModal(); closeSeedModal(); } });
+
+$('#acctCreate').addEventListener('click', () => { void createAccount(); });
+$('#acctSignin').addEventListener('click', () => { void doSignIn(); });
+$('#acctSignout').addEventListener('click', doSignOut);
+$('#acctClose').addEventListener('click', closeAcctModal);
+$('#acctOverlay').addEventListener('click', e => { if (e.target === $('#acctOverlay')) closeAcctModal(); });
+$('#syncBtn').addEventListener('click', () => syncNow());
+$('#acctPass').addEventListener('keydown', e => { if (e.key === 'Enter') { e.preventDefault(); void doSignIn(); } });
+
+document.addEventListener('keydown', e => { if (e.key === 'Escape' && !seedModalForced()) { closeModal(); closeIgModal(); closeSeedModal(); closeAcctModal(); } });
 
 const menu = $('#menu');
 $('#menuBtn').addEventListener('click', e => { e.stopPropagation(); menu.classList.toggle('open'); });
@@ -152,6 +163,7 @@ menu.querySelector('.pop')!.addEventListener('click', e => {
   else if (act === 'imp-recipes') startImport('recipes');
   else if (act === 'imp-ing') startImport('ingredients');
   else if (act === 'imp-stock') startImport('stock');
+  else if (act === 'account') openAcctModal();
   else if (act === 'switch-seed') openSeedModal({ forced: false });
   else if (act === 'reset') {
     if (confirm('Reset everything? This clears your recipes, ingredient edits, and stock, then asks you to pick a starter list again.')) {
@@ -200,3 +212,4 @@ load(); reconcileStock(state.records); // clean up any pre-existing stuck stock 
 fillKeySel(); fillIgCat(); initIgBuilder(); render();
 history.replaceState({ page: state.page, query: state.query }, ''); // seed initial nav entry
 if (!hasSeed()) openSeedModal({ forced: true });
+initSync(); // resume a stored session (no-op when signed out); app works fully logged-out

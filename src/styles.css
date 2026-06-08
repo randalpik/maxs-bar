@@ -107,6 +107,11 @@ select{appearance:none; padding-right:30px;
 .menu .pop .div{height:1px; background:var(--line); margin:4px 2px}
 .menu .pop .danger:hover{background:rgba(200,60,60,.16); color:#e88}
 
+/* sync button (in .controls, before the menu) — fixed width so label changes don't reflow the toolbar */
+#syncBtn{width:88px; text-align:center}
+#syncBtn[data-status="syncing"]{color:var(--muted)}
+#syncBtn[data-status="error"]{color:#e88; border-color:rgba(200,60,60,.4)}
+
 /* ---------- main ---------- */
 main{position:relative; z-index:1; max-width:1180px; margin:0 auto; padding:26px 22px 90px}
 /* The page is held hidden until web fonts load + the first chip layout runs (inline
@@ -239,6 +244,13 @@ html.ready body{animation:reveal .2s ease}
 .modal .actions{display:flex; gap:10px; justify-content:flex-end; align-items:center}
 .modal .actions .spacer{flex:1}
 .warn{color:#e88; font-size:11px; margin-right:auto}
+
+/* account / sync modal */
+.acct-modal{width:min(420px,100%)}
+.acct-msg{font-size:11px; color:var(--muted); min-height:14px; margin:0 0 14px}
+.acct-msg.err{color:#e88}
+.acct-who{font-size:13px; color:var(--muted); margin:0 0 18px; line-height:1.6}
+.acct-who strong{color:var(--text); font-weight:500}
 
 /* edit ingredient modal + icon builder */
 .ig-modal{width:min(520px,100%)}

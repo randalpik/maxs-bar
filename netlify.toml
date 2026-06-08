@@ -4,3 +4,13 @@
 
 [build.environment]
   NODE_VERSION = "22"
+
+[functions]
+  directory = "netlify/functions"
+  node_bundler = "esbuild"
+
+# Friendly same-origin API paths -> the serverless functions.
+[[redirects]]
+  from = "/api/*"
+  to = "/.netlify/functions/:splat"
+  status = 200

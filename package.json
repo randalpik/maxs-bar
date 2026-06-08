@@ -6,13 +6,15 @@
   "description": "Max's Bar — a cocktail index",
   "scripts": {
     "dev": "vite",
-    "build": "tsc && vite build",
+    "build": "tsc && tsc -p netlify/functions && vite build",
     "preview": "vite preview",
     "test": "vitest run",
     "test:watch": "vitest",
     "merge-ingredients": "vite-node scripts/merge-ingredients.ts"
   },
   "devDependencies": {
+    "@netlify/blobs": "10.7.9",
+    "@netlify/functions": "5.3.0",
     "@types/node": "25.9.2",
     "typescript": "^5.7.2",
     "vite": "^6.0.5",

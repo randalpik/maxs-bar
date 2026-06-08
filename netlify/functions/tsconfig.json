@@ -1,0 +1,19 @@
+{
+  "comment": "Node-context type-check for the serverless functions. Separate from the root (DOM/Vite) tsconfig — these run on Node, never in the browser, and must not pull in client globals. Bundled by Netlify (esbuild); tsc here only type-checks.",
+  "compilerOptions": {
+    "target": "ES2022",
+    "module": "ESNext",
+    "moduleResolution": "bundler",
+    "lib": ["ES2022"],
+    "types": ["node"],
+    "strict": true,
+    "noUncheckedIndexedAccess": true,
+    "noUnusedLocals": true,
+    "noUnusedParameters": true,
+    "isolatedModules": true,
+    "verbatimModuleSyntax": true,
+    "skipLibCheck": true,
+    "noEmit": true
+  },
+  "include": ["."]
+}

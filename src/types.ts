@@ -76,6 +76,10 @@ export interface IngredientOverride {
   aliases?: string[];
   /** A removed seed ingredient (always renders unstocked in recipes; hidden from the list). */
   removed?: boolean;
+  /** Epoch-ms of the last edit, stamped by setIngredientOverride. Sync-internal:
+   *  drives per-key last-write-wins and is never emitted by the file export. Absent
+   *  on legacy/imported overrides ⇒ treated as 0 (loses to any timestamped edit). */
+  ts?: number;
 }
 
 /** A user diff against the resolved recipe seed, keyed by lowercased name and
@@ -100,4 +104,25 @@ export interface Derived {
   p: ParsedLine;
   base: string | null;
   alc: number;
+}
+
+/** A stock toggle in the sync-only shadow map: on/off plus when it was last set.
+ *  `state.stocked` (the runtime Set) stays the source of truth for the UI; this map
+ *  exists so an *un-stock* can win a merge (a bare key list can't express removal). */
+export interface StockEntry {
+  on: boolean;
+  ts: number;
+}
+
+/** The full cross-device payload — the four user-state slices plus the timestamps
+ *  that drive per-key last-write-wins merging. This is the wire format (raw internal
+ *  maps, not the human-readable file diffs from transfer.ts), since merging needs the
+ *  per-entry timestamps that the file format drops. */
+export interface SyncPayload {
+  seedId: string;
+  /** Epoch-ms the seed was last chosen (LWW for the single seedId scalar). */
+  seedTs: number;
+  recipeOverrides: Record<string, RecipeOverride>;
+  ingredients: Record<string, IngredientOverride>;
+  stockTs: Record<string, StockEntry>;
 }

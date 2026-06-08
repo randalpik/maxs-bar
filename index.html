@@ -40,9 +40,12 @@
     </label>
     <button class="btn primary" id="addBtn">+ Add</button>
     <button class="btn primary" id="addIgBtn">+ Add</button>
+    <button class="btn" id="syncBtn" style="display:none" title="Sync now">Sync</button>
     <div class="menu" id="menu">
       <button class="btn" id="menuBtn">···</button>
       <div class="pop">
+        <button data-act="account" id="menuAccount">Sign in & sync…</button>
+        <div class="div"></div>
         <button data-act="exp-recipes">Export recipes</button>
         <button data-act="exp-ing">Export ingredients</button>
         <button data-act="exp-stock">Export stock list</button>
@@ -131,6 +134,31 @@
       <span class="spacer"></span>
       <button class="btn" id="seedCancel">Cancel</button>
       <button class="btn primary" id="seedConfirm">Use this list</button>
+    </div>
+  </div>
+</div>
+<!-- account / sync modal -->
+<div class="overlay" id="acctOverlay">
+  <div class="modal acct-modal">
+    <h3 id="acctTitle">Sign in &amp; sync</h3>
+    <p class="hint">Sync your bar across devices. A household can share one account to keep everyone in sync. Backing up your data (Export) is recommended.</p>
+    <div id="acctSignedOut">
+      <div class="field"><label>Account name</label><input id="acctName" autocomplete="username" autocapitalize="none" spellcheck="false"></div>
+      <div class="field"><label>Password</label><input id="acctPass" type="password" autocomplete="current-password"></div>
+      <p class="acct-msg" id="acctMsg"></p>
+      <div class="actions">
+        <span class="spacer"></span>
+        <button class="btn" id="acctCreate">Create account</button>
+        <button class="btn primary" id="acctSignin">Sign in</button>
+      </div>
+    </div>
+    <div id="acctSignedIn" style="display:none">
+      <p class="acct-who">Signed in as <strong id="acctWho"></strong>. This device is syncing automatically.</p>
+      <div class="actions">
+        <button class="btn danger-text warn" id="acctSignout">Sign out</button>
+        <span class="spacer"></span>
+        <button class="btn primary" id="acctClose">Close</button>
+      </div>
     </div>
   </div>
 </div>
