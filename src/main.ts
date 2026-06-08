@@ -34,6 +34,7 @@ function jumpToIngredient(key: string, label: string): void {
   if (!shown && isSeedKey(key)) { openIgModal(key); return; }   // edit the hidden generic here
   selectPage('ingredients');
   render();
+  pushNav();
   requestAnimationFrame(() => {
     const main = $('#main');
     const chips = [...main.querySelectorAll<HTMLElement>('.chip.ig')];
@@ -46,11 +47,31 @@ function jumpToIngredient(key: string, label: string): void {
   });
 }
 
+/* ---- navigation history: browser-back undoes tab / find / goto jumps ----
+ * Each navigation pushes the view state ({page, query}) so the browser back
+ * button steps back through tab switches and the automatic jumps from the chip
+ * find/goto buttons. Filter-box typing is NOT pushed (it would flood history);
+ * back skips transient filters to the last real navigation. */
+function pushNav(): void {
+  const nav = { page: state.page, query: state.query };
+  const cur = history.state as typeof nav | null;
+  if (cur && cur.page === nav.page && cur.query === nav.query) return; // no-op (e.g. active tab)
+  history.pushState(nav, '');
+}
+function restoreNav(nav: { page?: string; query?: string }): void {
+  state.query = nav.query || '';
+  $<HTMLInputElement>('#search').value = state.query;
+  selectPage((nav.page as 'recipes' | 'ingredients' | 'syrups') || 'recipes');
+  render();
+}
+window.addEventListener('popstate', e => restoreNav(e.state || { page: 'recipes', query: '' }));
+
 tabs.addEventListener('click', e => {
   const b = (e.target as HTMLElement).closest('button');
   if (!b) return;
   selectPage(b.dataset.page as 'recipes' | 'ingredients' | 'syrups');
   render();
+  pushNav();
 });
 $('#modeSeg').addEventListener('click', e => {
   const b = (e.target as HTMLElement).closest('button');
@@ -83,6 +104,7 @@ $('#main').addEventListener('click', e => {
     state.query = find.dataset.find!;
     $<HTMLInputElement>('#search').value = state.query;
     render();
+    pushNav();
     return;
   }
   if (state.page === 'ingredients') {
@@ -154,4 +176,5 @@ window.addEventListener('resize', () => {
 /* init */
 setClassifier(seedClassify); // resolve recipe ingredients from the seed, not the regex
 load(); fillKeySel(); fillIgCat(); initIgBuilder(); render();
+history.replaceState({ page: state.page, query: state.query }, ''); // seed initial nav entry
 if (!hasSeed()) openSeedModal({ forced: true });
