@@ -45,7 +45,6 @@ const byKey = new Map<string, SeedIngredient>(INGREDIENTS.map(e => [e.key, e]));
 const norm = (e: SeedIngredient) => JSON.stringify(e, Object.keys(e).sort());
 
 const added: string[] = [], updated: string[] = [], deleted: string[] = [], missing: string[] = [];
-let unchanged = 0;
 
 for (const key of removed) {
   if (byKey.delete(key)) deleted.push(key);
@@ -60,7 +59,6 @@ for (const e of incoming) {
   } else {
     const next = { ...cur, ...e } as SeedIngredient; // edit: overlay only the changed fields
     if (norm(cur) !== norm(next)) { byKey.set(e.key, next); updated.push(e.key); }
-    else unchanged++;
   }
 }
 
@@ -70,6 +68,7 @@ const finalKeys = [
   ...added.slice().sort(),
 ];
 const merged = finalKeys.map(k => byKey.get(k)!);
+const unchanged = merged.length - added.length - updated.length; // seed entries left as-is
 
 /* ---- regenerate the array text ---- */
 const q = (s: string) => JSON.stringify(s);
