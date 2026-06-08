@@ -1,6 +1,6 @@
 import type { Classified, Recipe } from './types';
 import { state, derive } from './state';
-import { sentenceCase, titleCase } from './parser';
+import { sentenceCase, titleCase, SPIRIT_FAMILIES } from './parser';
 import { ingredientKey, umbrellasForCat } from './ingredients';
 import type { Catalog, IngredientEntry } from './ingredients';
 import { INGREDIENTS } from './ingredients-seed';
@@ -41,6 +41,15 @@ export function isKnownKey(key: string): boolean {
   return byKey.has(key) || (key in state.ingredients && !state.ingredients[key]!.removed);
 }
 
+/** Base-spirit family of an ingredient: the first of [key, ...umbrellas] that is a
+ *  recognised spirit family. So light rum (umbrella "rum") → rum, cachaça (umbrella
+ *  "rum") → rum, a vermouth (umbrellas ["vermouth","wine"]) → wine, and the generic
+ *  "rum"/"gin"/"wine" entries → themselves. fam is no longer stored — it's this view
+ *  of the one umbrella hierarchy. */
+export function familyOf(key: string, umbrellas: readonly string[] = []): string | undefined {
+  return [key, ...umbrellas].find(u => SPIRIT_FAMILIES.includes(u));
+}
+
 /** Classify a recipe ingredient name from the committed list. Unknown names get a
  *  neutral, icon-less, sentence-cased result. */
 export function seedClassify(name: string): Classified {
@@ -50,7 +59,7 @@ export function seedClassify(name: string): Classified {
   // seed ingredients) feeds the recipe alcohol estimate; other fields stay seed-
   // derived (disp/color/shape are layered for display in effectiveChip).
   const abv = state.ingredients[ing.key]?.abv ?? ing.abv;
-  return { cat: ing.cat, shape: ing.shape ?? '', color: ing.color, abv, disp: ing.disp, fam: ing.fam, syrup: ing.syrup, citrus: ing.citrus };
+  return { cat: ing.cat, shape: ing.shape ?? '', color: ing.color, abv, disp: ing.disp, fam: familyOf(ing.key, ing.umbrellas), syrup: ing.syrup, citrus: ing.citrus };
 }
 
 /** Build the stockable catalog from the committed list + user overrides, with usage

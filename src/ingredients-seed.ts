@@ -16,7 +16,6 @@ export interface SeedIngredient {
   color: string;
   shape: string | null;
   abv: number;
-  fam?: string;
   syrup?: string;
   citrus?: string;
   aliases?: string[];
@@ -31,7 +30,6 @@ export const INGREDIENTS: SeedIngredient[] = [
     color: "#9FCB3B",
     shape: "squircle",
     abv: 0.62,
-    fam: "absinthe",
   },
   {
     key: "amaretto",
@@ -65,7 +63,6 @@ export const INGREDIENTS: SeedIngredient[] = [
     color: "#B86A2A",
     shape: "squircle",
     abv: 0.4,
-    fam: "brandy",
     aliases: ["calvados"],
     umbrellas: ["brandy"],
   },
@@ -118,7 +115,6 @@ export const INGREDIENTS: SeedIngredient[] = [
     color: "#B5651D",
     shape: "squircle",
     abv: 0.4,
-    fam: "whiskey",
     umbrellas: ["whiskey"],
   },
   {
@@ -128,7 +124,6 @@ export const INGREDIENTS: SeedIngredient[] = [
     color: "#A85A2A",
     shape: "squircle",
     abv: 0.4,
-    fam: "brandy",
   },
   {
     key: "brown sugar",
@@ -145,8 +140,8 @@ export const INGREDIENTS: SeedIngredient[] = [
     color: "#E1DBAE",
     shape: "squircle",
     abv: 0.4,
-    fam: "rum",
     aliases: ["cachaca"],
+    umbrellas: ["rum"],
   },
   {
     key: "campari",
@@ -180,8 +175,8 @@ export const INGREDIENTS: SeedIngredient[] = [
     color: "#E8E2B0",
     shape: "glass",
     abv: 0.12,
-    fam: "wine",
     aliases: ["prosecco", "sparkling"],
+    umbrellas: ["wine"],
   },
   {
     key: "cherry",
@@ -227,7 +222,6 @@ export const INGREDIENTS: SeedIngredient[] = [
     color: "#9B4D1E",
     shape: "squircle",
     abv: 0.4,
-    fam: "brandy",
     umbrellas: ["brandy"],
   },
   {
@@ -263,7 +257,6 @@ export const INGREDIENTS: SeedIngredient[] = [
     color: "#6E3F1C",
     shape: "squircle",
     abv: 0.4,
-    fam: "rum",
     umbrellas: ["rum"],
   },
   {
@@ -273,8 +266,7 @@ export const INGREDIENTS: SeedIngredient[] = [
     color: "#D7D1A0",
     shape: "glass",
     abv: 0.17,
-    fam: "wine",
-    umbrellas: ["vermouth"],
+    umbrellas: ["vermouth", "wine"],
   },
   {
     key: "egg",
@@ -317,7 +309,6 @@ export const INGREDIENTS: SeedIngredient[] = [
     color: "#DCEAF0",
     shape: "squircle",
     abv: 0.4,
-    fam: "gin",
   },
   {
     key: "ginger beer",
@@ -371,7 +362,6 @@ export const INGREDIENTS: SeedIngredient[] = [
     color: "#8A4B1E",
     shape: "squircle",
     abv: 0.4,
-    fam: "rum",
     umbrellas: ["rum"],
   },
   {
@@ -410,7 +400,6 @@ export const INGREDIENTS: SeedIngredient[] = [
     color: "#E6D7A6",
     shape: "squircle",
     abv: 0.4,
-    fam: "rum",
     umbrellas: ["rum"],
   },
   {
@@ -420,7 +409,7 @@ export const INGREDIENTS: SeedIngredient[] = [
     color: "#E6D98A",
     shape: "glass",
     abv: 0.17,
-    fam: "wine",
+    umbrellas: ["wine"],
   },
   {
     key: "lime",
@@ -569,8 +558,7 @@ export const INGREDIENTS: SeedIngredient[] = [
     color: "#6E1F2E",
     shape: "glass",
     abv: 0.13,
-    fam: "wine",
-    aliases: ["wine"],
+    umbrellas: ["wine"],
   },
   {
     key: "rum",
@@ -579,7 +567,6 @@ export const INGREDIENTS: SeedIngredient[] = [
     color: "#C99A5B",
     shape: "squircle",
     abv: 0.4,
-    fam: "rum",
   },
   {
     key: "rye",
@@ -588,7 +575,6 @@ export const INGREDIENTS: SeedIngredient[] = [
     color: "#C06A22",
     shape: "squircle",
     abv: 0.4,
-    fam: "whiskey",
     umbrellas: ["whiskey"],
   },
   {
@@ -607,7 +593,6 @@ export const INGREDIENTS: SeedIngredient[] = [
     color: "#A85A1A",
     shape: "squircle",
     abv: 0.4,
-    fam: "whiskey",
     umbrellas: ["whiskey"],
   },
   {
@@ -637,7 +622,6 @@ export const INGREDIENTS: SeedIngredient[] = [
     color: "#E0E6EC",
     shape: "squircle",
     abv: 0.4,
-    fam: "neutral",
   },
   {
     key: "sweet vermouth",
@@ -646,8 +630,7 @@ export const INGREDIENTS: SeedIngredient[] = [
     color: "#7A2E2E",
     shape: "glass",
     abv: 0.17,
-    fam: "wine",
-    umbrellas: ["vermouth"],
+    umbrellas: ["vermouth", "wine"],
   },
   {
     key: "syrup",
@@ -665,7 +648,6 @@ export const INGREDIENTS: SeedIngredient[] = [
     color: "#E6E0AE",
     shape: "squircle",
     abv: 0.4,
-    fam: "tequila",
     aliases: ["mezcal"],
   },
   {
@@ -684,8 +666,17 @@ export const INGREDIENTS: SeedIngredient[] = [
     color: "#B5651D",
     shape: "squircle",
     abv: 0.4,
-    fam: "whiskey",
     aliases: ["whisky"],
+  },
+  {
+    // Generic backstop: recipes that just say "wine" match any stocked wine child
+    // (red wine, champagne, vermouths, lillet); hidden from the stock list itself.
+    key: "wine",
+    disp: "Wine",
+    cat: "fortified",
+    color: "#7A2E3A",
+    shape: "glass",
+    abv: 0.12,
   },
   {
     key: "yellow chartreuse",

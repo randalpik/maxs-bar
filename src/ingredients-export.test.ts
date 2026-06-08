@@ -20,7 +20,8 @@ describe('buildIngredientsExport (seed-format diff)', () => {
     state.ingredients = { bourbon: { disp: 'Bourbon', cat: 'spirit', color: '#000000', shape: 'squircle', abv: 0.45 } };
     const { ingredients } = buildIngredientsExport();
     expect(ingredients).toHaveLength(1);
-    expect(ingredients[0]).toMatchObject({ key: 'bourbon', color: '#000000', abv: 0.45, fam: 'whiskey', umbrellas: ['whiskey'] });
+    expect(ingredients[0]).toMatchObject({ key: 'bourbon', color: '#000000', abv: 0.45, umbrellas: ['whiskey'] });
+    expect(ingredients[0]).not.toHaveProperty('fam'); // fam is derived from umbrellas, never stored/exported
   });
 
   it('skips a no-op edit (override fields all equal to the seed)', () => {

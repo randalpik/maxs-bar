@@ -10,6 +10,10 @@ import type { Classified, Ingredient, ParsedLine, Role } from "./types";
    anything the seed doesn't know renders as a plain, icon-less, sentence-cased chip.
    ============================================================ */
 
+/** Base-spirit family ids — the umbrella parents (or self-keys) that count as a base
+ *  spirit, in display order. An ingredient's family = the first of [key, ...umbrellas]
+ *  in this set (see familyOf in catalog.ts). Drives "group by spirit" + the base-spirit
+ *  sort/label. "spirit" is the neutral family (labelled "Neutral spirit"). */
 export const SPIRIT_FAMILIES = [
   "rum",
   "whiskey",
@@ -19,7 +23,7 @@ export const SPIRIT_FAMILIES = [
   "absinthe",
   "aquavit",
   "wine",
-  "neutral",
+  "spirit",
 ];
 export const FAMILY_LABEL: Record<string, string> = {
   rum: "Rum",
@@ -27,11 +31,10 @@ export const FAMILY_LABEL: Record<string, string> = {
   tequila: "Tequila",
   gin: "Gin",
   brandy: "Brandy",
-  cachaça: "Cachaça",
   absinthe: "Absinthe",
   aquavit: "Aquavit",
   wine: "Wine",
-  neutral: "Neutral spirit",
+  spirit: "Neutral spirit",
 };
 export const METHOD_ORDER = ["shaken", "stirred", "built"];
 

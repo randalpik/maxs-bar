@@ -57,6 +57,31 @@ describe('runtimeCatalog', () => {
     expect(isAvailable(parseIngredient('2 dark rum'), ctx)).toBe(false);  // specific not stocked
   });
 
+  it('derives fam from umbrellas (∩ spirit families), incl. the new wine/spirit cases', () => {
+    expect(seedClassify('light rum').fam).toBe('rum');     // umbrella "rum"
+    expect(seedClassify('cachaça').fam).toBe('rum');       // now an umbrella child of rum
+    expect(seedClassify('sweet vermouth').fam).toBe('wine'); // umbrellas ["vermouth","wine"] → wine
+    expect(seedClassify('campari').fam).toBeUndefined();   // liqueur: no family
+    expect(seedClassify('spirit').fam).toBe('spirit');     // neutral generic (labelled "Neutral spirit")
+  });
+
+  it('cachaça now stock-matches generic "rum"; vermouth matches "vermouth" not "red wine"', () => {
+    const cachaca = buildStockCtx(runtimeCatalog([]), new Set(['cachaça']));
+    expect(isAvailable(parseIngredient('2 rum'), cachaca)).toBe(true);
+    const verm = buildStockCtx(runtimeCatalog([]), new Set(['sweet vermouth']));
+    expect(isAvailable(parseIngredient('1 vermouth'), verm)).toBe(true);   // generic vermouth
+    expect(isAvailable(parseIngredient('1 wine'), verm)).toBe(true);       // any wine
+    expect(isAvailable(parseIngredient('1 red wine'), verm)).toBe(false);  // a specific other wine
+  });
+
+  it('the generic "wine" is hidden from the stock list but matched by any wine child', () => {
+    const keys = new Set(runtimeCatalog([]).entries.map(e => e.key));
+    expect(keys.has('wine')).toBe(false);       // generic parent hidden
+    expect(keys.has('red wine')).toBe(true);    // children shown
+    const ctx = buildStockCtx(runtimeCatalog([]), new Set(['champagne']));
+    expect(isAvailable(parseIngredient('2 wine'), ctx)).toBe(true);
+  });
+
   it('stores the raw seed category (display grouping is render-time only)', () => {
     const cat = runtimeCatalog([]);
     expect(cat.entries.find(e => e.key === 'milk')?.cat).toBe('dairy');        // not 'dairyegg'

@@ -31,8 +31,8 @@ function mergedEntry(key: string, seed: SeedIngredient | undefined, ov: typeof s
     abv: ov.abv ?? seed?.abv ?? 0,
   };
   // Preserve seed-only structured fields (not yet UI-editable); forward-compatible
-  // with user-edited aliases/umbrellas once those land.
-  if (seed?.fam) out.fam = seed.fam;
+  // with user-edited aliases/umbrellas once those land. (fam is derived from
+  // umbrellas, so it's never emitted.)
   if (seed?.syrup) out.syrup = seed.syrup;
   if (seed?.citrus) out.citrus = seed.citrus;
   const aliases = (ov as { aliases?: string[] }).aliases ?? seed?.aliases;
