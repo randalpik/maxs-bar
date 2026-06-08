@@ -5,7 +5,7 @@
  *
  * Takes the override-diff produced by the app's "Export ingredients" (a
  * { ingredients: SeedIngredient[], removed: string[] } file) and folds it into
- * src/ingredients-seed.ts: added entries are inserted, edited entries overwrite
+ * src/ingredients/ingredients-seed.ts: added entries are inserted, edited entries overwrite
  * by key, and `removed` keys are deleted. The INGREDIENTS array is fully
  * regenerated (existing entry order preserved, new entries appended key-sorted);
  * the hand-written header comment and the SeedIngredient interface are kept
@@ -15,10 +15,13 @@
  * Run via vite-node (handles the TS import + on-the-fly transpile).
  */
 import { readFileSync, writeFileSync, existsSync } from 'node:fs';
-import { INGREDIENTS, type SeedIngredient } from '../src/ingredients-seed.ts';
-import type { IngredientDiffEntry } from '../src/ingredients-export.ts';
+import {
+  INGREDIENTS,
+  type SeedIngredient,
+} from "../src/ingredients/ingredients-seed.ts";
+import type { IngredientDiffEntry } from "../src/ingredients/ingredients-export.ts";
 
-const SEED_PATH = 'src/ingredients-seed.ts';
+const SEED_PATH = "src/ingredients/ingredients-seed.ts";
 const MARKER = 'export const INGREDIENTS';
 
 const c = {

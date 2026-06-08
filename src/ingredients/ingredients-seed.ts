@@ -309,6 +309,7 @@ export const INGREDIENTS: SeedIngredient[] = [
     color: "#DCEAF0",
     shape: "squircle",
     abv: 0.4,
+    umbrellas: ["spirit", "gin"],
   },
   {
     key: "ginger beer",
@@ -400,7 +401,7 @@ export const INGREDIENTS: SeedIngredient[] = [
     color: "#E6D7A6",
     shape: "squircle",
     abv: 0.4,
-    umbrellas: ["rum"],
+    umbrellas: ["rum", "spirit"],
   },
   {
     key: "lillet blanc",
@@ -530,7 +531,7 @@ export const INGREDIENTS: SeedIngredient[] = [
   {
     key: "pineapple",
     disp: "Pineapple juice",
-    cat: "fruit",
+    cat: "mixer",
     color: "#E8C13A",
     shape: "droplet",
     abv: 0,
@@ -617,7 +618,7 @@ export const INGREDIENTS: SeedIngredient[] = [
   },
   {
     key: "spirit",
-    disp: "Spirit",
+    disp: "Neutral spirit",
     cat: "spirit",
     color: "#E0E6EC",
     shape: "squircle",
@@ -649,6 +650,7 @@ export const INGREDIENTS: SeedIngredient[] = [
     shape: "squircle",
     abv: 0.4,
     aliases: ["mezcal"],
+    umbrellas: ["tequila"],
   },
   {
     key: "tonic water",
@@ -669,8 +671,6 @@ export const INGREDIENTS: SeedIngredient[] = [
     aliases: ["whisky"],
   },
   {
-    // Generic backstop: recipes that just say "wine" match any stocked wine child
-    // (red wine, champagne, vermouths, lillet); hidden from the stock list itself.
     key: "wine",
     disp: "Wine",
     cat: "fortified",
