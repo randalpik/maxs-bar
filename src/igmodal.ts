@@ -11,11 +11,14 @@ import { $ } from './dom';
    (outline picker + colour adjuster, writing into the override store)
    ============================================================ */
 
-/** Outline shapes offered by the picker, roughly grouped vessel → fruit → garnish. */
+/** Outline shapes offered by the picker, roughly grouped vessel → fruit → garnish.
+ *  Only currently-used designs are offered; the superseded shapes fizz, ring, ellipse,
+ *  diamond and leaf were dropped (no ingredient or auto-classifier uses them). Their
+ *  icon() definitions remain as harmless fallbacks for any stale stored override. */
 const SHAPES = [
-  'squircle', 'hexagon', 'glass', 'bottle', 'dropper', 'triangle', 'droplet', 'fizz',
-  'circle', 'ring', 'wheel', 'wedge', 'ellipse', 'diamond', 'cube',
-  'leaf', 'sprig', 'seed', 'ginger', 'egg', 'twist', 'cherry', 'berry',
+  'squircle', 'hexagon', 'glass', 'bottle', 'dropper', 'triangle', 'droplet',
+  'circle', 'wheel', 'wedge', 'cube',
+  'sprig', 'seed', 'ginger', 'egg', 'twist', 'cherry', 'berry',
 ];
 
 let editingKey: string | null = null;

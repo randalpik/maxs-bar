@@ -163,15 +163,18 @@ export function render(): void {
     return;
   }
 
-  // group mode
+  // group mode — recipes that don't match the grouping (e.g. no syrup) are dropped
+  // rather than collected into a catch-all "—" bin.
   const map = new Map<string, Derived[]>();
   for (const d of data) {
     for (const g of groupsFor(d)) {
+      if (g === '—') continue;
       let arr = map.get(g);
       if (!arr) { arr = []; map.set(g, arr); }
       arr.push(d);
     }
   }
+  if (!map.size) { main.innerHTML = '<div class="empty">No recipes match this grouping.</div>'; return; }
   const keys = [...map.keys()];
   const order = groupSortKeys();
   keys.sort((a, b) => {
