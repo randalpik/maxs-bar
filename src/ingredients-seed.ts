@@ -160,8 +160,8 @@ export const INGREDIENTS: SeedIngredient[] = [
     key: "candied ginger",
     disp: "Candied ginger",
     cat: "other",
-    color: "#8C857A",
-    shape: null,
+    color: "#C99A3B",
+    shape: "ginger",
     abv: 0,
   },
   {

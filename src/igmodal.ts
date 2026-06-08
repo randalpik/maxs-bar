@@ -14,8 +14,8 @@ import { $ } from './dom';
 /** Outline shapes offered by the picker, roughly grouped vessel → fruit → garnish. */
 const SHAPES = [
   'squircle', 'hexagon', 'glass', 'bottle', 'dropper', 'triangle', 'droplet', 'fizz',
-  'circle', 'ring', 'wheel', 'ellipse', 'diamond', 'cube',
-  'leaf', 'sprig', 'seed', 'egg', 'twist', 'cherry', 'berry',
+  'circle', 'ring', 'wheel', 'wedge', 'ellipse', 'diamond', 'cube',
+  'leaf', 'sprig', 'seed', 'ginger', 'egg', 'twist', 'cherry', 'berry',
 ];
 
 let editingKey: string | null = null;

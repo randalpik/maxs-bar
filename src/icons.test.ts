@@ -19,12 +19,15 @@ describe('iconFor mapping', () => {
     expect(shapeOf('cherry')).toBe('cherry');
     expect(shapeOf('muddled raspberry')).toBe('berry');
   });
-  it('citrus: juice = circle, wheel = ring, peel/twist = curl, wedges iconless', () => {
+  it('citrus: juice = circle, wheel = ring, peel/twist = curl, wedge = segment', () => {
     expect(shapeOf('3/4 lime')).toBe('circle');
     expect(shapeOf('lemon wheel')).toBe('wheel');
     expect(shapeOf('orange peel')).toBe('twist');
     expect(shapeOf('lemon twist')).toBe('twist');
-    expect(shapeOf('2 lime wedges')).toBeNull();
+    expect(shapeOf('2 lime wedges')).toBe('wedge');
+  });
+  it('candied ginger gets the ginger icon', () => {
+    expect(shapeOf('candied ginger')).toBe('ginger');
   });
   it('non-alcoholic, non-citrus liquids fall under droplet', () => {
     expect(shapeOf('top milk')).toBe('droplet');
