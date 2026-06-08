@@ -46,7 +46,11 @@ export function isKnownKey(key: string): boolean {
 export function seedClassify(name: string): Classified {
   const ing = byKey.get(aliasIndex.get(name.toLowerCase()) ?? '');
   if (!ing) return { cat: 'unknown', shape: '', color: FALLBACK_COLOR, abv: 0, disp: sentenceCase(name) };
-  return { cat: ing.cat, shape: ing.shape ?? '', color: ing.color, abv: ing.abv, disp: ing.disp, fam: ing.fam, syrup: ing.syrup, citrus: ing.citrus };
+  // A user abv override (keyed by the seed key, which is the stock identity for
+  // seed ingredients) feeds the recipe alcohol estimate; other fields stay seed-
+  // derived (disp/color/shape are layered for display in effectiveChip).
+  const abv = state.ingredients[ing.key]?.abv ?? ing.abv;
+  return { cat: ing.cat, shape: ing.shape ?? '', color: ing.color, abv, disp: ing.disp, fam: ing.fam, syrup: ing.syrup, citrus: ing.citrus };
 }
 
 /** Build the stockable catalog from the committed list + user overrides, with usage
@@ -66,6 +70,7 @@ export function runtimeCatalog(records: Recipe[]): Catalog {
       cat: ov?.cat ?? displayCat(s.cat, s.disp, s.key),
       color: ov?.color ?? s.color,
       shape: ov && ov.shape !== undefined ? ov.shape : s.shape,
+      abv: ov?.abv ?? s.abv,
       umbrellas,
       umbrella: umbrellas[0] ?? 'self:' + s.key,
       count: 0,
@@ -82,6 +87,7 @@ export function runtimeCatalog(records: Recipe[]): Catalog {
       key, disp, cat,
       color: ov.color ?? FALLBACK_COLOR,
       shape: ov.shape ?? null,
+      abv: ov.abv ?? 0,
       umbrellas,
       umbrella: umbrellas[0] ?? 'self:' + key,
       count: 0,

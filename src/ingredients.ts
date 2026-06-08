@@ -81,6 +81,8 @@ export interface IngredientEntry {
   cat: string;
   color: string;
   shape: string | null;
+  /** Alcohol by volume (fraction 0–1), seed value with any user override applied. */
+  abv: number;
   /** Parent umbrella ids this is a child of (for generic-match). */
   umbrellas: string[];
   /** Primary umbrella for stock-list visual clustering (umbrellas[0] or self). */
@@ -150,6 +152,7 @@ export function buildCatalog(records: Recipe[]): Catalog {
       cat: ov?.cat ?? i.cat,                                 // raw parser category
       color: ov?.color ?? i.color,
       shape: ov && ov.shape !== undefined ? ov.shape : shp,
+      abv: ov?.abv ?? i.abv,
       umbrellas,
       umbrella: umbrellas[0] ?? 'self:' + key,
       count: 0,

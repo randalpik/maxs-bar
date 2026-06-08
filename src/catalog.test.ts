@@ -57,6 +57,12 @@ describe('runtimeCatalog', () => {
     expect(isAvailable(parseIngredient('2 dark rum'), ctx)).toBe(false);  // specific not stocked
   });
 
+  it('applies an abv override to the classifier and the catalog entry', () => {
+    state.ingredients = { bourbon: { abv: 0.5 } };
+    expect(seedClassify('bourbon').abv).toBe(0.5);              // feeds the alcohol estimate
+    expect(runtimeCatalog([]).entries.find(x => x.key === 'bourbon')?.abv).toBe(0.5);
+  });
+
   it('a hand-added shelf syrup (maple) joins the syrup umbrella', () => {
     const e = runtimeCatalog([]).entries.find(x => x.key === 'maple syrup');
     expect(e?.umbrellas).toContain('syrup');

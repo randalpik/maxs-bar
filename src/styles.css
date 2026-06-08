@@ -233,6 +233,7 @@ main{position:relative; z-index:1; max-width:1180px; margin:0 auto; padding:26px
 .ig-modal{width:min(520px,100%)}
 .ig-fields{display:flex; gap:14px; margin-bottom:16px}
 .ig-fields .field{flex:1; min-width:0; margin-bottom:0}
+.ig-fields .ig-abv{flex:0 0 76px}
 .ig-fields select{width:100%; font-size:14px; padding:11px 12px}
 .ig-builder{border:1px solid var(--line2); border-radius:12px; padding:13px 14px; margin-bottom:18px}
 .ig-builder-head{display:flex; align-items:center; justify-content:space-between; margin-bottom:12px}

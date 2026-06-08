@@ -69,6 +69,7 @@ export function openIgModal(key: string | null, prefillName = ''): void {
     editingColor = '#C99A5B';
     $('#igTitle').textContent = 'Add ingredient';
     $<HTMLInputElement>('#igName').value = prefillName;
+    $<HTMLInputElement>('#igAbv').value = '';
     sel.value = CATEGORY_ORDER[0]!;
     $<HTMLElement>('#igRemove').style.display = 'none';
     $<HTMLElement>('#igReset').style.display = 'none';
@@ -80,6 +81,8 @@ export function openIgModal(key: string | null, prefillName = ''): void {
     editingColor = entry.color;
     $('#igTitle').textContent = `Edit ${entry.disp}`;
     $<HTMLInputElement>('#igName').value = entry.disp;
+    // ABV stored as a 0–1 fraction; shown as a percentage.
+    $<HTMLInputElement>('#igAbv').value = entry.abv ? String(+(entry.abv * 100).toFixed(1)) : '0';
     // The category may be one the select doesn't list (rare fall-through cat) — add it.
     if (![...sel.options].some(o => o.value === entry.cat)) {
       const o = document.createElement('option');
@@ -101,7 +104,10 @@ export function closeIgModal(): void { $('#igOverlay').classList.remove('open');
 export function saveIgModal(): void {
   const disp = $<HTMLInputElement>('#igName').value.trim();
   if (!disp) { flashName(); return; }
-  const patch = { disp, cat: $<HTMLSelectElement>('#igCat').value, color: editingColor, shape: editingShape };
+  // ABV entered as a percentage; persist as a 0–1 fraction (blank → 0).
+  const pct = parseFloat($<HTMLInputElement>('#igAbv').value);
+  const abv = Number.isFinite(pct) ? Math.max(0, Math.min(1, pct / 100)) : 0;
+  const patch = { disp, cat: $<HTMLSelectElement>('#igCat').value, color: editingColor, shape: editingShape, abv };
   if (editingKey) {
     setIngredientOverride(editingKey, patch);
   } else {

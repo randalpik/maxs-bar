@@ -66,6 +66,9 @@ export interface IngredientOverride {
   cat?: string;
   color?: string;
   shape?: string | null;
+  /** Alcohol by volume as a fraction (0–1); overrides the seed abv, feeding the
+   *  per-recipe standard-drinks estimate. */
+  abv?: number;
   /** A removed seed ingredient (always renders unstocked in recipes; hidden from the list). */
   removed?: boolean;
 }
