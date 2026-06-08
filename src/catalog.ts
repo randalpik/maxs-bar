@@ -1,5 +1,5 @@
 import type { Classified, Recipe } from './types';
-import { state, derive } from './state';
+import { state, derive, saveStock } from './state';
 import { sentenceCase, titleCase, SPIRIT_FAMILIES } from './parser';
 import { ingredientKey, umbrellasForCat } from './ingredients';
 import type { Catalog, IngredientEntry } from './ingredients';
@@ -169,6 +169,19 @@ export function runtimeCatalog(records: Recipe[]): Catalog {
 
   const active = new Set<string>([...map.values()].flatMap(e => e.umbrellas));
   return { entries: [...map.values()], active };
+}
+
+/** Drop stock for any key that's no longer a stockable entry — e.g. an ingredient
+ *  that became a hidden effective generic (its self-tag was removed, or another
+ *  ingredient now lists it as an umbrella), was removed, or stopped being listed.
+ *  Without this a hidden item keeps a stuck "stocked" state. Call after any change
+ *  to ingredient definitions. Returns true if it pruned anything. */
+export function reconcileStock(records: Recipe[]): boolean {
+  const stockable = new Set(runtimeCatalog(records).entries.map(e => e.key));
+  let changed = false;
+  for (const k of [...state.stocked]) if (!stockable.has(k)) { state.stocked.delete(k); changed = true; }
+  if (changed) saveStock();
+  return changed;
 }
 
 /** The editable view of an ingredient for the modal: its catalog entry when shown, or

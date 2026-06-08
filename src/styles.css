@@ -1,5 +1,5 @@
 :root{
-  --bg:#131017; --bg2:#191622; --surface:#211D2B; --surface2:#2A2537;
+  --bg:#0C0A11; --bg2:#191622; --surface:#211D2B; --surface2:#2A2537;
   --line:rgba(238,234,248,.10); --line2:rgba(238,234,248,.18);
   --text:#F2F0F7; --muted:#A49FB2; --faint:#6C6678;
   --accent:#B79CEB; --accent-dim:rgba(155,111,214,.18);
@@ -33,7 +33,7 @@ body::before{
 /* ---------- toolbar ---------- */
 header.bar{
   position:sticky; top:0; z-index:20;
-  background:rgba(20,17,13,.82); backdrop-filter:blur(14px);
+  background:rgba(7,5,12,.86); backdrop-filter:blur(14px);
   border-bottom:1px solid var(--line);
   padding:14px 22px;
   display:flex; align-items:center; gap:18px; flex-wrap:wrap;
@@ -114,10 +114,16 @@ main{position:relative; z-index:1; max-width:1180px; margin:0 auto; padding:26px
    fallback-font sizes then snap. Fade in on reveal. */
 html.ready body{animation:reveal .2s ease}
 @keyframes reveal{from{opacity:0}to{opacity:1}}
-.grouphead{
-  display:flex; align-items:center; gap:14px; margin:42px 2px 14px;
+/* Each category header + its grid are boxed together so the whole group reads as
+   one unit. The box spacing replaces the old large header top-margin. */
+.group{
+  border:1px solid var(--line); border-radius:16px;
+  background:var(--bg2); padding:4px 16px 18px; margin:22px 0;
 }
-.grouphead:first-child{margin-top:8px}
+.group:first-child{margin-top:8px}
+.grouphead{
+  display:flex; align-items:center; gap:14px; margin:14px 4px 14px;
+}
 .grouphead .lbl{
   font-size:13px; letter-spacing:.2em; text-transform:uppercase; color:var(--accent); white-space:nowrap;
 }

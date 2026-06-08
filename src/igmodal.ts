@@ -1,6 +1,6 @@
 import { state, setIngredientOverride, resetIngredientOverride } from './state';
 import { CATEGORY_ORDER, CATEGORY_LABEL } from './ingredients';
-import { editableEntry, isKnownKey, isSeedKey, UMBRELLA_PARENTS } from './catalog';
+import { editableEntry, isKnownKey, isSeedKey, UMBRELLA_PARENTS, reconcileStock } from './catalog';
 import { icon } from './icons';
 import { titleCase, FAMILY_LABEL } from './parser';
 import { render, esc } from './render';
@@ -181,6 +181,7 @@ export function saveIgModal(): void {
     if (isKnownKey(key)) { flashName(); return; }
     setIngredientOverride(key, patch);
   }
+  reconcileStock(state.records);   // a now-hidden ingredient (e.g. self-tag removed) shouldn't stay stocked
   closeIgModal();
   render();
 }
@@ -188,6 +189,7 @@ export function saveIgModal(): void {
 export function resetIgModal(): void {
   if (!editingKey) return;
   resetIngredientOverride(editingKey);
+  reconcileStock(state.records);
   closeIgModal();
   render();
 }
@@ -197,6 +199,7 @@ export function removeIgModal(): void {
   if (!editingKey) return;
   if (isSeedKey(editingKey)) setIngredientOverride(editingKey, { removed: true });
   else resetIngredientOverride(editingKey);
+  reconcileStock(state.records);
   closeIgModal();
   render();
 }

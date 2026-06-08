@@ -113,6 +113,16 @@ function groupSortKeys(): string[] | null {
   return null;
 }
 
+/** A category section: its header and grid wrapped in one bordered box, so the
+ *  whole group reads as a unit (the `.group` panel in styles.css). `gridClass` is
+ *  'grid' for recipe/syrup cards, 'ig-grid' for the ingredients page. */
+function groupSection(label: string, count: number, body: string, gridClass = 'grid'): string {
+  return `<section class="group">`
+    + `<div class="grouphead"><span class="lbl">${esc(label)}</span><span class="cnt">${count}</span><span class="rule"></span></div>`
+    + `<div class="${gridClass}">${body}</div>`
+    + `</section>`;
+}
+
 export function render(): void {
   if (state.page === 'ingredients') { renderIngredients(); return; }
   if (state.page === 'syrups') { renderSyrups(); return; }
@@ -148,8 +158,7 @@ export function render(): void {
       for (const d of arr) { const k = binKey(d); (bins.get(k) ?? bins.set(k, []).get(k)!).push(d); }
       let html = '', gi = 0;
       for (const [k, items] of bins) {
-        html += `<div class="grouphead"><span class="lbl">${esc(binLabel(k))}</span><span class="cnt">${items.length}</span><span class="rule"></span></div>`;
-        html += `<div class="grid">${items.map(d => cardHTML(d, gi++, ctx)).join('')}</div>`;
+        html += groupSection(binLabel(k), items.length, items.map(d => cardHTML(d, gi++, ctx)).join(''));
       }
       main.innerHTML = html;
       scheduleLayout();
@@ -157,8 +166,7 @@ export function render(): void {
     }
 
     const lbl = KEY_OPTS.sort.find(o => o[0] === state.key)![1];
-    main.innerHTML = `<div class="grouphead"><span class="lbl">Sorted · ${lbl}</span><span class="cnt">${arr.length}</span><span class="rule"></span></div>`
-      + `<div class="grid">${arr.map((d, i) => cardHTML(d, i, ctx)).join('')}</div>`;
+    main.innerHTML = groupSection(`Sorted · ${lbl}`, arr.length, arr.map((d, i) => cardHTML(d, i, ctx)).join(''));
     scheduleLayout();
     return;
   }
@@ -186,8 +194,7 @@ export function render(): void {
   let html = '', gi = 0;
   for (const g of keys) {
     const items = map.get(g)!.sort((a, b) => a.rec.name.localeCompare(b.rec.name));
-    html += `<div class="grouphead"><span class="lbl">${esc(groupLabel(g))}</span><span class="cnt">${items.length}</span><span class="rule"></span></div>`;
-    html += `<div class="grid">${items.map(d => cardHTML(d, gi++, ctx)).join('')}</div>`;
+    html += groupSection(groupLabel(g), items.length, items.map(d => cardHTML(d, gi++, ctx)).join(''));
   }
   main.innerHTML = html;
   scheduleLayout();
@@ -206,8 +213,7 @@ export function renderSyrups(): void {
   const syrups = parseSyrups();
   $('#count').textContent = `${syrups.length} syrup${syrups.length === 1 ? '' : 's'}`;
   if (!syrups.length) { main.innerHTML = '<div class="empty">No syrups.</div>'; return; }
-  main.innerHTML = `<div class="grouphead"><span class="lbl">Syrups</span><span class="cnt">${syrups.length}</span><span class="rule"></span></div>`
-    + `<div class="grid">${syrups.map((s, i) => syrupCardHTML(s, i)).join('')}</div>`;
+  main.innerHTML = groupSection('Syrups', syrups.length, syrups.map((s, i) => syrupCardHTML(s, i)).join(''));
 }
 
 /* ---------- ingredients page ---------- */
@@ -277,8 +283,7 @@ export function renderIngredients(): void {
       if (ga && a.umbrella !== b.umbrella) return a.umbrella.localeCompare(b.umbrella);
       return a.disp.localeCompare(b.disp);
     });
-    html += `<div class="grouphead"><span class="lbl">${esc(SECTION_LABEL[cat] || titleCase(cat))}</span><span class="cnt">${items.length}</span><span class="rule"></span></div>`;
-    html += `<div class="ig-grid">${items.map(e => igChipHTML(e, state.stocked.has(e.key))).join('')}</div>`;
+    html += groupSection(SECTION_LABEL[cat] || titleCase(cat), items.length, items.map(e => igChipHTML(e, state.stocked.has(e.key))).join(''), 'ig-grid');
   }
   main.innerHTML = html;
   scheduleLayout();
