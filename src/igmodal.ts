@@ -1,5 +1,5 @@
 import { state, setIngredientOverride, resetIngredientOverride } from './state';
-import { RAW_CATEGORY_ORDER, RAW_CATEGORY_LABEL } from './ingredients';
+import { CATEGORY_ORDER, CATEGORY_LABEL } from './ingredients';
 import { runtimeCatalog, isKnownKey, isSeedKey } from './catalog';
 import { icon } from './icons';
 import { titleCase } from './parser';
@@ -26,9 +26,9 @@ let editingColor = '#C99A5B';
 export function fillIgCat(): void {
   const sel = $<HTMLSelectElement>('#igCat');
   sel.innerHTML = '';
-  for (const c of RAW_CATEGORY_ORDER) {
+  for (const c of CATEGORY_ORDER) {
     const o = document.createElement('option');
-    o.value = c; o.textContent = RAW_CATEGORY_LABEL[c] || titleCase(c);
+    o.value = c; o.textContent = CATEGORY_LABEL[c] || titleCase(c);
     sel.appendChild(o);
   }
 }
@@ -70,7 +70,7 @@ export function openIgModal(key: string | null, prefillName = ''): void {
     $('#igTitle').textContent = 'Add ingredient';
     $<HTMLInputElement>('#igName').value = prefillName;
     $<HTMLInputElement>('#igAbv').value = '';
-    sel.value = RAW_CATEGORY_ORDER[0]!;
+    sel.value = CATEGORY_ORDER[0]!;
     $<HTMLElement>('#igRemove').style.display = 'none';
     $<HTMLElement>('#igReset').style.display = 'none';
   } else {
@@ -86,7 +86,7 @@ export function openIgModal(key: string | null, prefillName = ''): void {
     // The category may be one the select doesn't list (rare fall-through cat) — add it.
     if (![...sel.options].some(o => o.value === entry.cat)) {
       const o = document.createElement('option');
-      o.value = entry.cat; o.textContent = RAW_CATEGORY_LABEL[entry.cat] || titleCase(entry.cat);
+      o.value = entry.cat; o.textContent = CATEGORY_LABEL[entry.cat] || titleCase(entry.cat);
       sel.appendChild(o);
     }
     sel.value = entry.cat;

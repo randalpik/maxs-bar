@@ -22,9 +22,9 @@ import { titleCase } from './parser';
    ============================================================ */
 
 /** Display (section) categories for the ingredients page — coarse buckets derived
- *  from the raw category via displayCat at render time. NOT a stored namespace. */
-export const CATEGORY_ORDER = ['spirit', 'liqueur', 'fortified', 'syrup', 'citrus', 'fruit', 'mixer', 'bitters', 'extract', 'herbspice', 'sugar', 'dairyegg', 'other'];
-export const CATEGORY_LABEL: Record<string, string> = {
+ *  from the raw category via sectionFor at render time. NOT a stored namespace. */
+export const SECTION_ORDER = ['spirit', 'liqueur', 'fortified', 'syrup', 'citrus', 'fruit', 'mixer', 'bitters', 'extract', 'herbspice', 'sugar', 'dairyegg', 'other'];
+export const SECTION_LABEL: Record<string, string> = {
   spirit: 'Spirits', liqueur: 'Liqueurs', fortified: 'Wines', syrup: 'Syrups',
   citrus: 'Citrus', fruit: 'Fruit', mixer: 'Mixers', bitters: 'Bitters',
   extract: 'Extracts', herbspice: 'Herbs & spices', sugar: 'Sugar',
@@ -34,8 +34,8 @@ export const CATEGORY_LABEL: Record<string, string> = {
 /** Raw categories — the single stored namespace (seed + overrides). These carry the
  *  distinctions the parser/icons need (egg≠dairy, herb≠spice, soda≠fruit); the edit
  *  modal offers exactly these so an override stores the same category the seed uses. */
-export const RAW_CATEGORY_ORDER = ['spirit', 'liqueur', 'fortified', 'syrup', 'citrus', 'fruit', 'soda', 'bitters', 'herb', 'spice', 'sugar', 'dairy', 'egg', 'other'];
-export const RAW_CATEGORY_LABEL: Record<string, string> = {
+export const CATEGORY_ORDER = ['spirit', 'liqueur', 'fortified', 'syrup', 'citrus', 'fruit', 'soda', 'bitters', 'herb', 'spice', 'sugar', 'dairy', 'egg', 'other'];
+export const CATEGORY_LABEL: Record<string, string> = {
   spirit: 'Spirit', liqueur: 'Liqueur', fortified: 'Wine', syrup: 'Syrup',
   citrus: 'Citrus', fruit: 'Fruit', soda: 'Soda', bitters: 'Bitters',
   herb: 'Herb', spice: 'Spice', sugar: 'Sugar', dairy: 'Dairy', egg: 'Egg', other: 'Other',
@@ -65,7 +65,7 @@ export function effectiveChip(i: Ingredient): { disp: string; color: string; sha
  *  stored category). Regroups raw categories into coarser buckets: extracts split out,
  *  cranberry/pomegranate/pineapple juices as store-bought mixers, soda → mixers,
  *  herbs+spices and dairy+egg merged. Operates on the raw category + display name + key. */
-export function displayCat(cat: string, disp: string, key: string): string {
+export function sectionFor(cat: string, disp: string, key: string): string {
   if (/extract/i.test(disp)) return 'extract';
   if (cat === 'fruit' && (key === 'cranberry' || key === 'pomegranate' || key === 'pineapple')) return 'mixer';
   if (cat === 'soda') return 'mixer';

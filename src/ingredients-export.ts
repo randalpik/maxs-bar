@@ -1,6 +1,6 @@
 import { state } from './state';
 import { titleCase } from './parser';
-import { CATEGORY_ORDER, displayCat } from './ingredients';
+import { SECTION_ORDER, sectionFor } from './ingredients';
 import { INGREDIENTS } from './ingredients-seed';
 import type { SeedIngredient } from './ingredients-seed';
 
@@ -67,8 +67,8 @@ export function buildIngredientsExport(): { ingredients: SeedIngredient[]; remov
     if (!seed) ingredients.push(m);                          // added ingredient
     else if (differsFromSeed(seed, m)) ingredients.push(m);  // edited seed ingredient
   }
-  const ord = (c: string) => { const i = CATEGORY_ORDER.indexOf(c); return i < 0 ? 99 : i; };
-  ingredients.sort((a, b) => ord(displayCat(a.cat, a.disp, a.key)) - ord(displayCat(b.cat, b.disp, b.key)) || a.disp.localeCompare(b.disp));
+  const ord = (c: string) => { const i = SECTION_ORDER.indexOf(c); return i < 0 ? 99 : i; };
+  ingredients.sort((a, b) => ord(sectionFor(a.cat, a.disp, a.key)) - ord(sectionFor(b.cat, b.disp, b.key)) || a.disp.localeCompare(b.disp));
   removed.sort();
   return { ingredients, removed };
 }

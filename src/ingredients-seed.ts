@@ -3,7 +3,7 @@
 // catalog.ts). Edit freely. A recipe ingredient not found here renders as a plain,
 // icon-less chip until you add it.
 //
-//   cat      — category (drives icon default + stock grouping via displayCat)
+//   cat      — category (drives icon default + stock grouping via sectionFor)
 //   aliases  — extra recipe-text names that resolve to this ingredient (identity + citrus
 //              juice/peel/wheel forms are derived, so list only real shorthands here)
 //   umbrellas— parent ids this is a CHILD of; a key referenced here is an effective generic,

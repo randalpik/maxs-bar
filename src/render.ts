@@ -1,10 +1,10 @@
 import type { Derived, Ingredient } from './types';
 import { state, derive } from './state';
-import { SPIRIT_LABEL, SPIRIT_ORDER, METHOD_ORDER, titleCase } from './parser';
+import { FAMILY_LABEL, SPIRIT_FAMILIES, METHOD_ORDER, titleCase } from './parser';
 import { icon, amountTag } from './icons';
 import {
   buildStockCtx, isAvailable, missingCount, ingredientKey, effectiveChip,
-  displayCat, CATEGORY_ORDER, CATEGORY_LABEL,
+  sectionFor, SECTION_ORDER, SECTION_LABEL,
 } from './ingredients';
 import type { StockCtx, IngredientEntry } from './ingredients';
 import { runtimeCatalog } from './catalog';
@@ -78,7 +78,7 @@ export function chipHTML(i: Ingredient, ctx?: StockCtx, searchable = false): str
 }
 
 function cardHTML(d: Derived, idx: number, ctx?: StockCtx): string {
-  const baseL = d.base ? SPIRIT_LABEL[d.base] || titleCase(d.base) : '—';
+  const baseL = d.base ? FAMILY_LABEL[d.base] || titleCase(d.base) : '—';
   const drinks = +(d.alc / 0.6).toFixed(2);
   const meta = [
     `<span><b>${esc(baseL)}</b></span>`,
@@ -102,13 +102,13 @@ function groupsFor(d: Derived): string[] {
 }
 
 function groupLabel(g: string): string {
-  if (state.key === 'spirit') return SPIRIT_LABEL[g] || titleCase(g);
+  if (state.key === 'spirit') return FAMILY_LABEL[g] || titleCase(g);
   if (state.key === 'syrup') return g === 'generic' ? 'Syrup' : titleCase(g) + ' syrup';
   return titleCase(g);
 }
 
 function groupSortKeys(): string[] | null {
-  if (state.key === 'spirit') return SPIRIT_ORDER;
+  if (state.key === 'spirit') return SPIRIT_FAMILIES;
   if (state.key === 'method') return METHOD_ORDER;
   return null;
 }
@@ -130,7 +130,7 @@ export function render(): void {
     else if (state.key === 'missing') arr.sort((a, b) => missingCount(a.p.ingredients, ctx) - missingCount(b.p.ingredients, ctx) || a.rec.name.localeCompare(b.rec.name));
     else if (state.key === 'edited') arr.sort((a, b) => (b.rec.edited || '').localeCompare(a.rec.edited || '') || a.rec.name.localeCompare(b.rec.name));
     else { // base spirit
-      const oi = (f: string | null) => { const x = SPIRIT_ORDER.indexOf(f as string); return x < 0 ? 99 : x; };
+      const oi = (f: string | null) => { const x = SPIRIT_FAMILIES.indexOf(f as string); return x < 0 ? 99 : x; };
       arr.sort((a, b) => oi(a.base) - oi(b.base) || a.rec.name.localeCompare(b.rec.name));
     }
 
@@ -141,7 +141,7 @@ export function render(): void {
       const binKey = (d: Derived): string =>
         state.key === 'base' ? (d.base || '—') : String(missingCount(d.p.ingredients, ctx));
       const binLabel = (k: string): string => {
-        if (state.key === 'base') return k === '—' ? '—' : (SPIRIT_LABEL[k] || titleCase(k));
+        if (state.key === 'base') return k === '—' ? '—' : (FAMILY_LABEL[k] || titleCase(k));
         return k === '0' ? 'Ready to make' : `${k} missing`;
       };
       const bins = new Map<string, Derived[]>();
@@ -250,12 +250,12 @@ export function renderIngredients(): void {
   // Section by the render-time display grouping; entries store the raw category.
   const byCat = new Map<string, IngredientEntry[]>();
   for (const e of entries) {
-    const sec = displayCat(e.cat, e.disp, e.key);
+    const sec = sectionFor(e.cat, e.disp, e.key);
     let arr = byCat.get(sec);
     if (!arr) { arr = []; byCat.set(sec, arr); }
     arr.push(e);
   }
-  const cats = [...CATEGORY_ORDER, ...[...byCat.keys()].filter(c => !CATEGORY_ORDER.includes(c))];
+  const cats = [...SECTION_ORDER, ...[...byCat.keys()].filter(c => !SECTION_ORDER.includes(c))];
 
   // An umbrella is a real group only when it has more than one member; lone
   // items (their own "self:" umbrella, or a family with no siblings) are singletons.
@@ -274,7 +274,7 @@ export function renderIngredients(): void {
       if (ga && a.umbrella !== b.umbrella) return a.umbrella.localeCompare(b.umbrella);
       return a.disp.localeCompare(b.disp);
     });
-    html += `<div class="grouphead"><span class="lbl">${esc(CATEGORY_LABEL[cat] || titleCase(cat))}</span><span class="cnt">${items.length}</span><span class="rule"></span></div>`;
+    html += `<div class="grouphead"><span class="lbl">${esc(SECTION_LABEL[cat] || titleCase(cat))}</span><span class="cnt">${items.length}</span><span class="rule"></span></div>`;
     html += `<div class="ig-grid">${items.map(e => igChipHTML(e, state.stocked.has(e.key))).join('')}</div>`;
   }
   main.innerHTML = html;

@@ -55,7 +55,7 @@ export function seedClassify(name: string): Classified {
 
 /** Build the stockable catalog from the committed list + user overrides, with usage
  *  counts from the current recipes. Effective generics are hidden; edits apply,
- *  removals drop, additions append. The display category is derived via displayCat. */
+ *  removals drop, additions append. The display category is derived via sectionFor. */
 export function runtimeCatalog(records: Recipe[]): Catalog {
   const map = new Map<string, IngredientEntry>();
 

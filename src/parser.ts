@@ -10,7 +10,7 @@ import type { Classified, Ingredient, ParsedLine, Role } from "./types";
    anything the seed doesn't know renders as a plain, icon-less, sentence-cased chip.
    ============================================================ */
 
-export const SPIRIT_ORDER = [
+export const SPIRIT_FAMILIES = [
   "rum",
   "whiskey",
   "tequila",
@@ -21,7 +21,7 @@ export const SPIRIT_ORDER = [
   "wine",
   "neutral",
 ];
-export const SPIRIT_LABEL: Record<string, string> = {
+export const FAMILY_LABEL: Record<string, string> = {
   rum: "Rum",
   whiskey: "Whiskey",
   tequila: "Tequila",
