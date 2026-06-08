@@ -133,6 +133,29 @@ export function render(): void {
       const oi = (f: string | null) => { const x = SPIRIT_ORDER.indexOf(f as string); return x < 0 ? 99 : x; };
       arr.sort((a, b) => oi(a.base) - oi(b.base) || a.rec.name.localeCompare(b.rec.name));
     }
+
+    // Binnable sorts (base spirit, missing ingredients) split into category headers
+    // like group mode. The array is already in bin order, so grouping it into a
+    // Map (insertion-ordered) yields the bins in the right order, name-sorted within.
+    if (state.key === 'base' || state.key === 'missing') {
+      const binKey = (d: Derived): string =>
+        state.key === 'base' ? (d.base || '—') : String(missingCount(d.p.ingredients, ctx));
+      const binLabel = (k: string): string => {
+        if (state.key === 'base') return k === '—' ? '—' : (SPIRIT_LABEL[k] || titleCase(k));
+        return k === '0' ? 'Ready to make' : `${k} missing`;
+      };
+      const bins = new Map<string, Derived[]>();
+      for (const d of arr) { const k = binKey(d); (bins.get(k) ?? bins.set(k, []).get(k)!).push(d); }
+      let html = '', gi = 0;
+      for (const [k, items] of bins) {
+        html += `<div class="grouphead"><span class="lbl">${esc(binLabel(k))}</span><span class="cnt">${items.length}</span><span class="rule"></span></div>`;
+        html += `<div class="grid">${items.map(d => cardHTML(d, gi++, ctx)).join('')}</div>`;
+      }
+      main.innerHTML = html;
+      requestAnimationFrame(layoutCards);
+      return;
+    }
+
     const lbl = KEY_OPTS.sort.find(o => o[0] === state.key)![1];
     main.innerHTML = `<div class="grouphead"><span class="lbl">Sorted · ${lbl}</span><span class="cnt">${arr.length}</span><span class="rule"></span></div>`
       + `<div class="grid">${arr.map((d, i) => cardHTML(d, i, ctx)).join('')}</div>`;
