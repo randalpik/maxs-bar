@@ -25,7 +25,7 @@ index.html        # markup + Vite module entry (-> /src/main.ts)
 src/
   main.ts         # event wiring + init (injects the seed-backed classifier)
   test-setup.ts   # vitest: install the seed-backed classifier
-  styles.css      # styles (verbatim from the prototype)
+  styles.css      # global styles (dark theme; CSS variables in :root)
   core/
     types.ts      # shared types
     util.ts       # nowISO()

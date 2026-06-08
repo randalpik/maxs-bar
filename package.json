@@ -3,7 +3,7 @@
   "private": true,
   "version": "0.1.0",
   "type": "module",
-  "description": "Max's Bar — a cocktail index",
+  "description": "Max's Bar: a cocktail index",
   "scripts": {
     "dev": "vite",
     "build": "tsc && tsc -p netlify/functions && vite build",

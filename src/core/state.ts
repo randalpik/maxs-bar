@@ -17,7 +17,7 @@ export const RECIPES_KEY = 'backbar.recipes.v1';
 export const STOCK_TS_KEY = 'backbar.stock-ts.v1';
 export const SEED_TS_KEY = 'backbar.seed-ts.v1';
 
-/** Shared, mutable app state — replaces the prototype's module-level globals. */
+/** Shared, mutable app state. */
 export const state: {
   records: Recipe[];
   /** Chosen recipe seed id; '' until the user picks one (forces the seed modal). */
