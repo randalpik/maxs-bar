@@ -152,14 +152,14 @@ export function render(): void {
         html += `<div class="grid">${items.map(d => cardHTML(d, gi++, ctx)).join('')}</div>`;
       }
       main.innerHTML = html;
-      requestAnimationFrame(layoutCards);
+      scheduleLayout();
       return;
     }
 
     const lbl = KEY_OPTS.sort.find(o => o[0] === state.key)![1];
     main.innerHTML = `<div class="grouphead"><span class="lbl">Sorted · ${lbl}</span><span class="cnt">${arr.length}</span><span class="rule"></span></div>`
       + `<div class="grid">${arr.map((d, i) => cardHTML(d, i, ctx)).join('')}</div>`;
-    requestAnimationFrame(layoutCards);
+    scheduleLayout();
     return;
   }
 
@@ -190,7 +190,7 @@ export function render(): void {
     html += `<div class="grid">${items.map(d => cardHTML(d, gi++, ctx)).join('')}</div>`;
   }
   main.innerHTML = html;
-  requestAnimationFrame(layoutCards);
+  scheduleLayout();
 }
 
 /* ---------- syrups page (read-only reference) ---------- */
@@ -281,7 +281,7 @@ export function renderIngredients(): void {
     html += `<div class="ig-grid">${items.map(e => igChipHTML(e, state.stocked.has(e.key))).join('')}</div>`;
   }
   main.innerHTML = html;
-  requestAnimationFrame(layoutCards);
+  scheduleLayout();
 }
 
 /** Min chip border-box width that keeps the top-right find button off the icon. */
@@ -320,3 +320,22 @@ export function layoutCards(): void {
   // Recipe cards and ingredient-category grids both get the same chip fitting.
   document.querySelectorAll<HTMLElement>('#main .card, #main .ig-grid').forEach(layoutChipGroup);
 }
+
+/* Chip fitting measures wrapped-line widths, which only settle once the web fonts
+   have loaded. Running it during the initial paint (before fonts arrive) forces a
+   layout against the fallback font, then re-flows when fonts land — the "flash of
+   unstyled content" Chrome warns about. So the FIRST layout is deferred to
+   fonts.ready, and #main stays hidden (body.fonts-ready gate in CSS) until then.
+   Once fonts are ready, every later render lays out synchronously in a rAF. */
+let fontsReady = false;
+function scheduleLayout(): void {
+  if (fontsReady) requestAnimationFrame(layoutCards);
+  // else: the fonts.ready handler below runs the first layout once fonts arrive.
+}
+
+const whenFonts = document.fonts?.ready ?? Promise.resolve();
+whenFonts.then(() => {
+  fontsReady = true;
+  layoutCards();
+  document.body.classList.add('fonts-ready');
+});

@@ -149,7 +149,7 @@ window.addEventListener('resize', () => {
   clearTimeout(layoutTimer);
   layoutTimer = setTimeout(layoutCards, 120);
 });
-if (document.fonts && document.fonts.ready) document.fonts.ready.then(layoutCards);
+// First-paint layout (and the fonts.ready gate) lives in render.ts now.
 
 /* init */
 setClassifier(seedClassify); // resolve recipe ingredients from the seed, not the regex

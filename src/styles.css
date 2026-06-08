@@ -109,6 +109,10 @@ select{appearance:none; padding-right:30px;
 
 /* ---------- main ---------- */
 main{position:relative; z-index:1; max-width:1180px; margin:0 auto; padding:26px 22px 90px}
+/* Hide content until web fonts load + the first chip layout runs, so cards don't
+   flash at fallback-font sizes then snap (see scheduleLayout in render.ts). */
+#main{opacity:0}
+body.fonts-ready #main{opacity:1; transition:opacity .18s ease}
 .grouphead{
   display:flex; align-items:center; gap:14px; margin:42px 2px 14px;
 }
