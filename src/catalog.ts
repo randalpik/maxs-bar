@@ -105,23 +105,27 @@ export function seedClassify(name: string): Classified {
 export function runtimeCatalog(records: Recipe[]): Catalog {
   const map = new Map<string, IngredientEntry>();
 
-  // Effective generics (hidden from the stock list) are computed from the *live*
-  // umbrella references — seed lists with the user's overrides applied, plus added
-  // ingredients — so assigning a child to e.g. "spirit" in the UI hides the generic
-  // "Spirit" entry, exactly as a seed-declared parent would.
-  const parents = new Set<string>();
+  // Effective generics (hidden from the stock list) from the *live* umbrella graph
+  // (seed lists + user overrides + added ingredients). Self-tag = concrete: a key is
+  // hidden only when something OTHER than itself depends on it, so an ingredient that
+  // lists its own family (e.g. gin → "gin", or tequila kept generic when mezcal is
+  // added) stays visible while still acting as a parent.
+  const refByOther = new Set<string>();   // key referenced as a parent by some other ingredient
+  const selfTagged = new Set<string>();   // key that lists itself (declares it's concrete)
+  const note = (key: string, umbs: string[]) => { for (const u of umbs) (u === key ? selfTagged : refByOther).add(u); };
   for (const s of INGREDIENTS) {
     const ov = state.ingredients[s.key];
     if (ov?.removed) continue;
-    for (const u of (ov?.umbrellas ?? s.umbrellas ?? [])) parents.add(u);
+    note(s.key, ov?.umbrellas ?? s.umbrellas ?? []);
   }
   for (const [key, ov] of Object.entries(state.ingredients)) {
     if (ov.removed || byKey.has(key)) continue;
-    for (const u of (ov.umbrellas ?? umbrellasForCat(ov.cat ?? 'other', ov.disp ?? titleCase(key)))) parents.add(u);
+    note(key, ov.umbrellas ?? umbrellasForCat(ov.cat ?? 'other', ov.disp ?? titleCase(key)));
   }
+  const hidden = new Set([...refByOther].filter(k => !selfTagged.has(k)));
 
   for (const s of INGREDIENTS) {
-    if (parents.has(s.key)) continue;
+    if (hidden.has(s.key)) continue;
     const ov = state.ingredients[s.key];
     if (ov?.removed) continue;
     const umbrellas = ov?.umbrellas ?? s.umbrellas ?? [];
@@ -141,7 +145,7 @@ export function runtimeCatalog(records: Recipe[]): Catalog {
 
   // User-added ingredients: override keys absent from the committed list (and not removed).
   for (const [key, ov] of Object.entries(state.ingredients)) {
-    if (ov.removed || map.has(key) || byKey.has(key) || parents.has(key)) continue;
+    if (ov.removed || map.has(key) || byKey.has(key) || hidden.has(key)) continue;
     const disp = ov.disp ?? titleCase(key);
     const cat = ov.cat ?? 'other';
     const umbrellas = ov.umbrellas ?? umbrellasForCat(cat, disp);
@@ -165,4 +169,29 @@ export function runtimeCatalog(records: Recipe[]): Catalog {
 
   const active = new Set<string>([...map.values()].flatMap(e => e.umbrellas));
   return { entries: [...map.values()], active };
+}
+
+/** The editable view of an ingredient for the modal: its catalog entry when shown, or
+ *  — for a hidden seed generic (e.g. rum/syrup/spirit) — a synthesized entry from the
+ *  seed + override, so the generic can be recoloured or self-tagged even though it
+ *  isn't in the stock list. Undefined for unknown keys. */
+export function editableEntry(key: string): IngredientEntry | undefined {
+  const shown = runtimeCatalog(state.records).entries.find(e => e.key === key);
+  if (shown) return shown;
+  const s = byKey.get(key);
+  if (!s) return undefined;
+  const ov = state.ingredients[key];
+  const umbrellas = ov?.umbrellas ?? s.umbrellas ?? [];
+  return {
+    key,
+    disp: ov?.disp ?? s.disp,
+    cat: ov?.cat ?? s.cat,
+    color: ov?.color ?? s.color,
+    shape: ov && ov.shape !== undefined ? ov.shape : s.shape,
+    abv: ov?.abv ?? s.abv,
+    umbrellas,
+    aliases: ov?.aliases ?? s.aliases ?? [],
+    umbrella: umbrellas[0] ?? 'self:' + key,
+    count: 0,
+  };
 }

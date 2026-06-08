@@ -1,6 +1,6 @@
 import './styles.css';
 import { setClassifier } from './parser';
-import { seedClassify, runtimeCatalog } from './catalog';
+import { seedClassify, runtimeCatalog, isSeedKey } from './catalog';
 import { state, load, toggleStock, hasSeed, resetAll } from './state';
 import { toCSV } from './csv';
 import { fillKeySel, render, layoutCards, updateIngredientChip } from './render';
@@ -22,17 +22,22 @@ function selectPage(page: 'recipes' | 'ingredients' | 'syrups'): void {
   bar.classList.toggle('page-ingredients', page === 'ingredients');
   bar.classList.toggle('page-syrups', page === 'syrups');
 }
-/** Jump from a recipe chip to the Ingredients page: scroll to the matching stock
- *  chip (or, for an effective generic like "rum", its first child), flashing it.
- *  If nothing in the list matches (e.g. an ingredient from a user-added recipe),
- *  open the add-ingredient modal prefilled with the chip's name. */
+/** Act on the recipe-chip "plan" button:
+ *  - a hidden seed generic (e.g. rum/syrup/spirit, whose colour only shows in recipes)
+ *    → open its edit modal in place, so it can be recoloured or self-tagged;
+ *  - a normal stocked ingredient → jump to the Ingredients page and scroll to it
+ *    (or, for a generic with no own entry, its first child), flashing it;
+ *  - nothing in the list (e.g. from a user-added recipe) → open the add modal prefilled. */
 function jumpToIngredient(key: string, label: string): void {
+  const cat = runtimeCatalog(state.records);
+  const shown = cat.entries.some(e => e.key === key);
+  if (!shown && isSeedKey(key)) { openIgModal(key); return; }   // edit the hidden generic here
   selectPage('ingredients');
   render();
   requestAnimationFrame(() => {
     const main = $('#main');
     const chips = [...main.querySelectorAll<HTMLElement>('.chip.ig')];
-    const child = runtimeCatalog(state.records).entries.find(e => e.umbrellas.includes(key));
+    const child = cat.entries.find(e => e.umbrellas.includes(key));
     const target = chips.find(c => c.dataset.ing === key) ?? chips.find(c => c.dataset.ing === child?.key);
     if (!target) { openIgModal(null, label); return; }
     target.scrollIntoView({ behavior: 'smooth', block: 'center' });

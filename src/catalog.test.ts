@@ -1,5 +1,5 @@
 import { describe, it, expect, afterEach } from 'vitest';
-import { seedClassify, runtimeCatalog, SEED_KEYS, isKnownKey } from './catalog';
+import { seedClassify, runtimeCatalog, editableEntry, SEED_KEYS, isKnownKey } from './catalog';
 import { buildStockCtx, isAvailable } from './ingredients';
 import { parseIngredient } from './parser';
 import { state } from './state';
@@ -89,6 +89,31 @@ describe('runtimeCatalog', () => {
     const ctx = buildStockCtx(runtimeCatalog([]), new Set(['gin']));
     expect(isAvailable(parseIngredient('2 spirit'), ctx)).toBe(true);   // matched by a child
     expect(seedClassify('light rum').fam).toBe('rum');                  // family still rum, not spirit
+  });
+
+  it('self-tag = concrete: an ingredient in its own family stays shown but acts as a parent', () => {
+    state.ingredients = { gin: { umbrellas: ['gin'] } };
+    const cat = runtimeCatalog([]);
+    expect(new Set(cat.entries.map(e => e.key)).has('gin')).toBe(true);  // not hidden
+    expect(cat.active.has('gin')).toBe(true);                            // "gin" now an active umbrella
+  });
+
+  it('self-tag exempts a parent from hiding even when another child references it', () => {
+    state.ingredients = {
+      gin: { umbrellas: ['gin'] },
+      'plymouth gin': { disp: 'Plymouth gin', cat: 'spirit', umbrellas: ['gin'] },
+    };
+    const keys = new Set(runtimeCatalog([]).entries.map(e => e.key));
+    expect(keys.has('gin')).toBe(true);            // stays concrete (self-tagged)
+    expect(keys.has('plymouth gin')).toBe(true);
+    const ctx = buildStockCtx(runtimeCatalog([]), new Set(['plymouth gin']));
+    expect(isAvailable(parseIngredient('2 gin'), ctx)).toBe(true);   // generic gin matched by a child
+  });
+
+  it('editableEntry synthesizes a hidden generic so the modal can edit it', () => {
+    expect(runtimeCatalog([]).entries.some(e => e.key === 'rum')).toBe(false);  // hidden
+    expect(editableEntry('rum')).toMatchObject({ key: 'rum', disp: 'Rum' });    // still editable
+    expect(editableEntry('not-a-real-key')).toBeUndefined();
   });
 
   it('the generic "wine" is hidden from the stock list but matched by any wine child', () => {

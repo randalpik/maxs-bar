@@ -1,6 +1,6 @@
 import { state, setIngredientOverride, resetIngredientOverride } from './state';
 import { CATEGORY_ORDER, CATEGORY_LABEL } from './ingredients';
-import { runtimeCatalog, isKnownKey, isSeedKey, UMBRELLA_PARENTS } from './catalog';
+import { editableEntry, isKnownKey, isSeedKey, UMBRELLA_PARENTS } from './catalog';
 import { icon } from './icons';
 import { titleCase, FAMILY_LABEL } from './parser';
 import { render, esc } from './render';
@@ -89,7 +89,7 @@ function renderRelations(): void {
     ? editingUmbrellas.map(u => relChip(u, umbLabel(u), 'umb')).join('')
     : '<span class="rel-empty">none</span>';
   const sel = $<HTMLSelectElement>('#igUmbSel');
-  const avail = UMBRELLA_PARENTS.filter(p => p !== editingKey && !editingUmbrellas.includes(p));
+  const avail = UMBRELLA_PARENTS.filter(p => !editingUmbrellas.includes(p));
   sel.innerHTML =
     '<option value="">add umbrella…</option>' +
     avail
@@ -130,7 +130,7 @@ export function openIgModal(key: string | null, prefillName = ''): void {
     $<HTMLElement>('#igRemove').style.display = 'none';
     $<HTMLElement>('#igReset').style.display = 'none';
   } else {
-    const entry = runtimeCatalog(state.records).entries.find(e => e.key === key);
+    const entry = editableEntry(key);   // catalog entry, or a synthesized one for a hidden generic
     if (!entry) return;
     editingKey = key;
     editingShape = entry.shape;
