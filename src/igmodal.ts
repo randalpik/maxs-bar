@@ -140,7 +140,7 @@ export function openIgModal(key: string | null, prefillName = ''): void {
     editingColor = entry.color;
     editingUmbrellas = [...entry.umbrellas];
     editingAliases = [...entry.aliases];
-    $('#igTitle').textContent = `Edit ${entry.disp}`;
+    $('#igTitle').textContent = 'Edit ingredient';
     $<HTMLInputElement>('#igName').value = entry.disp;
     // ABV stored as a 0–1 fraction; shown as a percentage.
     $<HTMLInputElement>('#igAbv').value = entry.abv ? String(+(entry.abv * 100).toFixed(1)) : '0';
