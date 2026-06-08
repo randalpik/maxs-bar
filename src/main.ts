@@ -1,18 +1,18 @@
 import './styles.css';
-import { setClassifier } from './parser';
-import { seedClassify, runtimeCatalog, isSeedKey, reconcileStock } from './catalog';
-import { state, load, toggleStock, hasSeed, resetAll } from './state';
-import { fillKeySel, render, layoutCards, updateIngredientChip } from './render';
-import { openModal, closeModal, saveModal, updatePreview, deleteEditing } from './modal';
-import { openIgModal, closeIgModal, saveIgModal, resetIgModal, removeIgModal, fillIgCat, initIgBuilder } from './igmodal';
-import { openSeedModal, closeSeedModal, confirmSeed, seedModalForced } from './seedmodal';
+import { setClassifier } from './parser/parser';
+import { seedClassify, runtimeCatalog, isSeedKey, reconcileStock } from './ingredients/catalog';
+import { state, load, toggleStock, hasSeed, resetAll } from './core/state';
+import { fillKeySel, render, layoutCards, updateIngredientChip } from './ui/render';
+import { openModal, closeModal, saveModal, updatePreview, deleteEditing } from './ui/modal';
+import { openIgModal, closeIgModal, saveIgModal, resetIgModal, removeIgModal, fillIgCat, initIgBuilder } from './ui/igmodal';
+import { openSeedModal, closeSeedModal, confirmSeed, seedModalForced } from './ui/seedmodal';
 import {
   exportRecipesJSON, exportIngredientsJSON, exportStockJSON,
   importRecipes, importIngredientsJSON, importStockJSON,
-} from './io';
-import { initSync, syncNow } from './sync';
-import { openAcctModal, closeAcctModal, createAccount, doSignIn, doSignOut } from './acct';
-import { $ } from './dom';
+} from './io/io';
+import { initSync, syncNow } from './sync/sync';
+import { openAcctModal, closeAcctModal, createAccount, doSignIn, doSignOut } from './sync/acct';
+import { $ } from './core/dom';
 
 /* ============================================================
    Wire up
