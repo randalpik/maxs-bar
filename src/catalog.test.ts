@@ -57,6 +57,13 @@ describe('runtimeCatalog', () => {
     expect(isAvailable(parseIngredient('2 dark rum'), ctx)).toBe(false);  // specific not stocked
   });
 
+  it('stores the raw seed category (display grouping is render-time only)', () => {
+    const cat = runtimeCatalog([]);
+    expect(cat.entries.find(e => e.key === 'milk')?.cat).toBe('dairy');        // not 'dairyegg'
+    expect(cat.entries.find(e => e.key === 'ginger beer')?.cat).toBe('soda');  // not 'mixer'
+    expect(cat.entries.find(e => e.key === 'nutmeg')?.cat).toBe('spice');      // not 'herbspice'
+  });
+
   it('applies an abv override to the classifier and the catalog entry', () => {
     state.ingredients = { bourbon: { abv: 0.5 } };
     expect(seedClassify('bourbon').abv).toBe(0.5);              // feeds the alcohol estimate

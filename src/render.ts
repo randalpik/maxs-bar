@@ -4,7 +4,7 @@ import { SPIRIT_LABEL, SPIRIT_ORDER, METHOD_ORDER, titleCase } from './parser';
 import { icon, amountTag } from './icons';
 import {
   buildStockCtx, isAvailable, missingCount, ingredientKey, effectiveChip,
-  CATEGORY_ORDER, CATEGORY_LABEL,
+  displayCat, CATEGORY_ORDER, CATEGORY_LABEL,
 } from './ingredients';
 import type { StockCtx, IngredientEntry } from './ingredients';
 import { runtimeCatalog } from './catalog';
@@ -247,10 +247,12 @@ export function renderIngredients(): void {
   $('#count').textContent = `${stockedCount} of ${total} stocked`;
   if (!total) { main.innerHTML = '<div class="empty">No ingredients yet.</div>'; return; }
 
+  // Section by the render-time display grouping; entries store the raw category.
   const byCat = new Map<string, IngredientEntry[]>();
   for (const e of entries) {
-    let arr = byCat.get(e.cat);
-    if (!arr) { arr = []; byCat.set(e.cat, arr); }
+    const sec = displayCat(e.cat, e.disp, e.key);
+    let arr = byCat.get(sec);
+    if (!arr) { arr = []; byCat.set(sec, arr); }
     arr.push(e);
   }
   const cats = [...CATEGORY_ORDER, ...[...byCat.keys()].filter(c => !CATEGORY_ORDER.includes(c))];

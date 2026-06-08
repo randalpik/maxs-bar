@@ -9,10 +9,8 @@ import type { SeedIngredient } from './ingredients-seed';
 
    Produces the user's ingredient overrides as a diff against the committed seed,
    so hand-created/edited entries can be reconciled into ingredients-seed.ts. The
-   download wrapper lives in io.ts. Note the category-namespace gap: the edit modal
-   works in DISPLAY categories (mixer/herbspice/dairyegg) while the seed stores RAW
-   categories (soda/herb/spice/dairy/egg) — so a seed entry's raw category is kept
-   unless the user actually changed the display category in the modal.
+   download wrapper lives in io.ts. Categories share a single (raw) namespace with
+   the seed — the edit modal stores raw categories — so cat is compared directly.
    ============================================================ */
 
 const FALLBACK_COLOR = '#8C857A';
@@ -24,11 +22,10 @@ function seedShape(seed: SeedIngredient | undefined, ov: { shape?: string | null
 /** Build a seed-format object from a seed entry + the user's override, in the
  *  canonical field order, omitting empty optionals. */
 function mergedEntry(key: string, seed: SeedIngredient | undefined, ov: typeof state.ingredients[string]): SeedIngredient {
-  const dispCatChanged = seed && ov.cat !== undefined && ov.cat !== displayCat(seed.cat, ov.disp ?? seed.disp, key);
   const out: SeedIngredient = {
     key,
     disp: ov.disp ?? seed?.disp ?? titleCase(key),
-    cat: seed ? (dispCatChanged ? ov.cat! : seed.cat) : (ov.cat ?? 'other'),
+    cat: ov.cat ?? seed?.cat ?? 'other',
     color: ov.color ?? seed?.color ?? FALLBACK_COLOR,
     shape: seedShape(seed, ov),
     abv: ov.abv ?? seed?.abv ?? 0,
@@ -45,12 +42,10 @@ function mergedEntry(key: string, seed: SeedIngredient | undefined, ov: typeof s
   return out;
 }
 
-/** True if the merged entry differs from the seed entry on any persisted field
- *  (category compared in display space, since that's where the modal edits). */
+/** True if the merged entry differs from the seed entry on any persisted field. */
 function differsFromSeed(seed: SeedIngredient, m: SeedIngredient): boolean {
-  const dispCat = displayCat(seed.cat, seed.disp, seed.key);
   return m.disp !== seed.disp
-    || (m.cat !== seed.cat && m.cat !== dispCat)
+    || m.cat !== seed.cat
     || m.color !== seed.color
     || (m.shape ?? null) !== (seed.shape ?? null)
     || m.abv !== seed.abv

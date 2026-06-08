@@ -1,7 +1,7 @@
 import type { Classified, Recipe } from './types';
 import { state, derive } from './state';
 import { sentenceCase, titleCase } from './parser';
-import { ingredientKey, displayCat, umbrellasForCat } from './ingredients';
+import { ingredientKey, umbrellasForCat } from './ingredients';
 import type { Catalog, IngredientEntry } from './ingredients';
 import { INGREDIENTS } from './ingredients-seed';
 import type { SeedIngredient } from './ingredients-seed';
@@ -67,7 +67,7 @@ export function runtimeCatalog(records: Recipe[]): Catalog {
     map.set(s.key, {
       key: s.key,
       disp: ov?.disp ?? s.disp,
-      cat: ov?.cat ?? displayCat(s.cat, s.disp, s.key),
+      cat: ov?.cat ?? s.cat,                   // raw category (single stored namespace)
       color: ov?.color ?? s.color,
       shape: ov && ov.shape !== undefined ? ov.shape : s.shape,
       abv: ov?.abv ?? s.abv,
