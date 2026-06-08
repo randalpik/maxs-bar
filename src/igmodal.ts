@@ -90,8 +90,11 @@ function renderRelations(): void {
     : '<span class="rel-empty">none</span>';
   const sel = $<HTMLSelectElement>('#igUmbSel');
   const avail = UMBRELLA_PARENTS.filter(p => p !== editingKey && !editingUmbrellas.includes(p));
-  sel.innerHTML = '<option value="">+ umbrella…</option>'
-    + avail.map(p => `<option value="${esc(p)}">${esc(umbLabel(p))}</option>`).join('');
+  sel.innerHTML =
+    '<option value="">add umbrella…</option>' +
+    avail
+      .map((p) => `<option value="${esc(p)}">${esc(umbLabel(p))}</option>`)
+      .join("");
   sel.disabled = !avail.length;
   $('#igAliasChips').innerHTML = editingAliases.length
     ? editingAliases.map(a => relChip(a, a, 'alias')).join('')

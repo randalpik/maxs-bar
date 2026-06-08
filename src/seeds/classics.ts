@@ -5,7 +5,7 @@ export const classicsText = `Daiquiri: 2 rum, 3/4 lime, 3/4 syrup
 
 Dark and Stormy: 2 dark rum, 1/2 lime, cardamom bitters, top ginger beer (built)
 
-Caipirinha: 2 cachaça, 4 lime wedges, 2 tsp brown sugar muddled (built)
+Caipirinha: 2 cachaça, 4 lime wedges muddled, 2 tsp brown sugar muddled (built)
 
 Mojito: 2 light rum, 3/4 lime, 1/2 simple, muddled mint, top soda (built)
 
