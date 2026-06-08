@@ -1,7 +1,6 @@
 import type { Recipe, RecipeOverride, IngredientOverride } from './types';
-import type { SeedIngredient } from './ingredients-seed';
 import { state } from './state';
-import { buildIngredientsExport } from './ingredients-export';
+import { buildIngredientsExport, type IngredientDiffEntry } from './ingredients-export';
 
 /* ============================================================
    Import / export transforms (pure — no DOM, localStorage or render).
@@ -61,21 +60,27 @@ export function isRecipesExport(v: unknown): v is RecipesExport {
 /* ---------- ingredients (seed-format diff JSON) ---------- */
 
 export interface IngredientsExport {
-  ingredients: SeedIngredient[];
+  ingredients: IngredientDiffEntry[];
   removed: string[];
 }
 
 /** Re-exported so io.ts has one import site for the whole transfer layer. */
 export { buildIngredientsExport };
 
-/** Parse an ingredients export into a fresh override map (full replace). The
- *  exported entries are full (merged) seed-format objects; storing their persisted
- *  fields as the override reproduces them on the next buildIngredientsExport. */
+/** Parse an ingredients export into a fresh override map (full replace). Each entry
+ *  carries only the fields it changed (additions carry everything), so we copy only
+ *  the fields present — storing them as the override reproduces the entry on the
+ *  next buildIngredientsExport. */
 export function parseIngredientsImport(data: IngredientsExport): Record<string, IngredientOverride> {
   const out: Record<string, IngredientOverride> = {};
   for (const e of data.ingredients ?? []) {
     if (!e.key) continue;
-    const ov: IngredientOverride = { disp: e.disp, cat: e.cat, color: e.color, shape: e.shape ?? null, abv: e.abv };
+    const ov: IngredientOverride = {};
+    if ('disp' in e) ov.disp = e.disp;
+    if ('cat' in e) ov.cat = e.cat;
+    if ('color' in e) ov.color = e.color;
+    if ('shape' in e) ov.shape = e.shape ?? null;
+    if ('abv' in e) ov.abv = e.abv;
     if (e.aliases?.length) ov.aliases = e.aliases;
     if (e.umbrellas?.length) ov.umbrellas = e.umbrellas;
     out[e.key] = ov;

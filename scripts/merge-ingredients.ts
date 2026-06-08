@@ -16,6 +16,7 @@
  */
 import { readFileSync, writeFileSync, existsSync } from 'node:fs';
 import { INGREDIENTS, type SeedIngredient } from '../src/ingredients-seed.ts';
+import type { IngredientDiffEntry } from '../src/ingredients-export.ts';
 
 const SEED_PATH = 'src/ingredients-seed.ts';
 const MARKER = 'export const INGREDIENTS';
@@ -30,7 +31,7 @@ const die = (msg: string): never => { console.error(`${c.red}✗ ${msg}${c.reset
 const jsonPath = process.argv[2] ?? 'ingredients.json';
 if (!existsSync(jsonPath)) die(`No file at ${jsonPath}. Pass a path: npm run merge-ingredients -- ~/Downloads/ingredients.json`);
 
-let payload: { ingredients?: SeedIngredient[]; removed?: string[] } = {};
+let payload: { ingredients?: IngredientDiffEntry[]; removed?: string[] } = {};
 try { payload = JSON.parse(readFileSync(jsonPath, 'utf8')); }
 catch (e) { die(`${jsonPath} is not valid JSON: ${(e as Error).message}`); }
 if (!Array.isArray(payload.ingredients)) die(`${jsonPath} is not an ingredients export (missing "ingredients" array).`);
@@ -53,9 +54,14 @@ for (const key of removed) {
 for (const e of incoming) {
   if (!e?.key) continue;
   const cur = byKey.get(e.key);
-  if (!cur) { byKey.set(e.key, e); added.push(e.key); }
-  else if (norm(cur) !== norm(e)) { byKey.set(e.key, e); updated.push(e.key); }
-  else unchanged++;
+  if (!cur) {
+    byKey.set(e.key, e as SeedIngredient);          // addition: full entry
+    added.push(e.key);
+  } else {
+    const next = { ...cur, ...e } as SeedIngredient; // edit: overlay only the changed fields
+    if (norm(cur) !== norm(next)) { byKey.set(e.key, next); updated.push(e.key); }
+    else unchanged++;
+  }
 }
 
 // Existing order first (minus deletions), then new keys appended alphabetically.

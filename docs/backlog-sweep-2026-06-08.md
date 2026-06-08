@@ -180,7 +180,7 @@ tests** (`transfer.test.ts`, 7 tests) per your criterion.
 | Menu item | Format | Semantics |
 |---|---|---|
 | Export recipes | `{seed, recipes[], removed[]}` JSON | seed-relative override diff |
-| Export ingredients | seed-format diff JSON | unchanged |
+| Export ingredients | seed-format diff JSON | additions = full entry; **edits = key + only the changed fields** |
 | Export stock list | flat `string[]` JSON | sorted stocked keys |
 | Import recipes | `.json` \| `.csv` \| `.txt` | **json = full replace** (seed + overrides); csv/txt = additive merge (human intake), sniffed by content then filename |
 | Import ingredients | `.json` | full replace of ingredient overrides |

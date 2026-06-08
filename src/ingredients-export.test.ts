@@ -22,12 +22,13 @@ describe('buildIngredientsExport (seed-format diff)', () => {
     expect(ingredients[0]).toMatchObject({ key: 'overproof rum', cat: 'spirit', umbrellas: ['rum'], aliases: ['151'] });
   });
 
-  it('emits an edited seed ingredient, preserving its raw category and structured fields', () => {
+  it('emits an edited seed ingredient as key + only the changed fields', () => {
+    // Override matches the seed on disp/cat/shape; only color and abv differ, so the
+    // diff should carry just those — not the full entry, not the unchanged umbrellas.
     state.ingredients = { bourbon: { disp: 'Bourbon', cat: 'spirit', color: '#000000', shape: 'squircle', abv: 0.45 } };
     const { ingredients } = buildIngredientsExport();
     expect(ingredients).toHaveLength(1);
-    expect(ingredients[0]).toMatchObject({ key: 'bourbon', color: '#000000', abv: 0.45, umbrellas: ['whiskey'] });
-    expect(ingredients[0]).not.toHaveProperty('fam'); // fam is derived from umbrellas, never stored/exported
+    expect(ingredients[0]).toEqual({ key: 'bourbon', color: '#000000', abv: 0.45 });
   });
 
   it('skips a no-op edit (override fields all equal to the seed)', () => {

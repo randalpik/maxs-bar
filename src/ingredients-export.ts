@@ -42,33 +42,44 @@ function mergedEntry(key: string, seed: SeedIngredient | undefined, ov: typeof s
   return out;
 }
 
-/** True if the merged entry differs from the seed entry on any persisted field. */
-function differsFromSeed(seed: SeedIngredient, m: SeedIngredient): boolean {
-  return m.disp !== seed.disp
-    || m.cat !== seed.cat
-    || m.color !== seed.color
-    || (m.shape ?? null) !== (seed.shape ?? null)
-    || m.abv !== seed.abv
-    || JSON.stringify(m.aliases ?? []) !== JSON.stringify(seed.aliases ?? [])
-    || JSON.stringify(m.umbrellas ?? []) !== JSON.stringify(seed.umbrellas ?? []);
+/** An exported ingredient: a full entry for an addition, or just `key` + the
+ *  changed fields for an edit (so the diff is clear at a glance). */
+export type IngredientDiffEntry = { key: string } & Partial<Omit<SeedIngredient, 'key'>>;
+
+/** For an edited seed ingredient, the key plus only the fields whose merged value
+ *  differs from the seed (canonical field order). Returns null for a no-op edit. */
+function sparseDiff(seed: SeedIngredient, m: SeedIngredient): IngredientDiffEntry | null {
+  const out: IngredientDiffEntry = { key: m.key };
+  let changed = false;
+  if (m.disp !== seed.disp) { out.disp = m.disp; changed = true; }
+  if (m.cat !== seed.cat) { out.cat = m.cat; changed = true; }
+  if (m.color !== seed.color) { out.color = m.color; changed = true; }
+  if ((m.shape ?? null) !== (seed.shape ?? null)) { out.shape = m.shape ?? null; changed = true; }
+  if (m.abv !== seed.abv) { out.abv = m.abv; changed = true; }
+  if (JSON.stringify(m.aliases ?? []) !== JSON.stringify(seed.aliases ?? [])) { out.aliases = m.aliases; changed = true; }
+  if (JSON.stringify(m.umbrellas ?? []) !== JSON.stringify(seed.umbrellas ?? [])) { out.umbrellas = m.umbrellas; changed = true; }
+  return changed ? out : null;
 }
 
-/** The user's ingredient overrides as a seed-format diff: `ingredients` holds added +
- *  edited entries (a paste-able SeedIngredient[]), `removed` lists tombstoned seed keys.
- *  Only what differs from the seed is emitted. */
-export function buildIngredientsExport(): { ingredients: SeedIngredient[]; removed: string[] } {
+/** The user's ingredient overrides as a seed-format diff: `ingredients` holds
+ *  additions (full entries) and edits (key + only the changed fields), `removed`
+ *  lists tombstoned seed keys. Only what differs from the seed is emitted. */
+export function buildIngredientsExport(): { ingredients: IngredientDiffEntry[]; removed: string[] } {
   const seedByKey = new Map(INGREDIENTS.map(i => [i.key, i]));
-  const ingredients: SeedIngredient[] = [];
+  // Carry the full merged entry alongside the (possibly sparse) output entry so we
+  // can still sort by section + display name even when the output omits cat/disp.
+  const rows: { sec: string; disp: string; entry: IngredientDiffEntry }[] = [];
   const removed: string[] = [];
   for (const [key, ov] of Object.entries(state.ingredients)) {
     const seed = seedByKey.get(key);
     if (ov.removed) { if (seed) removed.push(key); continue; }
     const m = mergedEntry(key, seed, ov);
-    if (!seed) ingredients.push(m);                          // added ingredient
-    else if (differsFromSeed(seed, m)) ingredients.push(m);  // edited seed ingredient
+    const entry = seed ? sparseDiff(seed, m) : m;   // edit → sparse; addition → full entry
+    if (!entry) continue;                           // no-op edit
+    rows.push({ sec: sectionFor(m.cat, m.disp, m.key), disp: m.disp, entry });
   }
   const ord = (c: string) => { const i = SECTION_ORDER.indexOf(c); return i < 0 ? 99 : i; };
-  ingredients.sort((a, b) => ord(sectionFor(a.cat, a.disp, a.key)) - ord(sectionFor(b.cat, b.disp, b.key)) || a.disp.localeCompare(b.disp));
+  rows.sort((a, b) => ord(a.sec) - ord(b.sec) || a.disp.localeCompare(b.disp));
   removed.sort();
-  return { ingredients, removed };
+  return { ingredients: rows.map(r => r.entry), removed };
 }
