@@ -1,7 +1,12 @@
 # Backlog sweep — 2026-06-08
 
 Branch: `backlog-sweep-2026-06-08` (off `production`). All commits build clean
-(`npm run build`) and keep the 75 unit tests green.
+(`npm run build`) and keep the unit tests green (now 82, +7 transfer round-trips).
+
+> **Round 2 (post-review):** the FOUC fix was redone (the first attempt didn't
+> hold on a plain dev refresh), the favicon was made bolder, and the whole I/O
+> cluster was implemented per your decisions. See **Round 2** at the bottom; the
+> original Round-1 notes below are kept for the record.
 
 ---
 
@@ -149,3 +154,57 @@ but more fragile. The export is already seed-format, so the merge logic itself
 
 The backlog FUTURE IDEAS (sync/sign-in, ingredient location ordering) were out of
 scope for this sweep.
+
+---
+
+## Round 2 — post-review fixes & the I/O build-out
+
+### FOUC — redone  ✅ `5ee6528`
+Your report was right: the first fix didn't hold. The `opacity:0` gate lived in
+`styles.css`, which **Vite injects via JS in dev**, so it applied too late and the
+unstyled content still flashed on a plain refresh. Moved the hide rule to an inline
+`<style>` in `<head>` (parsed before any paint, dev *and* prod): dark canvas +
+`html:not(.ready) body{visibility:hidden}`, with `<html class="ready">` added in
+`render.ts` after the first fonts-ready chip layout. **Worth a quick re-check on
+your end**, but a normal dev refresh should now be clean.
+
+### Favicon — bolder  ✅ `5ee6528`
+Hexagon enlarged to fill the viewBox, stroke thickened to 2.6 — reads as a hexagon
+at favicon size now, not a blob.
+
+### I/O cluster — implemented  ✅ `6f941f2` (transfer), `214c3c1` (merge script)
+All five decisions applied. JSON is canonical; pure transforms live in
+`transfer.ts`, DOM/persist wrappers in `io.ts`, with **byte-identical round-trip
+tests** (`transfer.test.ts`, 7 tests) per your criterion.
+
+| Menu item | Format | Semantics |
+|---|---|---|
+| Export recipes | `{seed, recipes[], removed[]}` JSON | seed-relative override diff |
+| Export ingredients | seed-format diff JSON | unchanged |
+| Export stock list | flat `string[]` JSON | sorted stocked keys |
+| Import recipes | `.json` \| `.csv` \| `.txt` | **json = full replace** (seed + overrides); csv/txt = additive merge (human intake), sniffed by content then filename |
+| Import ingredients | `.json` | full replace of ingredient overrides |
+| Import stock list | `.json` | reset all → unstocked, then stock each listed key **present in the current catalog** (unknown keys ignored) |
+
+New `···` order: Export recipes / ingredients / stock list — Import recipes /
+ingredients / stock list — Switch seed… / Reset everything…
+
+**Merge script** (`npm run merge-ingredients [path]`, default `./ingredients.json`):
+folds an exported `ingredients.json` into `src/ingredients-seed.ts` — inserts adds,
+overwrites edits by key, deletes `removed`, then full-regenerates the array.
+Existing entry order is preserved (new keys appended alphabetically) so the diff
+stays reviewable; header comment + interface kept verbatim. Colourised
+added/updated/removed/unchanged report. Runs via `vite-node`.
+**One known tradeoff (you chose full-regenerate):** inline comments *inside* the
+array are dropped — currently just the generic-wine note at the old
+`ingredients-seed.ts:672`. Re-add by hand after a merge if you want it kept.
+
+### Verified
+- 82 unit tests green; `npm run build` (tsc + vite) clean.
+- Merge script exercised end-to-end against a synthetic export (add + edit +
+  removal): produced the expected focused diff, regenerated file type-checked,
+  then the seed was restored — no seed change is part of this branch.
+- **Still needs your hands-on check:** the FOUC reveal and the browser-back
+  behaviour (both perceptual/stateful; no headless browser here). The import
+  flows are unit-covered for the pure transforms, but the file-picker → render
+  path is worth a manual click-through.
