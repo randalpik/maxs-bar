@@ -68,6 +68,7 @@ export const INGREDIENTS: SeedIngredient[] = [
     shape: "squircle",
     abv: 0.4,
     fam: "brandy",
+    aliases: ["calvados"],
     umbrellas: ["brandy"],
   },
   {
@@ -93,6 +94,7 @@ export const INGREDIENTS: SeedIngredient[] = [
     color: "#C8902E",
     shape: "hexagon",
     abv: 0.4,
+    aliases: ["benedictine"],
   },
   {
     key: "bitters",
@@ -109,6 +111,7 @@ export const INGREDIENTS: SeedIngredient[] = [
     color: "#4A2540",
     shape: "hexagon",
     abv: 0.2,
+    aliases: ["blackberry", "cassis", "mure", "mûre"],
   },
   {
     key: "bourbon",
@@ -145,6 +148,7 @@ export const INGREDIENTS: SeedIngredient[] = [
     shape: "squircle",
     abv: 0.4,
     fam: "cachaça",
+    aliases: ["cachaca"],
   },
   {
     key: "campari",
@@ -179,7 +183,7 @@ export const INGREDIENTS: SeedIngredient[] = [
     shape: "glass",
     abv: 0.12,
     fam: "wine",
-    aliases: ["prosecco"],
+    aliases: ["prosecco", "sparkling"],
   },
   {
     key: "cherry",
@@ -216,6 +220,7 @@ export const INGREDIENTS: SeedIngredient[] = [
     color: "#F2EAD8",
     shape: "droplet",
     abv: 0,
+    aliases: ["coconut"],
   },
   {
     key: "cognac",
@@ -251,7 +256,7 @@ export const INGREDIENTS: SeedIngredient[] = [
     color: "#7A4FA3",
     shape: "hexagon",
     abv: 0.2,
-    aliases: ["violette"],
+    aliases: ["violet", "violette"],
   },
   {
     key: "dark rum",
@@ -289,6 +294,7 @@ export const INGREDIENTS: SeedIngredient[] = [
     color: "#E6E0AE",
     shape: "hexagon",
     abv: 0.2,
+    aliases: ["elderflower", "germain"],
   },
   {
     key: "espresso",
@@ -377,7 +383,7 @@ export const INGREDIENTS: SeedIngredient[] = [
     color: "#3A2417",
     shape: "hexagon",
     abv: 0.2,
-    aliases: ["kahlua"],
+    aliases: ["coffee liqueur", "kahlua"],
   },
   {
     key: "lapsang syrup",
@@ -434,6 +440,7 @@ export const INGREDIENTS: SeedIngredient[] = [
     color: "#E7E1D2",
     shape: "hexagon",
     abv: 0.32,
+    aliases: ["maraschino"],
   },
   {
     key: "maple syrup",
@@ -494,7 +501,7 @@ export const INGREDIENTS: SeedIngredient[] = [
     color: "#E0892B",
     shape: "hexagon",
     abv: 0.4,
-    aliases: ["curaçao"],
+    aliases: ["cointreau", "curacao", "curaçao", "triple sec"],
   },
   {
     key: "orgeat",
@@ -565,6 +572,7 @@ export const INGREDIENTS: SeedIngredient[] = [
     shape: "glass",
     abv: 0.13,
     fam: "wine",
+    aliases: ["wine"],
   },
   {
     key: "rum",
@@ -622,7 +630,7 @@ export const INGREDIENTS: SeedIngredient[] = [
     color: "#DCE8EE",
     shape: "droplet",
     abv: 0,
-    aliases: ["soda"],
+    aliases: ["seltzer", "soda"],
   },
   {
     key: "spirit",
@@ -660,6 +668,7 @@ export const INGREDIENTS: SeedIngredient[] = [
     shape: "squircle",
     abv: 0.4,
     fam: "tequila",
+    aliases: ["mezcal"],
   },
   {
     key: "tonic water",
@@ -668,6 +677,7 @@ export const INGREDIENTS: SeedIngredient[] = [
     color: "#DCE8EE",
     shape: "droplet",
     abv: 0,
+    aliases: ["tonic"],
   },
   {
     key: "whiskey",
@@ -677,6 +687,7 @@ export const INGREDIENTS: SeedIngredient[] = [
     shape: "squircle",
     abv: 0.4,
     fam: "whiskey",
+    aliases: ["whisky"],
   },
   {
     key: "yellow chartreuse",
