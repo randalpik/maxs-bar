@@ -80,19 +80,23 @@ export function iconFor(i: Ingredient): string | null {
   }
 }
 
-export function amountTag(i: Ingredient): { amount: string | null; tag: string | null } {
+function baseAmountTag(i: Ingredient): { amount: string | null; tag: string | null } {
   switch (i.role) {
     case 'pour': return { amount: fmtOz(i.qty || 0), tag: null };
     case 'float': return { amount: fmtOz(i.qty || 0), tag: 'float' };
     case 'measure': return { amount: (+(i.qty || 0)) + ' tsp', tag: null };
     case 'count': { const n = i.qty || 1; return { amount: n + ' ' + (n === 1 ? 'wedge' : 'wedges'), tag: null }; }
     case 'egg': return { amount: (i.qty || 1) + ' ' + i.eggMod, tag: null };
-    case 'muddled': return i.qty
-      ? { amount: (i.unit === 'tsp' ? (+i.qty) + ' tsp' : fmtOz(i.qty)), tag: 'muddle' }
-      : { amount: 'muddle', tag: null };
     case 'dash': return { amount: 'dash', tag: null };
     case 'bitters': return { amount: 'dash', tag: null };
     case 'top': return { amount: 'top', tag: null };
     default: return { amount: 'garnish', tag: null };
   }
+}
+
+export function amountTag(i: Ingredient): { amount: string | null; tag: string | null } {
+  const r = baseAmountTag(i);
+  // "muddled" is additive: keep the ingredient's real amount, just flag the treatment.
+  if (i.prefix === 'muddled') r.tag = 'muddle';
+  return r;
 }

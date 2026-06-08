@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { iconFor } from './icons';
+import { iconFor, amountTag } from './icons';
 import { parseIngredient } from './parser';
 
 const shapeOf = (raw: string) => iconFor(parseIngredient(raw));
@@ -28,6 +28,16 @@ describe('iconFor mapping', () => {
   });
   it('candied ginger gets the ginger icon', () => {
     expect(shapeOf('candied ginger')).toBe('ginger');
+  });
+  it('muddled wedges keep the wedge icon + count amount, with a muddle tag', () => {
+    const i = parseIngredient('4 lime wedges muddled');
+    expect(iconFor(i)).toBe('wedge');             // not iconless
+    expect(amountTag(i)).toEqual({ amount: '4 wedges', tag: 'muddle' });
+  });
+  it('muddled also tags an otherwise-amountless garnish without changing its icon', () => {
+    const m = parseIngredient('muddled mint');
+    expect(iconFor(m)).toBe('sprig');
+    expect(amountTag(m).tag).toBe('muddle');
   });
   it('non-alcoholic, non-citrus liquids fall under droplet', () => {
     expect(shapeOf('top milk')).toBe('droplet');

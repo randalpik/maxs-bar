@@ -119,10 +119,12 @@ export function parseIngredient(raw: string): Ingredient {
   const isCount = /\bwedges?\b/.test(lname);
   const isPeel = /\b(peel|wheel|twist)\b/.test(lname);
   let role: Role;
+  // "muddled" is a treatment, not a role — it must NOT short-circuit type resolution
+  // (e.g. "4 lime wedges muddled" is still a count of wedges). It carries through on
+  // `prefix` and only adds the "muddle" tag at render time (see amountTag).
   if (prefix === "top") role = "top";
   else if (prefix === "float") role = "float";
   else if (prefix === "dash") role = "dash";
-  else if (prefix === "muddled") role = "muddled";
   else if (info.cat === "egg") role = "egg";
   else if (info.cat === "bitters") role = "bitters";
   else if (isCount) role = "count";

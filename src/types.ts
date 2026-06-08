@@ -4,7 +4,6 @@ export type Role =
   | 'measure'
   | 'count'
   | 'egg'
-  | 'muddled'
   | 'dash'
   | 'bitters'
   | 'top'

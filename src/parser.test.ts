@@ -61,8 +61,17 @@ describe('parseIngredient roles & units', () => {
     const i = parseIngredient('2 tsp brown sugar');
     expect(i.role).toBe('measure');
   });
-  it('trailing muddled → muddled role', () => {
-    expect(parseIngredient('2 tsp brown sugar muddled').role).toBe('muddled');
+  it('muddled is a treatment tag, not a role — the real type still resolves', () => {
+    // tsp sugar muddled → still a measure
+    const s = parseIngredient('2 tsp brown sugar muddled');
+    expect(s.role).toBe('measure');
+    expect(s.prefix).toBe('muddled');
+    // lime wedges muddled → still a count of wedges (the bug: muddled used to win)
+    const w = parseIngredient('4 lime wedges muddled');
+    expect(w.role).toBe('count');
+    expect(w.unit).toBe('wedge');
+    expect(w.disp).toBe('Lime');
+    expect(w.prefix).toBe('muddled');
   });
   it('citrus juice gains a " juice" suffix, non-citrus juice does not double it', () => {
     expect(parseIngredient('1 lime').disp).toBe('Lime juice');
