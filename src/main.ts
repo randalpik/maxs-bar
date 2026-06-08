@@ -7,7 +7,7 @@ import { fillKeySel, render, layoutCards, updateIngredientChip } from './render'
 import { openModal, closeModal, saveModal, updatePreview, deleteEditing } from './modal';
 import { openIgModal, closeIgModal, saveIgModal, resetIgModal, removeIgModal, fillIgCat, initIgBuilder } from './igmodal';
 import { openSeedModal, closeSeedModal, confirmSeed, seedModalForced } from './seedmodal';
-import { download, exportTXT, importTXT, importCSV, exportIngredientsCSV } from './io';
+import { download, exportTXT, importTXT, importCSV, exportIngredientsJSON } from './io';
 import { $ } from './dom';
 
 /* ============================================================
@@ -119,7 +119,7 @@ menu.querySelector('.pop')!.addEventListener('click', e => {
   menu.classList.remove('open');
   if (act === 'exp-csv') download('drinks.csv', toCSV(state.records), 'text/csv');
   else if (act === 'exp-txt') exportTXT();
-  else if (act === 'exp-ing') exportIngredientsCSV();
+  else if (act === 'exp-ing') exportIngredientsJSON();
   else if (act === 'imp-txt' || act === 'imp-csv') $('#fileIn').click();
   else if (act === 'switch-seed') openSeedModal({ forced: false });
   else if (act === 'reset') {

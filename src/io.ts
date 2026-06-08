@@ -1,8 +1,7 @@
 import { state, save } from './state';
 import { parseLine } from './parser';
-import { parseCSV, csvField } from './csv';
-import { CATEGORY_ORDER } from './ingredients';
-import { runtimeCatalog } from './catalog';
+import { parseCSV } from './csv';
+import { buildIngredientsExport } from './ingredients-export';
 import { nowISO } from './util';
 import { render } from './render';
 
@@ -22,19 +21,11 @@ export function exportTXT(): void {
   download('drinks.txt', txt, 'text/plain');
 }
 
-/** Export the derived ingredient catalog as CSV (one row per stockable item),
- *  ordered by category then name. Intended as a backup / a starting point for a
- *  future editable ingredient store or seed. Columns: key is the stock identity. */
-export function exportIngredientsCSV(): void {
-  const { entries } = runtimeCatalog(state.records);
-  const ord = (c: string) => { const i = CATEGORY_ORDER.indexOf(c); return i < 0 ? 99 : i; };
-  const rows = [...entries].sort((a, b) => ord(a.cat) - ord(b.cat) || a.disp.localeCompare(b.disp));
-  const head = ['key', 'name', 'category', 'color', 'shape', 'stocked', 'uses'];
-  const body = rows.map(e => [
-    e.key, e.disp, e.cat, e.color, e.shape || '', state.stocked.has(e.key) ? 'yes' : 'no', String(e.count),
-  ]);
-  const csv = [head, ...body].map(r => r.map(csvField).join(',')).join('\n') + '\n';
-  download('ingredients.csv', csv, 'text/csv');
+/** Export the user's ingredient overrides as JSON in the canonical seed format, so
+ *  hand-created/edited entries can be reconciled into ingredients-seed.ts. The diff
+ *  assembly lives in ingredients-export.ts (pure / unit-tested). */
+export function exportIngredientsJSON(): void {
+  download('ingredients.json', JSON.stringify(buildIngredientsExport(), null, 2) + '\n', 'application/json');
 }
 
 export function importTXT(text: string): void {
