@@ -1,7 +1,8 @@
 import { state, save } from './state';
 import { parseLine } from './parser';
 import { parseCSV, csvField } from './csv';
-import { buildCatalog, CATEGORY_ORDER } from './ingredients';
+import { CATEGORY_ORDER } from './ingredients';
+import { runtimeCatalog } from './catalog';
 import { nowISO } from './util';
 import { render } from './render';
 
@@ -25,7 +26,7 @@ export function exportTXT(): void {
  *  ordered by category then name. Intended as a backup / a starting point for a
  *  future editable ingredient store or seed. Columns: key is the stock identity. */
 export function exportIngredientsCSV(): void {
-  const { entries } = buildCatalog(state.records);
+  const { entries } = runtimeCatalog(state.records);
   const ord = (c: string) => { const i = CATEGORY_ORDER.indexOf(c); return i < 0 ? 99 : i; };
   const rows = [...entries].sort((a, b) => ord(a.cat) - ord(b.cat) || a.disp.localeCompare(b.disp));
   const head = ['key', 'name', 'category', 'color', 'shape', 'stocked', 'uses'];

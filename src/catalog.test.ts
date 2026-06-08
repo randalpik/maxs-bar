@@ -1,5 +1,7 @@
 import { describe, it, expect, afterEach } from 'vitest';
 import { seedClassify, runtimeCatalog, SEED_KEYS, isKnownKey } from './catalog';
+import { buildStockCtx, isAvailable } from './ingredients';
+import { parseIngredient } from './parser';
 import { state } from './state';
 
 const keys = (records = []) => new Set(runtimeCatalog(records).entries.map(e => e.key));
@@ -44,6 +46,22 @@ describe('runtimeCatalog', () => {
     const cat = runtimeCatalog([]);
     expect(cat.entries.find(x => x.key === 'agave syrup')!.umbrella).toBe('syrup');
     expect(cat.entries.find(x => x.key === 'shrub x')!.umbrella).toBe('self:shrub x');
+  });
+
+  it('hides effective generics and satisfies them via a stocked child', () => {
+    const keys = new Set(runtimeCatalog([]).entries.map(e => e.key));
+    expect(keys.has('rum')).toBe(false);       // generic parent hidden from stock
+    expect(keys.has('light rum')).toBe(true);  // its children shown
+    const ctx = buildStockCtx(runtimeCatalog([]), new Set(['light rum']));
+    expect(isAvailable(parseIngredient('2 rum'), ctx)).toBe(true);        // generic matched by child
+    expect(isAvailable(parseIngredient('2 dark rum'), ctx)).toBe(false);  // specific not stocked
+  });
+
+  it('a hand-added shelf syrup (maple) joins the syrup umbrella', () => {
+    const e = runtimeCatalog([]).entries.find(x => x.key === 'maple syrup');
+    expect(e?.umbrellas).toContain('syrup');
+    const ctx = buildStockCtx(runtimeCatalog([]), new Set(['maple syrup']));
+    expect(isAvailable(parseIngredient('3/4 syrup'), ctx)).toBe(true);
   });
 });
 
