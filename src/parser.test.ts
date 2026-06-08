@@ -64,6 +64,12 @@ describe('parseIngredient roles & units', () => {
   it('trailing muddled → muddled role', () => {
     expect(parseIngredient('2 tsp brown sugar muddled').role).toBe('muddled');
   });
+  it('citrus juice gains a " juice" suffix, non-citrus juice does not double it', () => {
+    expect(parseIngredient('1 lime').disp).toBe('Lime juice');
+    // pineapple/cranberry/pomegranate seed disp already ends in "juice"
+    expect(parseIngredient('1 pineapple').disp).toBe('Pineapple juice');
+    expect(parseIngredient('2 cranberry').disp).toBe('Cranberry juice');
+  });
   it('peel/wheel/twist garnishes render in sentence case', () => {
     expect(parseIngredient('orange peel').disp).toBe('Orange peel');
     expect(parseIngredient('lemon wheel').disp).toBe('Lemon wheel');

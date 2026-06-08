@@ -145,7 +145,10 @@ export function parseIngredient(raw: string): Ingredient {
   } else if (info.cat === "bitters") {
     disp = sentenceCase(name);
   } else if ((info.cat === "citrus" || info.cat === "fruit") && liquid) {
-    disp = info.disp + " juice";
+    // Only append " juice" when the display name doesn't already carry it —
+    // non-citrus juices (pineapple, cranberry, pomegranate) seed disp as
+    // "Pineapple juice" etc., so blind concatenation produced "juice juice".
+    disp = /\bjuice$/i.test(info.disp) ? info.disp : info.disp + " juice";
   }
 
   return {
