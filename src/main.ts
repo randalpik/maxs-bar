@@ -37,6 +37,10 @@ $('#modeSeg').addEventListener('click', e => {
 });
 $<HTMLSelectElement>('#keySel').addEventListener('change', e => { state.key = (e.target as HTMLSelectElement).value; render(); });
 $<HTMLInputElement>('#search').addEventListener('input', e => { state.query = (e.target as HTMLInputElement).value; render(); });
+$('#searchClear').addEventListener('click', () => {
+  const inp = $<HTMLInputElement>('#search');
+  inp.value = ''; state.query = ''; inp.focus(); render();
+});
 $('#addBtn').addEventListener('click', () => openModal(null));
 $('#addIgBtn').addEventListener('click', () => openIgModal(null));
 $('#main').addEventListener('click', e => {

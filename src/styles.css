@@ -78,8 +78,17 @@ select{appearance:none; padding-right:30px;
   background-repeat:no-repeat; background-position:right 11px center;
 }
 .search{position:relative}
-.search input{cursor:text; width:160px; padding-left:30px}
-.search svg{position:absolute; left:9px; top:50%; transform:translateY(-50%); opacity:.5}
+.search input{cursor:text; width:160px; padding-left:30px; padding-right:28px}
+.search>svg{position:absolute; left:9px; top:50%; transform:translateY(-50%); opacity:.5}
+.search-clear{
+  position:absolute; right:6px; top:50%; transform:translateY(-50%);
+  width:18px; height:18px; padding:0; display:grid; place-items:center;
+  border:0; border-radius:5px; background:transparent; color:var(--faint);
+  cursor:pointer; opacity:.7; transition:color .1s, background .1s, opacity .1s;
+}
+.search-clear:hover{color:var(--accent); background:var(--accent-dim); opacity:1}
+/* hidden while the field is empty (placeholder visible) */
+.search input:placeholder-shown ~ .search-clear{display:none}
 .btn{display:inline-flex; align-items:center; gap:7px}
 .btn:hover,select:hover,.search input:focus{border-color:var(--accent)}
 .btn.primary{background:var(--accent-dim); border-color:rgba(155,111,214,.4); color:var(--accent)}
