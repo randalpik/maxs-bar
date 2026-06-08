@@ -69,6 +69,12 @@ export interface IngredientOverride {
   /** Alcohol by volume as a fraction (0–1); overrides the seed abv, feeding the
    *  per-recipe standard-drinks estimate. */
   abv?: number;
+  /** Umbrella parents this is a child of (stock matching + derived family).
+   *  Replaces the seed's list when present. */
+  umbrellas?: string[];
+  /** Extra recipe-text names that resolve to this ingredient. Replaces the seed's
+   *  list when present. */
+  aliases?: string[];
   /** A removed seed ingredient (always renders unstocked in recipes; hidden from the list). */
   removed?: boolean;
 }

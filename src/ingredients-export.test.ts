@@ -16,6 +16,12 @@ describe('buildIngredientsExport (seed-format diff)', () => {
     expect(ingredients[0]).toMatchObject({ key: 'yuzu', disp: 'Yuzu', cat: 'citrus', color: '#e8d44b', shape: 'wheel', abv: 0 });
   });
 
+  it('round-trips user-set umbrellas and aliases on an added ingredient', () => {
+    state.ingredients = { 'overproof rum': { disp: 'Overproof rum', cat: 'spirit', umbrellas: ['rum'], aliases: ['151'] } };
+    const { ingredients } = buildIngredientsExport();
+    expect(ingredients[0]).toMatchObject({ key: 'overproof rum', cat: 'spirit', umbrellas: ['rum'], aliases: ['151'] });
+  });
+
   it('emits an edited seed ingredient, preserving its raw category and structured fields', () => {
     state.ingredients = { bourbon: { disp: 'Bourbon', cat: 'spirit', color: '#000000', shape: 'squircle', abv: 0.45 } };
     const { ingredients } = buildIngredientsExport();

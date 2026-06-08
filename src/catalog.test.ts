@@ -82,6 +82,29 @@ describe('runtimeCatalog', () => {
     expect(isAvailable(parseIngredient('2 wine'), ctx)).toBe(true);
   });
 
+  it('classifies a user-added ingredient by key, alias and " juice" form', () => {
+    state.ingredients = { yuzu: { disp: 'Yuzu', cat: 'citrus', aliases: ['sudachi'] } };
+    expect(seedClassify('yuzu').cat).toBe('citrus');
+    expect(seedClassify('sudachi').disp).toBe('Yuzu');     // via user alias
+    expect(seedClassify('yuzu juice').disp).toBe('Yuzu');  // juice-strip
+    expect(seedClassify('kumquat').cat).toBe('unknown');   // still unknown
+  });
+
+  it('a user umbrella on an added spirit gives it a family and stock-matches the generic', () => {
+    state.ingredients = { 'overproof rum': { disp: 'Overproof rum', cat: 'spirit', umbrellas: ['rum'] } };
+    expect(seedClassify('overproof rum').fam).toBe('rum');
+    const ctx = buildStockCtx(runtimeCatalog([]), new Set(['overproof rum']));
+    expect(isAvailable(parseIngredient('2 rum'), ctx)).toBe(true);
+  });
+
+  it('a user alias on a seed ingredient resolves to the seed classification', () => {
+    state.ingredients = { rye: { aliases: ['rittenhouse'] } };
+    const c = seedClassify('rittenhouse');
+    expect(c.disp).toBe('Rye');     // seed disp, not "Rittenhouse"
+    expect(c.cat).toBe('spirit');   // seed category, not "other"
+    expect(c.fam).toBe('whiskey');  // seed umbrella → family
+  });
+
   it('stores the raw seed category (display grouping is render-time only)', () => {
     const cat = runtimeCatalog([]);
     expect(cat.entries.find(e => e.key === 'milk')?.cat).toBe('dairy');        // not 'dairyegg'

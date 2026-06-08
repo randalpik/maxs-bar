@@ -255,3 +255,20 @@ main{position:relative; z-index:1; max-width:1180px; margin:0 auto; padding:26px
 .ig-shape.on{border-color:var(--accent); background:var(--accent-dim)}
 .ig-shape svg{width:24px; height:24px}
 .ig-none{color:var(--faint); font-size:16px}
+
+/* umbrella + alias editors */
+.ig-rels{display:flex; flex-direction:column; gap:14px; margin-bottom:18px}
+.rel-row{display:flex; flex-wrap:wrap; align-items:center; gap:7px}
+.rel-chips{display:flex; flex-wrap:wrap; gap:6px}
+.rel-chip{
+  display:inline-flex; align-items:center; gap:4px; padding:5px 5px 5px 10px;
+  border:1px solid var(--line2); border-radius:8px; background:var(--accent-dim);
+  color:var(--accent); font-size:12px; line-height:1;
+}
+.rel-chip button{
+  border:0; background:transparent; color:inherit; cursor:pointer;
+  font-size:15px; line-height:1; padding:0 3px; opacity:.65;
+}
+.rel-chip button:hover{opacity:1}
+.rel-add{width:auto; min-width:160px; font-size:13px}
+.rel-empty{color:var(--faint); font-size:12px; font-style:italic}

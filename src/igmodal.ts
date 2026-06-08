@@ -1,9 +1,9 @@
 import { state, setIngredientOverride, resetIngredientOverride } from './state';
 import { CATEGORY_ORDER, CATEGORY_LABEL } from './ingredients';
-import { runtimeCatalog, isKnownKey, isSeedKey } from './catalog';
+import { runtimeCatalog, isKnownKey, isSeedKey, UMBRELLA_PARENTS } from './catalog';
 import { icon } from './icons';
-import { titleCase } from './parser';
-import { render } from './render';
+import { titleCase, FAMILY_LABEL } from './parser';
+import { render, esc } from './render';
 import { $ } from './dom';
 
 /* ============================================================
@@ -21,6 +21,10 @@ const SHAPES = [
 let editingKey: string | null = null;
 let editingShape: string | null = null;
 let editingColor = '#C99A5B';
+let editingUmbrellas: string[] = [];
+let editingAliases: string[] = [];
+
+const umbLabel = (u: string): string => FAMILY_LABEL[u] || titleCase(u);
 
 /** Populate the category <select> once, from the catalog category order. */
 export function fillIgCat(): void {
@@ -45,6 +49,53 @@ export function initIgBuilder(): void {
     editingColor = (e.target as HTMLInputElement).value;
     renderBuilder();
   });
+  // Umbrellas: pick a parent from the dropdown to add it.
+  $<HTMLSelectElement>('#igUmbSel').addEventListener('change', e => {
+    const v = (e.target as HTMLSelectElement).value;
+    if (v && !editingUmbrellas.includes(v)) editingUmbrellas.push(v);
+    renderRelations();
+  });
+  // Aliases: type + Enter to add.
+  $<HTMLInputElement>('#igAliasInput').addEventListener('keydown', e => {
+    if (e.key !== 'Enter') return;
+    e.preventDefault();
+    const inp = e.target as HTMLInputElement;
+    const v = inp.value.trim().toLowerCase();
+    if (v && !editingAliases.includes(v)) editingAliases.push(v);
+    inp.value = '';
+    renderRelations();
+  });
+  // Deletable chips in both lists.
+  const del = (e: Event) => {
+    const b = (e.target as HTMLElement).closest<HTMLElement>('[data-rel]');
+    if (!b) return;
+    const val = b.dataset.val!;
+    if (b.dataset.rel === 'umb') editingUmbrellas = editingUmbrellas.filter(u => u !== val);
+    else editingAliases = editingAliases.filter(a => a !== val);
+    renderRelations();
+  };
+  $('#igUmbChips').addEventListener('click', del);
+  $('#igAliasChips').addEventListener('click', del);
+}
+
+/** One deletable pill in the umbrella/alias editors. */
+function relChip(val: string, label: string, kind: 'umb' | 'alias'): string {
+  return `<span class="rel-chip">${esc(label)}<button type="button" data-rel="${kind}" data-val="${esc(val)}" title="remove" tabindex="-1">×</button></span>`;
+}
+
+/** Redraw the umbrella + alias chip lists and the umbrella dropdown options. */
+function renderRelations(): void {
+  $('#igUmbChips').innerHTML = editingUmbrellas.length
+    ? editingUmbrellas.map(u => relChip(u, umbLabel(u), 'umb')).join('')
+    : '<span class="rel-empty">none</span>';
+  const sel = $<HTMLSelectElement>('#igUmbSel');
+  const avail = UMBRELLA_PARENTS.filter(p => !editingUmbrellas.includes(p));
+  sel.innerHTML = '<option value="">+ umbrella…</option>'
+    + avail.map(p => `<option value="${esc(p)}">${esc(umbLabel(p))}</option>`).join('');
+  sel.disabled = !avail.length;
+  $('#igAliasChips').innerHTML = editingAliases.length
+    ? editingAliases.map(a => relChip(a, a, 'alias')).join('')
+    : '<span class="rel-empty">none</span>';
 }
 
 /** Draw the preview, colour input and shape tiles for the current selection. */
@@ -67,6 +118,8 @@ export function openIgModal(key: string | null, prefillName = ''): void {
     editingKey = null;
     editingShape = null;
     editingColor = '#C99A5B';
+    editingUmbrellas = [];
+    editingAliases = [];
     $('#igTitle').textContent = 'Add ingredient';
     $<HTMLInputElement>('#igName').value = prefillName;
     $<HTMLInputElement>('#igAbv').value = '';
@@ -79,6 +132,8 @@ export function openIgModal(key: string | null, prefillName = ''): void {
     editingKey = key;
     editingShape = entry.shape;
     editingColor = entry.color;
+    editingUmbrellas = [...entry.umbrellas];
+    editingAliases = [...entry.aliases];
     $('#igTitle').textContent = `Edit ${entry.disp}`;
     $<HTMLInputElement>('#igName').value = entry.disp;
     // ABV stored as a 0–1 fraction; shown as a percentage.
@@ -95,6 +150,7 @@ export function openIgModal(key: string | null, prefillName = ''): void {
     $<HTMLElement>('#igReset').style.display = (isSeedKey(key) && state.ingredients[key]) ? 'block' : 'none';
   }
   renderBuilder();
+  renderRelations();
   $('#igOverlay').classList.add('open');
   $<HTMLInputElement>('#igName').focus();
 }
@@ -107,7 +163,10 @@ export function saveIgModal(): void {
   // ABV entered as a percentage; persist as a 0–1 fraction (blank → 0).
   const pct = parseFloat($<HTMLInputElement>('#igAbv').value);
   const abv = Number.isFinite(pct) ? Math.max(0, Math.min(1, pct / 100)) : 0;
-  const patch = { disp, cat: $<HTMLSelectElement>('#igCat').value, color: editingColor, shape: editingShape, abv };
+  const patch = {
+    disp, cat: $<HTMLSelectElement>('#igCat').value, color: editingColor, shape: editingShape, abv,
+    umbrellas: [...editingUmbrellas], aliases: [...editingAliases],
+  };
   if (editingKey) {
     setIngredientOverride(editingKey, patch);
   } else {

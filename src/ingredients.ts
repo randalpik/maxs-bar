@@ -97,6 +97,8 @@ export interface IngredientEntry {
   abv: number;
   /** Parent umbrella ids this is a child of (for generic-match). */
   umbrellas: string[];
+  /** Extra recipe-text names that resolve here (seed + user override). */
+  aliases: string[];
   /** Primary umbrella for stock-list visual clustering (umbrellas[0] or self). */
   umbrella: string;
   count: number;
@@ -165,7 +167,8 @@ export function buildCatalog(records: Recipe[]): Catalog {
       color: ov?.color ?? i.color,
       shape: ov && ov.shape !== undefined ? ov.shape : shp,
       abv: ov?.abv ?? i.abv,
-      umbrellas,
+      umbrellas: ov?.umbrellas ?? umbrellas,
+      aliases: ov?.aliases ?? [],
       umbrella: umbrellas[0] ?? 'self:' + key,
       count: 0,
     });

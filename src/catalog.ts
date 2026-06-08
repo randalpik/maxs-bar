@@ -32,6 +32,10 @@ for (const ing of INGREDIENTS) {
  *  list and satisfied when any child is stocked. */
 const HIDDEN = new Set<string>(INGREDIENTS.flatMap(i => i.umbrellas ?? []));
 
+/** Existing umbrella parents, offered in the edit modal's umbrella dropdown (new
+ *  umbrella creation is seed-only / out of scope for the UI). */
+export const UMBRELLA_PARENTS: string[] = [...HIDDEN].sort();
+
 /** Stockable committed keys (everything that isn't an effective generic). */
 export const SEED_KEYS = new Set(INGREDIENTS.filter(i => !HIDDEN.has(i.key)).map(i => i.key));
 export const isSeedKey = (key: string): boolean => byKey.has(key);
@@ -50,16 +54,47 @@ export function familyOf(key: string, umbrellas: readonly string[] = []): string
   return [key, ...umbrellas].find(u => SPIRIT_FAMILIES.includes(u));
 }
 
-/** Classify a recipe ingredient name from the committed list. Unknown names get a
- *  neutral, icon-less, sentence-cased result. */
+/** Resolve a recipe-text name to a user-added/aliased ingredient key (not in the
+ *  seed). Matches the override key directly, with a trailing " juice" stripped (as
+ *  ingredientKey does), or any of the override's aliases. */
+function resolveUserKey(lname: string): string | undefined {
+  const stripped = lname.replace(/\s+juice$/, '');
+  for (const [key, ov] of Object.entries(state.ingredients)) {
+    if (ov.removed) continue;
+    if (key === lname || key === stripped) return key;
+    if (ov.aliases?.some(a => a.toLowerCase() === lname)) return key;
+  }
+  return undefined;
+}
+
+/** Classify a recipe ingredient name. A name resolves to a key via the seed index
+ *  (key/alias/citrus form) or, failing that, a user override (added key or user alias).
+ *  A seed key classifies from the committed entry (with overrides); a non-seed key from
+ *  its override alone; anything unresolved is a neutral unknown. So user-added and
+ *  user-aliased ingredients classify in recipe text just like seed ones. */
 export function seedClassify(name: string): Classified {
-  const ing = byKey.get(aliasIndex.get(name.toLowerCase()) ?? '');
-  if (!ing) return { cat: 'unknown', shape: '', color: FALLBACK_COLOR, abv: 0, disp: sentenceCase(name) };
-  // A user abv override (keyed by the seed key, which is the stock identity for
-  // seed ingredients) feeds the recipe alcohol estimate; other fields stay seed-
-  // derived (disp/color/shape are layered for display in effectiveChip).
-  const abv = state.ingredients[ing.key]?.abv ?? ing.abv;
-  return { cat: ing.cat, shape: ing.shape ?? '', color: ing.color, abv, disp: ing.disp, fam: familyOf(ing.key, ing.umbrellas), syrup: ing.syrup, citrus: ing.citrus };
+  const lname = name.toLowerCase();
+  const key = aliasIndex.get(lname) ?? resolveUserKey(lname);
+  if (!key) return { cat: 'unknown', shape: '', color: FALLBACK_COLOR, abv: 0, disp: sentenceCase(name) };
+  const ing = byKey.get(key);
+  const ov = state.ingredients[key];
+  if (ing) {
+    // Seed ingredient. A user abv override feeds the alcohol estimate; a user umbrella
+    // override flows into fam + matching. disp/color/shape stay seed-derived (display
+    // overrides are layered in effectiveChip).
+    return {
+      cat: ing.cat, shape: ing.shape ?? '', color: ing.color, abv: ov?.abv ?? ing.abv,
+      disp: ing.disp, fam: familyOf(key, ov?.umbrellas ?? ing.umbrellas),
+      syrup: ing.syrup, citrus: ing.citrus,
+    };
+  }
+  // User-added ingredient — classify from its override alone.
+  const cat = ov!.cat ?? 'other';
+  return {
+    cat, shape: ov!.shape ?? '', color: ov!.color ?? FALLBACK_COLOR, abv: ov!.abv ?? 0,
+    disp: ov!.disp ?? titleCase(key), fam: familyOf(key, ov!.umbrellas),
+    citrus: cat === 'citrus' ? key : undefined,
+  };
 }
 
 /** Build the stockable catalog from the committed list + user overrides, with usage
@@ -72,7 +107,7 @@ export function runtimeCatalog(records: Recipe[]): Catalog {
     if (HIDDEN.has(s.key)) continue;
     const ov = state.ingredients[s.key];
     if (ov?.removed) continue;
-    const umbrellas = s.umbrellas ?? [];
+    const umbrellas = ov?.umbrellas ?? s.umbrellas ?? [];
     map.set(s.key, {
       key: s.key,
       disp: ov?.disp ?? s.disp,
@@ -81,6 +116,7 @@ export function runtimeCatalog(records: Recipe[]): Catalog {
       shape: ov && ov.shape !== undefined ? ov.shape : s.shape,
       abv: ov?.abv ?? s.abv,
       umbrellas,
+      aliases: ov?.aliases ?? s.aliases ?? [],
       umbrella: umbrellas[0] ?? 'self:' + s.key,
       count: 0,
     });
@@ -91,13 +127,14 @@ export function runtimeCatalog(records: Recipe[]): Catalog {
     if (ov.removed || map.has(key) || byKey.has(key)) continue;
     const disp = ov.disp ?? titleCase(key);
     const cat = ov.cat ?? 'other';
-    const umbrellas = umbrellasForCat(cat, disp);
+    const umbrellas = ov.umbrellas ?? umbrellasForCat(cat, disp);
     map.set(key, {
       key, disp, cat,
       color: ov.color ?? FALLBACK_COLOR,
       shape: ov.shape ?? null,
       abv: ov.abv ?? 0,
       umbrellas,
+      aliases: ov.aliases ?? [],
       umbrella: umbrellas[0] ?? 'self:' + key,
       count: 0,
     });

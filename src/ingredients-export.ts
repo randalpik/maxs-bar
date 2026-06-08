@@ -35,8 +35,8 @@ function mergedEntry(key: string, seed: SeedIngredient | undefined, ov: typeof s
   // umbrellas, so it's never emitted.)
   if (seed?.syrup) out.syrup = seed.syrup;
   if (seed?.citrus) out.citrus = seed.citrus;
-  const aliases = (ov as { aliases?: string[] }).aliases ?? seed?.aliases;
-  const umbrellas = (ov as { umbrellas?: string[] }).umbrellas ?? seed?.umbrellas;
+  const aliases = ov.aliases ?? seed?.aliases;
+  const umbrellas = ov.umbrellas ?? seed?.umbrellas;
   if (aliases?.length) out.aliases = aliases;
   if (umbrellas?.length) out.umbrellas = umbrellas;
   return out;
