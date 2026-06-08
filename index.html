@@ -4,7 +4,11 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Max's Bar — Cocktail Index</title>
-<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Cpath d='M16 4 L26 10 L26 22 L16 28 L6 22 L6 10 Z' fill='%237A4FA3' stroke='rgba(240,237,248,.85)' stroke-width='1.5' stroke-linejoin='round'/%3E%3C/svg%3E">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Cpath d='M16 1.5 L29 9 L29 23 L16 30.5 L3 23 L3 9 Z' fill='%237A4FA3' stroke='%23F0EDF8' stroke-width='2.6' stroke-linejoin='round'/%3E%3C/svg%3E">
+<!-- Prevent FOUC: keep a dark canvas and hide content until the app mounts and the
+     web fonts load. render.ts adds <html class="ready"> after the first chip layout.
+     This lives inline in <head> so it applies before Vite's JS-injected dev CSS. -->
+<style>html{background:#131017}html:not(.ready) body{visibility:hidden}</style>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,400..700;1,9..144,400..600&family=Hanken+Grotesk:wght@400;500;600;700&family=Spline+Sans+Mono:wght@400;500;600&display=swap" rel="stylesheet">

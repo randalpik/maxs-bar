@@ -324,8 +324,8 @@ export function layoutCards(): void {
 /* Chip fitting measures wrapped-line widths, which only settle once the web fonts
    have loaded. Running it during the initial paint (before fonts arrive) forces a
    layout against the fallback font, then re-flows when fonts land — the "flash of
-   unstyled content" Chrome warns about. So the FIRST layout is deferred to
-   fonts.ready, and #main stays hidden (body.fonts-ready gate in CSS) until then.
+   unstyled content". So the FIRST layout is deferred to fonts.ready, and the page is
+   held hidden (the inline `html:not(.ready) body` gate in index.html) until then.
    Once fonts are ready, every later render lays out synchronously in a rAF. */
 let fontsReady = false;
 function scheduleLayout(): void {
@@ -336,6 +336,6 @@ function scheduleLayout(): void {
 const whenFonts = document.fonts?.ready ?? Promise.resolve();
 whenFonts.then(() => {
   fontsReady = true;
-  layoutCards();
-  document.body.classList.add('fonts-ready');
+  layoutCards();                                  // first layout, with correct font metrics
+  document.documentElement.classList.add('ready'); // reveal the page (inline gate in index.html)
 });
