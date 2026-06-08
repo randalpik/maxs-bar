@@ -1,10 +1,10 @@
 :root{
-  --bg:#14110D; --bg2:#1B1611; --surface:#211C16; --surface2:#2A241C;
-  --line:rgba(244,239,230,.10); --line2:rgba(244,239,230,.18);
-  --text:#F4EFE6; --muted:#A89F90; --faint:#6E665B;
+  --bg:#131017; --bg2:#191622; --surface:#211D2B; --surface2:#2A2537;
+  --line:rgba(238,234,248,.10); --line2:rgba(238,234,248,.18);
+  --text:#F2F0F7; --muted:#A49FB2; --faint:#6C6678;
   --accent:#B79CEB; --accent-dim:rgba(155,111,214,.18);
   --unstocked:#C3122E;
-  --stroke:rgba(245,240,231,.85);
+  --stroke:rgba(240,237,248,.85);
   --mono:'Spline Sans Mono',ui-monospace,monospace;
   --sans:'Hanken Grotesk',ui-sans-serif,system-ui,sans-serif;
   --disp:'Fraunces',Georgia,serif;

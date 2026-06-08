@@ -30,7 +30,7 @@ export function icon(shape: string, color: string): string {
     case 'berry': inner = [[13.5, 13.5], [18.5, 13.5], [11.5, 18], [16, 18], [20.5, 18], [14, 22.5], [18, 22.5]].map(([x, y]) => `<circle cx="${x}" cy="${y}" r="2.7" fill="${color}" ${w}/>`).join(''); break;
     case 'twist': inner = `<path d="M9 10 C18 3 28 11 22 18.5 C17.5 24 10.5 20 13 14.5" fill="none" stroke="${color}" stroke-width="2.5" stroke-linecap="round"/>`; break;
     case 'wheel': inner = `<circle cx="16" cy="16" r="9.5" fill="none" stroke="${color}" stroke-width="2.4"/>`; break;
-    case 'wedge': inner = `<path d="M16 27 L6.5 11 Q16 5.5 25.5 11 Z" fill="${color}" ${w}/><path d="M16 27 L11 13 M16 27 L16 9.5 M16 27 L21 13" fill="none" stroke="${S}" stroke-width="1" opacity=".5"/>`; break;
+    case 'wedge': inner = `<path d="M5.5 20.5 A 10.5 10.5 0 0 1 26.5 20.5 Z" fill="${color}" ${w}/><path d="M16 20.5 L9 13.5 M16 20.5 L16 9.5 M16 20.5 L23 13.5" fill="none" stroke="${S}" stroke-width="1" opacity=".5"/>`; break;
     case 'ginger': inner = `<path d="M10 20 C6 18 7 12 11.5 12.5 C11.5 8.5 16.5 8.5 16.5 12.5 C16.5 8 22 7.5 22.5 12 C27 12 27 19 22.5 20 C23.5 25 17.5 25.5 16 21.5 C15 26 9 25 10 20 Z" fill="${color}" ${w}/><circle cx="13" cy="15" r="1" fill="${S}" opacity=".45"/><circle cx="19.5" cy="14.5" r="1" fill="${S}" opacity=".45"/><circle cx="16.5" cy="18.5" r="1" fill="${S}" opacity=".45"/>`; break;
     default: inner = `<circle cx="16" cy="16" r="10" fill="${color}" ${w}/>`;
   }
