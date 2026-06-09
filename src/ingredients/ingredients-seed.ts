@@ -87,6 +87,15 @@ export const INGREDIENTS: SeedIngredient[] = [
     abv: 0.17,
   },
   {
+    key: "beer",
+    disp: "Beer",
+    cat: "brew",
+    color: "#C9881F",
+    shape: "can",
+    abv: 0.05,
+    umbrellas: ["consumable"],
+  },
+  {
     key: "bénédictine",
     disp: "Bénédictine",
     cat: "liqueur",
@@ -180,7 +189,7 @@ export const INGREDIENTS: SeedIngredient[] = [
     shape: "glass",
     abv: 0.12,
     aliases: ["prosecco", "sparkling"],
-    umbrellas: ["wine"],
+    umbrellas: ["wine", "consumable"],
   },
   {
     key: "cherry",
@@ -198,6 +207,15 @@ export const INGREDIENTS: SeedIngredient[] = [
     shape: "triangle",
     abv: 0.44,
     umbrellas: ["bitters"],
+  },
+  {
+    key: "cider",
+    disp: "Cider",
+    cat: "brew",
+    color: "#C99A3B",
+    shape: "can",
+    abv: 0.05,
+    umbrellas: ["consumable"],
   },
   {
     key: "cinnamon syrup",
@@ -235,6 +253,7 @@ export const INGREDIENTS: SeedIngredient[] = [
     color: "#B5293A",
     shape: "droplet",
     abv: 0,
+    umbrellas: ["consumable"],
   },
   {
     key: "crème de cacao",
@@ -297,6 +316,7 @@ export const INGREDIENTS: SeedIngredient[] = [
     color: "#3A2417",
     shape: "droplet",
     abv: 0,
+    umbrellas: ["consumable"],
   },
   {
     key: "falernum",
@@ -322,6 +342,7 @@ export const INGREDIENTS: SeedIngredient[] = [
     color: "#C9A24B",
     shape: "droplet",
     abv: 0,
+    umbrellas: ["consumable"],
   },
   {
     key: "ginger extract",
@@ -539,6 +560,7 @@ export const INGREDIENTS: SeedIngredient[] = [
     color: "#E8C13A",
     shape: "droplet",
     abv: 0,
+    umbrellas: ["consumable"],
   },
   {
     key: "pomegranate",
@@ -547,6 +569,7 @@ export const INGREDIENTS: SeedIngredient[] = [
     color: "#9E2A3A",
     shape: "droplet",
     abv: 0,
+    umbrellas: ["consumable"],
   },
   {
     key: "raspberry",
@@ -563,7 +586,7 @@ export const INGREDIENTS: SeedIngredient[] = [
     color: "#6E1F2E",
     shape: "glass",
     abv: 0.13,
-    umbrellas: ["wine"],
+    umbrellas: ["wine", "consumable"],
   },
   {
     key: "rum",
@@ -599,7 +622,7 @@ export const INGREDIENTS: SeedIngredient[] = [
     color: "#A85A1A",
     shape: "squircle",
     abv: 0.4,
-    umbrellas: ["whiskey"],
+    umbrellas: ["whiskey", "consumable"],
   },
   {
     key: "simple syrup",
@@ -620,6 +643,7 @@ export const INGREDIENTS: SeedIngredient[] = [
     shape: "droplet",
     abv: 0,
     aliases: ["seltzer", "soda"],
+    umbrellas: ["consumable"],
   },
   {
     key: "spirit",
@@ -655,7 +679,7 @@ export const INGREDIENTS: SeedIngredient[] = [
     shape: "squircle",
     abv: 0.4,
     aliases: ["mezcal"],
-    umbrellas: ["tequila", "agave"],
+    umbrellas: ["tequila", "agave", "consumable"],
   },
   {
     key: "tonic water",
@@ -665,6 +689,7 @@ export const INGREDIENTS: SeedIngredient[] = [
     shape: "droplet",
     abv: 0,
     aliases: ["tonic"],
+    umbrellas: ["consumable"],
   },
   {
     key: "whiskey",

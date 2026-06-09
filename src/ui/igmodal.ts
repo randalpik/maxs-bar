@@ -17,7 +17,7 @@ import { $ } from '../core/dom';
  *  diamond and leaf were dropped (no ingredient or auto-classifier uses them). Their
  *  icon() definitions remain as harmless fallbacks for any stale stored override. */
 const SHAPES = [
-  'squircle', 'hexagon', 'glass', 'bottle', 'dropper', 'triangle', 'droplet',
+  'squircle', 'hexagon', 'glass', 'can', 'bottle', 'dropper', 'triangle', 'droplet',
   'circle', 'wheel', 'wedge', 'cube',
   'sprig', 'seed', 'ginger', 'egg', 'twist', 'cherry', 'berry',
 ];

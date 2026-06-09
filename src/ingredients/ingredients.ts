@@ -24,22 +24,80 @@ import { titleCase } from '../parser/parser';
 
 /** Display (section) categories for the ingredients page — coarse buckets derived
  *  from the raw category via sectionFor at render time. NOT a stored namespace. */
-export const SECTION_ORDER = ['spirit', 'liqueur', 'fortified', 'syrup', 'citrus', 'fruit', 'mixer', 'bitters', 'extract', 'herbspice', 'sugar', 'dairyegg', 'other'];
+export const SECTION_ORDER = [
+  "spirit",
+  "liqueur",
+  "fortified",
+  "syrup",
+  "citrus",
+  "fruit",
+  "mixer",
+  "brew",
+  "bitters",
+  "extract",
+  "herbspice",
+  "sugar",
+  "dairyegg",
+  "other",
+];
 export const SECTION_LABEL: Record<string, string> = {
-  spirit: 'Spirits', liqueur: 'Liqueurs', fortified: 'Wines', syrup: 'Syrups',
-  citrus: 'Citrus', fruit: 'Fruit', mixer: 'Mixers', bitters: 'Bitters',
-  extract: 'Extracts', herbspice: 'Herbs & spices', sugar: 'Sugar',
-  dairyegg: 'Dairy & egg', other: 'Other',
+  spirit: "Spirits",
+  liqueur: "Liqueurs",
+  fortified: "Wines",
+  syrup: "Syrups",
+  citrus: "Citrus",
+  fruit: "Fruit",
+  mixer: "Mixers",
+  brew: "Brews",
+  bitters: "Bitters",
+  extract: "Extracts",
+  herbspice: "Herbs & spices",
+  sugar: "Sugar",
+  dairyegg: "Dairy & egg",
+  other: "Other",
 };
+
+/** The special umbrella marking an ingredient as consumable on its own. Unlike a real
+ *  umbrella it isn't a matchable generic parent — it only bumps the ingredients-page
+ *  use count by 1 and is skipped when picking an entry's visual cluster key. */
+export const CONSUMABLE = 'consumable';
 
 /** Raw categories — the single stored namespace (seed + overrides). These carry the
  *  distinctions the parser/icons need (egg≠dairy, herb≠spice, soda≠fruit); the edit
  *  modal offers exactly these so an override stores the same category the seed uses. */
-export const CATEGORY_ORDER = ['spirit', 'liqueur', 'fortified', 'syrup', 'citrus', 'fruit', 'soda', 'bitters', 'herb', 'spice', 'sugar', 'dairy', 'egg', 'other'];
+export const CATEGORY_ORDER = [
+  "spirit",
+  "liqueur",
+  "fortified",
+  "syrup",
+  "citrus",
+  "fruit",
+  "soda",
+  "brew",
+  "bitters",
+  "herb",
+  "spice",
+  "sugar",
+  "dairy",
+  "egg",
+  "other",
+];
 export const CATEGORY_LABEL: Record<string, string> = {
-  spirit: 'Spirit', liqueur: 'Liqueur', fortified: 'Wine', syrup: 'Syrup',
-  citrus: 'Citrus', fruit: 'Fruit', soda: 'Soda', bitters: 'Bitters',
-  herb: 'Herb', spice: 'Spice', sugar: 'Sugar', dairy: 'Dairy', egg: 'Egg', other: 'Other',
+  spirit: "Spirit",
+  liqueur: "Liqueur",
+  fortified: "Wine",
+  syrup: "Syrup",
+  citrus: "Citrus",
+  fruit: "Fruit",
+  soda: "Soda",
+  brew: "Brew",
+  bitters: "Bitters",
+  herb: "Herb",
+  spice: "Spice",
+  sugar: "Sugar",
+  dairy: "Dairy",
+  egg: "Egg",
+  other: "Other",
 };
 
 /** Stable identity for an ingredient. For citrus, this folds every derivative

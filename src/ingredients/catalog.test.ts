@@ -48,6 +48,17 @@ describe('runtimeCatalog', () => {
     expect(cat.entries.find(x => x.key === 'shrub x')!.umbrella).toBe('self:shrub x');
   });
 
+  it('the "consumable" umbrella adds one use but is not a cluster key', () => {
+    const cat = runtimeCatalog([]);                 // no recipes -> recipe usage is 0
+    const espresso = cat.entries.find(e => e.key === 'espresso')!;
+    expect(espresso.count).toBe(1);                 // consumable bump on top of 0 recipe uses
+    expect(espresso.umbrella).toBe('self:espresso'); // "consumable" skipped, no real umbrella
+    const cherry = cat.entries.find(e => e.key === 'cherry')!;
+    expect(cherry.count).toBe(0);                    // not consumable, unused
+    // A consumable with a real umbrella keeps it as the cluster key.
+    expect(cat.entries.find(e => e.key === 'scotch')!.umbrella).toBe('whiskey');
+  });
+
   it('hides effective generics and satisfies them via a stocked child', () => {
     const keys = new Set(runtimeCatalog([]).entries.map(e => e.key));
     expect(keys.has('rum')).toBe(false);       // generic parent hidden from stock

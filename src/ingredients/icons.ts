@@ -24,6 +24,7 @@ export function icon(shape: string, color: string): string {
     case 'triangle': inner = `<path d="M16 8.5 L23.5 22.5 L8.5 22.5 Z" fill="${color}" ${w}/>`; break;
     case 'egg': inner = `<path d="M16 4 C11 4 8 11 8 17.5 C8 23 11.5 28 16 28 C20.5 28 24 23 24 17.5 C24 11 21 4 16 4 Z" fill="${color}" ${w}/>`; break;
     case 'cube': inner = `<rect x="9.5" y="9.5" width="13" height="13" rx="3" fill="${color}" ${w}/>`; break;
+    case 'can': inner = `<rect x="10" y="6.5" width="12" height="20.5" rx="2.5" fill="${color}" ${w}/><rect x="11.5" y="4" width="9" height="3" rx="1.2" fill="${color}" ${w}/><path d="M10 11 h12 M10 22.5 h12" fill="none" stroke="${S}" stroke-width="1" opacity=".45"/>`; break;
     case 'sprig': inner = `<path d="M16 28 C16 22 15 16 16 9" fill="none" stroke="${color}" stroke-width="2" stroke-linecap="round"/><path d="M16 19 C10 18 8 13 11 10 C16 12 16 16 16 19 Z" fill="${color}" ${w}/><path d="M16 15 C22 14 24 9 21 6 C16 8 16 12 16 15 Z" fill="${color}" ${w}/>`; break;
     case 'seed': inner = `<ellipse cx="16" cy="16" rx="8" ry="10" fill="${color}" ${w}/><path d="M16 7 V25" fill="none" stroke="${S}" stroke-width="1" opacity=".55"/><path d="M11.5 12 q4.5 4 0 8 M20.5 12 q-4.5 4 0 8" fill="none" stroke="${S}" stroke-width=".9" opacity=".4"/>`; break;
     case 'cherry': inner = `<circle cx="14" cy="20.5" r="6.8" fill="${color}" ${w}/><path d="M16.5 14 C19 9 22 7 25 6.5" fill="none" stroke="${S}" stroke-width="1.4" stroke-linecap="round"/><path d="M24.5 6.8 C27 5 29 6.5 28.5 6.5 C28 9 25.5 9 24.5 6.8 Z" fill="${color}" ${w}/>`; break;
@@ -59,6 +60,7 @@ export function iconFor(i: Ingredient): string | null {
     case 'spirit': return 'squircle';
     case 'liqueur': return 'hexagon';
     case 'fortified': return 'glass';
+    case 'brew': return 'can';
     case 'syrup': return 'bottle';
     case 'bitters': return 'triangle';
     case 'egg': return 'egg';

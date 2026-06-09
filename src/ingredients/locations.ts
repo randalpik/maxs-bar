@@ -31,7 +31,7 @@ export function defaultLocationForCat(cat: string, disp = ''): string {
   switch (cat) {
     case 'spirit': case 'liqueur': case 'bitters': return 'bottom-shelf';
     case 'fortified': return 'wine-rack';
-    case 'citrus': case 'fruit': case 'dairy': case 'egg': return 'fridge';
+    case 'citrus': case 'fruit': case 'dairy': case 'egg': case 'brew': return 'fridge';
     case 'herb': case 'spice': case 'sugar': return 'pantry';
     default: return DEFAULT_LOCATION;
   }

@@ -1,7 +1,7 @@
 import type { Classified, Recipe } from '../core/types';
 import { state, derive, saveStock } from '../core/state';
 import { sentenceCase, titleCase, SPIRIT_FAMILIES } from '../parser/parser';
-import { ingredientKey, umbrellasForCat } from './ingredients';
+import { ingredientKey, umbrellasForCat, CONSUMABLE } from './ingredients';
 import { defaultLocationForCat } from './locations';
 import type { Catalog, IngredientEntry } from './ingredients';
 import { INGREDIENTS } from './ingredients-seed';
@@ -149,7 +149,7 @@ export function runtimeCatalog(records: Recipe[]): Catalog {
       abv: ov?.abv ?? s.abv,
       umbrellas,
       aliases: ov?.aliases ?? s.aliases ?? [],
-      umbrella: umbrellas[0] ?? 'self:' + s.key,
+      umbrella: umbrellas.filter(u => u !== CONSUMABLE)[0] ?? 'self:' + s.key,
       defaultLoc: ov?.defaultLocation ?? s.defaultLocation ?? defaultLocationForCat(ov?.cat ?? s.cat, ov?.disp ?? s.disp),
       count: 0,
     });
@@ -168,7 +168,7 @@ export function runtimeCatalog(records: Recipe[]): Catalog {
       abv: ov.abv ?? 0,
       umbrellas,
       aliases: ov.aliases ?? [],
-      umbrella: umbrellas[0] ?? 'self:' + key,
+      umbrella: umbrellas.filter(u => u !== CONSUMABLE)[0] ?? 'self:' + key,
       defaultLoc: ov.defaultLocation ?? defaultLocationForCat(cat, disp),
       count: 0,
     });
@@ -179,6 +179,10 @@ export function runtimeCatalog(records: Recipe[]): Catalog {
       const e = map.get(ingredientKey(i));
       if (e) e.count++;
     }
+
+  // The "consumable" umbrella isn't matched like a generic — it just adds one use
+  // (consumable on its own) on top of any recipe usage.
+  for (const e of map.values()) if (e.umbrellas.includes(CONSUMABLE)) e.count++;
 
   const active = new Set<string>([...map.values()].flatMap(e => e.umbrellas));
   return { entries: [...map.values()], active };
@@ -217,7 +221,7 @@ export function editableEntry(key: string): IngredientEntry | undefined {
     abv: ov?.abv ?? s.abv,
     umbrellas,
     aliases: ov?.aliases ?? s.aliases ?? [],
-    umbrella: umbrellas[0] ?? 'self:' + key,
+    umbrella: umbrellas.filter(u => u !== CONSUMABLE)[0] ?? 'self:' + key,
     defaultLoc: ov?.defaultLocation ?? s.defaultLocation ?? defaultLocationForCat(ov?.cat ?? s.cat, ov?.disp ?? s.disp),
     count: 0,
   };

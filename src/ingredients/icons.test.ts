@@ -48,4 +48,8 @@ describe('iconFor mapping', () => {
     expect(shapeOf('2 rum')).toBe('squircle');
     expect(shapeOf('1 campari')).toBe('hexagon');
   });
+  it('brews (beer, cider) get the can icon', () => {
+    expect(shapeOf('1 beer')).toBe('can');
+    expect(shapeOf('1 cider')).toBe('can');
+  });
 });
