@@ -141,7 +141,7 @@ export const INGREDIENTS: SeedIngredient[] = [
     shape: "squircle",
     abv: 0.4,
     aliases: ["cachaca"],
-    umbrellas: ["rum"],
+    umbrellas: ["cane"],
   },
   {
     key: "campari",
@@ -257,7 +257,7 @@ export const INGREDIENTS: SeedIngredient[] = [
     color: "#6E3F1C",
     shape: "squircle",
     abv: 0.4,
-    umbrellas: ["rum"],
+    umbrellas: ["rum", "cane"],
   },
   {
     key: "dry vermouth",
@@ -363,7 +363,7 @@ export const INGREDIENTS: SeedIngredient[] = [
     color: "#8A4B1E",
     shape: "squircle",
     abv: 0.4,
-    umbrellas: ["rum"],
+    umbrellas: ["rum", "cane"],
   },
   {
     key: "kahlúa",
@@ -401,7 +401,7 @@ export const INGREDIENTS: SeedIngredient[] = [
     color: "#E6D7A6",
     shape: "squircle",
     abv: 0.4,
-    umbrellas: ["rum", "spirit"],
+    umbrellas: ["rum", "cane", "spirit"],
   },
   {
     key: "lillet blanc",
@@ -568,6 +568,7 @@ export const INGREDIENTS: SeedIngredient[] = [
     color: "#C99A5B",
     shape: "squircle",
     abv: 0.4,
+    umbrellas: ["cane"],
   },
   {
     key: "rye",
@@ -650,7 +651,7 @@ export const INGREDIENTS: SeedIngredient[] = [
     shape: "squircle",
     abv: 0.4,
     aliases: ["mezcal"],
-    umbrellas: ["tequila"],
+    umbrellas: ["tequila", "agave"],
   },
   {
     key: "tonic water",

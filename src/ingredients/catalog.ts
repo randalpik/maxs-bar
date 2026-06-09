@@ -28,17 +28,27 @@ for (const ing of INGREDIENTS) {
   if (ing.cat === 'citrus') for (const f of ['', ' juice', ' peel', ' wheel', ' twist', ' wedge', ' wedges']) aliasIndex.set((ing.key + f).trim(), ing.key);
 }
 
-/** Keys referenced as an umbrella parent = effective generics, hidden from the stock
- *  list and satisfied when any child is stocked. */
-const HIDDEN = new Set<string>(INGREDIENTS.flatMap(i => i.umbrellas ?? []));
+/** Every key any seed ingredient lists as an umbrella parent (incl. self-references). */
+const UMBRELLA_REFS = new Set<string>(INGREDIENTS.flatMap(i => i.umbrellas ?? []));
 
-/** Umbrella parents offered in the edit modal's dropdown: the seed's existing parents
- *  plus every base-spirit family (so e.g. "spirit", "gin" are assignable even before any
- *  ingredient is a child of them — assigning a child then makes the parent an effective
- *  generic). New umbrella *names* still can't be invented in the UI. */
-export const UMBRELLA_PARENTS: string[] = [...new Set([...HIDDEN, ...SPIRIT_FAMILIES])].sort();
+/** Effective generics hidden from the stock list: a key listed as a parent by some
+ *  *other* ingredient and not self-tagged. A self-tagged key (e.g. gin, tequila) stays
+ *  stockable while still acting as a parent — mirrors runtimeCatalog's "self-tag =
+ *  concrete" rule, so SEED_KEYS matches what the catalog actually shows. */
+const HIDDEN = ((): Set<string> => {
+  const refByOther = new Set<string>(), selfTagged = new Set<string>();
+  for (const i of INGREDIENTS) for (const u of i.umbrellas ?? []) (u === i.key ? selfTagged : refByOther).add(u);
+  return new Set([...refByOther].filter(k => !selfTagged.has(k)));
+})();
 
-/** Stockable committed keys (everything that isn't an effective generic). */
+/** Umbrella parents offered in the edit modal's dropdown: every key already used as a
+ *  parent (incl. self-tagged generics like "tequila") plus every base-spirit family (so
+ *  e.g. "spirit", "gin" are assignable even before any ingredient is a child of them —
+ *  assigning a child then makes the parent an effective generic). New umbrella *names*
+ *  still can't be invented in the UI. */
+export const UMBRELLA_PARENTS: string[] = [...new Set([...UMBRELLA_REFS, ...SPIRIT_FAMILIES])].sort();
+
+/** Stockable committed keys (everything that isn't a hidden effective generic). */
 export const SEED_KEYS = new Set(INGREDIENTS.filter(i => !HIDDEN.has(i.key)).map(i => i.key));
 export const isSeedKey = (key: string): boolean => byKey.has(key);
 

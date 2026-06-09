@@ -10,7 +10,7 @@ describe('seedClassify', () => {
   it('resolves a known name from the seed (incl. generics)', () => {
     const rum = seedClassify('rum');
     expect(rum.cat).toBe('spirit');
-    expect(rum.fam).toBe('rum');
+    expect(rum.fam).toBe('cane');
     expect(seedClassify('lime').cat).toBe('citrus');
   });
   it('falls back to unknown + sentence-case for unrecognised names', () => {
@@ -58,37 +58,34 @@ describe('runtimeCatalog', () => {
   });
 
   it('derives fam from umbrellas (∩ spirit families), incl. the new wine/spirit cases', () => {
-    expect(seedClassify('light rum').fam).toBe('rum');     // umbrella "rum"
-    expect(seedClassify('cachaça').fam).toBe('rum');       // now an umbrella child of rum
+    expect(seedClassify('light rum').fam).toBe('cane');    // umbrellas ["rum","cane"] → cane (rum no longer a family)
+    expect(seedClassify('cachaça').fam).toBe('cane');      // umbrella child of cane, not rum
     expect(seedClassify('sweet vermouth').fam).toBe('wine'); // umbrellas ["vermouth","wine"] → wine
     expect(seedClassify('campari').fam).toBeUndefined();   // liqueur: no family
     expect(seedClassify('spirit').fam).toBe('spirit');     // neutral generic (labelled "Neutral spirit")
   });
 
-  it('cachaça now stock-matches generic "rum"; vermouth matches "vermouth" not "red wine"', () => {
+  it('cachaça matches generic "cane" but not "rum"; vermouth matches "vermouth" not "red wine"', () => {
     const cachaca = buildStockCtx(runtimeCatalog([]), new Set(['cachaça']));
-    expect(isAvailable(parseIngredient('2 rum'), cachaca)).toBe(true);
+    expect(isAvailable(parseIngredient('2 rum'), cachaca)).toBe(false);   // cachaça is cane, not rum
+    expect(isAvailable(parseIngredient('2 cane'), cachaca)).toBe(true);   // but does satisfy the cane family
+    const rum = buildStockCtx(runtimeCatalog([]), new Set(['light rum']));
+    expect(isAvailable(parseIngredient('2 rum'), rum)).toBe(true);        // a real rum still matches generic "rum"
     const verm = buildStockCtx(runtimeCatalog([]), new Set(['sweet vermouth']));
     expect(isAvailable(parseIngredient('1 vermouth'), verm)).toBe(true);   // generic vermouth
     expect(isAvailable(parseIngredient('1 wine'), verm)).toBe(true);       // any wine
     expect(isAvailable(parseIngredient('1 red wine'), verm)).toBe(false);  // a specific other wine
   });
 
-  it('a UI-assigned umbrella ("spirit") hides the generic and matches its children', () => {
-    // No seed entry references "spirit" as a parent, so it shows by default…
-    expect(new Set(runtimeCatalog([]).entries.map(e => e.key)).has('spirit')).toBe(true);
-    // …until the user assigns children to it via overrides, exactly as Max plans.
-    state.ingredients = {
-      'light rum': { umbrellas: ['rum', 'spirit'] },
-      gin: { umbrellas: ['spirit'] },
-    };
+  it('"spirit" is a hidden generic (seed children list it); gin/light rum stay shown', () => {
+    // gin (["spirit","gin"]) and light rum (["rum","cane","spirit"]) list "spirit" as a
+    // parent, so the neutral-spirit generic is hidden from the stock list while its
+    // children remain stockable.
     const keys = new Set(runtimeCatalog([]).entries.map(e => e.key));
-    expect(keys.has('spirit')).toBe(false);     // generic now hidden
+    expect(keys.has('spirit')).toBe(false);     // generic hidden
     expect(keys.has('light rum')).toBe(true);   // children still shown
     expect(keys.has('gin')).toBe(true);
-    const ctx = buildStockCtx(runtimeCatalog([]), new Set(['gin']));
-    expect(isAvailable(parseIngredient('2 spirit'), ctx)).toBe(true);   // matched by a child
-    expect(seedClassify('light rum').fam).toBe('rum');                  // family still rum, not spirit
+    expect(seedClassify('light rum').fam).toBe('cane');                 // its own family is cane, not spirit
   });
 
   it('self-tag = concrete: an ingredient in its own family stays shown but acts as a parent', () => {
@@ -133,8 +130,8 @@ describe('runtimeCatalog', () => {
   });
 
   it('a user umbrella on an added spirit gives it a family and stock-matches the generic', () => {
-    state.ingredients = { 'overproof rum': { disp: 'Overproof rum', cat: 'spirit', umbrellas: ['rum'] } };
-    expect(seedClassify('overproof rum').fam).toBe('rum');
+    state.ingredients = { 'overproof rum': { disp: 'Overproof rum', cat: 'spirit', umbrellas: ['rum', 'cane'] } };
+    expect(seedClassify('overproof rum').fam).toBe('cane');
     const ctx = buildStockCtx(runtimeCatalog([]), new Set(['overproof rum']));
     expect(isAvailable(parseIngredient('2 rum'), ctx)).toBe(true);
   });

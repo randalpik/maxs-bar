@@ -15,24 +15,22 @@ import type { Classified, Ingredient, ParsedLine, Role } from "../core/types";
  *  in this set (see familyOf in catalog.ts). Drives "group by spirit" + the base-spirit
  *  sort/label. "spirit" is the neutral family (labelled "Neutral spirit"). */
 export const SPIRIT_FAMILIES = [
-  "rum",
+  "cane",
   "whiskey",
-  "tequila",
+  "agave",
   "gin",
   "brandy",
   "absinthe",
-  "aquavit",
   "wine",
   "spirit",
 ];
 export const FAMILY_LABEL: Record<string, string> = {
-  rum: "Rum",
+  cane: "Cane",
   whiskey: "Whiskey",
-  tequila: "Tequila",
+  agave: "Agave",
   gin: "Gin",
   brandy: "Brandy",
   absinthe: "Absinthe",
-  aquavit: "Aquavit",
   wine: "Wine",
   spirit: "Neutral spirit",
 };

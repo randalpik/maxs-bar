@@ -29,7 +29,7 @@ describe('parseIngredient roles & units', () => {
     expect(i.unit).toBe('oz');
     expect(i.qty).toBe(2);
     expect(i.cat).toBe('spirit');
-    expect(i.fam).toBe('rum');
+    expect(i.fam).toBe('cane');
   });
   it('top prefix → top role', () => {
     expect(parseIngredient('top ginger beer').role).toBe('top');
@@ -38,7 +38,7 @@ describe('parseIngredient roles & units', () => {
     const i = parseIngredient('float 1/2 dark rum');
     expect(i.role).toBe('float');
     expect(i.qty).toBeCloseTo(0.5);
-    expect(i.fam).toBe('rum');
+    expect(i.fam).toBe('cane');
   });
   it('dash prefix → dash role', () => {
     expect(parseIngredient('dash saline').role).toBe('dash');
@@ -117,7 +117,7 @@ describe('parseLine', () => {
 
 describe('baseSpirit & estAlcoholOz', () => {
   it('picks the dominant spirit family', () => {
-    expect(baseSpirit(parseLine('Daiquiri: 2 rum, 3/4 lime, 3/4 syrup')!)).toBe('rum');
+    expect(baseSpirit(parseLine('Daiquiri: 2 rum, 3/4 lime, 3/4 syrup')!)).toBe('cane');
     expect(baseSpirit(parseLine('Negroni: 1 gin, 1 sweet vermouth, 1 campari, orange peel (stirred)')!)).toBe('gin');
   });
   it('returns null when there is no spirit', () => {
