@@ -16,6 +16,32 @@
 <body>
 
 <header class="bar">
+  <!-- Immutable top-right block (sync + ··· menu): position:absolute, so it never
+       moves or reflows — at narrow widths it simply overlaps the title rather than
+       being displaced. Sync sits left of the menu; sync only shows while signed in. -->
+  <div class="topright">
+    <button class="btn" id="syncBtn" style="display:none" title="Sync now">Sync</button>
+    <div class="menu" id="menu">
+      <button class="btn" id="menuBtn">···</button>
+      <div class="pop">
+        <button data-act="account" id="menuAccount">Sign in & sync…</button>
+        <div class="div"></div>
+        <button data-act="exp-recipes">Export recipes</button>
+        <button data-act="exp-ing">Export ingredients</button>
+        <button data-act="exp-stock">Export stock list</button>
+        <div class="div"></div>
+        <button data-act="imp-recipes">Import recipes</button>
+        <button data-act="imp-ing">Import ingredients</button>
+        <button data-act="imp-stock">Import stock list</button>
+        <div class="div"></div>
+        <button data-act="switch-seed">Switch seed…</button>
+        <button data-act="reset" class="danger">Reset everything…</button>
+      </div>
+    </div>
+  </div>
+  <!-- invisible float reserving the top-right block's width on row 1 ONLY, so the
+       toolbar wraps before reaching it; rows below flow full-width underneath -->
+  <i class="tr-pad" aria-hidden="true"></i>
   <div class="brand">
     <span class="mark"><em>Max's</em>&nbsp;Bar</span>
     <span class="sub" id="count">— recipes</span>
@@ -40,24 +66,6 @@
     </label>
     <button class="btn primary" id="addBtn">+ Add</button>
     <button class="btn primary" id="addIgBtn">+ Add</button>
-    <button class="btn" id="syncBtn" style="display:none" title="Sync now">Sync</button>
-    <div class="menu" id="menu">
-      <button class="btn" id="menuBtn">···</button>
-      <div class="pop">
-        <button data-act="account" id="menuAccount">Sign in & sync…</button>
-        <div class="div"></div>
-        <button data-act="exp-recipes">Export recipes</button>
-        <button data-act="exp-ing">Export ingredients</button>
-        <button data-act="exp-stock">Export stock list</button>
-        <div class="div"></div>
-        <button data-act="imp-recipes">Import recipes</button>
-        <button data-act="imp-ing">Import ingredients</button>
-        <button data-act="imp-stock">Import stock list</button>
-        <div class="div"></div>
-        <button data-act="switch-seed">Switch seed…</button>
-        <button data-act="reset" class="danger">Reset everything…</button>
-      </div>
-    </div>
   </div>
 </header>
 

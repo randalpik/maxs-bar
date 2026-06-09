@@ -43,6 +43,13 @@ Both recipes and ingredients follow the same shape: a committed seed in the repo
 ### Rendering & chip layout ([src/ui/render.ts](src/ui/render.ts))
 `render()` dispatches on `state.page` ('recipes' | 'ingredients' | 'syrups' — the last a read-only reference tab). After writing `innerHTML`, it schedules `layoutCards()` in a `requestAnimationFrame` — this measures each chip's widest wrapped line and equalizes heights per container (`.card` and `.ig-grid`). Anything that re-renders chips must let `layoutCards` run, and it also re-runs on resize and `fonts.ready`.
 
+### The header/toolbar layout ([index.html](index.html) `header.bar` + [src/styles.css](src/styles.css))
+Reflows from ~320px to desktop with no breakpoints but one. Invariants to preserve:
+- The title and the `.topright` cluster (sync + `···`) are `position:absolute` anchors that **never move** — when space runs out they overlap rather than reflow. Sync+menu live in one `.topright` element so they stay a single unit.
+- The toolbar (tabs + controls) is **inline flow, not flex**: `header.bar` is a block with `font-size:0`, `.controls` is `display:contents`, items are `inline-flex`. So items reflow individually *and* wrap around the right float.
+- The anchors' row-1 footprint is held by two struts so the reservation is **first-row-only**: a left inline-block (`header.bar::before`) the tab switch indents past, and a right `float` (`.tr-pad`, width responsive via `:has`). The lone `@media (max-width:360px)` drops `.tr-pad` before it would otherwise wrap and open a gap.
+- Toolbar items need **symmetric** vertical margins — `vertical-align:middle` centers the margin-box, so a bottom-only margin misaligns them against the anchors.
+
 ### Optional cross-device sync ([src/sync/](src/sync/) + [netlify/functions/](netlify/functions/))
 Sync is layered *on top of* the override model — it syncs the override layer, never derived data (same principle as "the recipe string is the only source of truth"). The synced unit is a `SyncPayload` ([src/core/types.ts](src/core/types.ts)): `seedId`/`seedTs`, `recipeOverrides`, `ingredients`, `stockTs` — every entry carries its own timestamp.
 - **Merge is per-key last-write-wins**, and [src/sync/merge.ts](src/sync/merge.ts) is **pure** (no state/DOM/IO) — that's what makes it unit-testable. Don't reach into state or localStorage from it.

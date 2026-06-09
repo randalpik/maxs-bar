@@ -31,19 +31,70 @@ body::before{
 }
 
 /* ---------- toolbar ---------- */
+/* The header is a plain block (not flex) so the ··· menu can float — a float
+   reserves space only on the rows it vertically overlaps, so it holds the
+   top-right corner on row 1 while the toolbar flows full-width underneath it on
+   later rows. brand / tabs / controls are inline-flex *units*: each keeps its own
+   internal flex layout but wraps as one whole box, so the toolbar still collapses
+   cleanly to "brand+tabs" on row 1 and "controls" below when it doesn't all fit.
+   font-size:0 kills the whitespace between inline boxes; spacing is via margins. */
 header.bar{
   position:sticky; top:0; z-index:20;
   background:rgba(7,5,12,.86); backdrop-filter:blur(14px);
   border-bottom:1px solid var(--line);
-  padding:14px 22px;
-  display:flex; align-items:center; gap:18px; flex-wrap:wrap;
+  /* bottom padding is light because each row's items carry their own
+     margin-bottom (below) — that margin is what spaces wrapped rows apart. */
+  padding:14px 16px 5px; font-size:0;
 }
+/* Title and the top-right buttons are BOTH absolutely positioned — neither ever
+   moves or reflows. At narrow widths they simply overlap the toolbar/each other
+   rather than being displaced. They're vertically centered in the ~50px first row
+   (ROW_H below); the toolbar items center the same way (vertical-align:middle). */
+/* Both boxes are 50px tall (= ROW_H, the first-row line height set by the struts
+   below) and center their content, so the title and buttons land on the same
+   vertical center as the toolbar items. */
+header.bar > .brand{
+  position:absolute; top:14px; left:16px;
+  display:flex; height:50px; justify-content:center;
+}
+.topright{
+  position:absolute; top:14px; right:16px;
+  display:flex; align-items:center; gap:10px; height:50px;
+}
+
+/* Two invisible struts reserve the title (left) and button-block (right) footprints
+   on ROW 1 ONLY — wrapped rows below them have no strut, so they start flush. The
+   left one is an inline-block at the head of the flow; the right one is a float so
+   the toolbar wraps before it yet rows below flow full-width underneath. Both are
+   ~ROW_H tall so a toolbar that wraps entirely below the title clears it vertically.
+   .tr-pad widens when the sync button is showing (signed in) vs just the menu. */
+header.bar::before{content:''; display:inline-block; width:155px; height:50px; vertical-align:middle}
+/* shorter than the left strut: it only needs to overlap row 1's items to reserve
+   their right edge */
+.tr-pad{float:right; width:150px; height:34px}
+header.bar:has(#syncBtn[style*="none"]) .tr-pad{width:52px}
+/* Below this width the tab switch has long since wrapped to row 2 (≈616px), so no
+   toolbar item is ever on row 1 to need the right reservation — and keeping the
+   spacer here is exactly what would force it to drop and open an oversized gap
+   (≈336px). Drop it from flow before that can happen. The 360px value is tied to the
+   specific row-1 trio (title + sync + ···); revisit it only if those change. */
+@media (max-width:360px){ .tr-pad{display:none} }
+
+/* Unwrap .controls so the tab switch and every control become individual in-flow
+   items — they reflow one at a time around the struts instead of the whole controls
+   block jumping down together. */
+header.bar > .controls{display:contents}
+header.bar > #tabs, header.bar .controls > *{
+  /* vertical margin is SYMMETRIC on purpose: vertical-align:middle centers the
+     margin-box, so a bottom-only margin would push the content up and misalign it
+     against the absolutely-positioned title/buttons. 5+5 also gives the row gap. */
+  display:inline-flex; vertical-align:middle; margin:5px 10px 5px 0;
+}
+header.bar .search{display:inline-flex}
 /* fixed min-width so the changing count line ("NN of NN stocked", "Syrups", …)
    never resizes the title area and shifts the tab toggle beside it */
-.brand{display:flex; flex-direction:column; gap:1px; line-height:1.04; min-width:140px}
+.brand{flex-direction:column; gap:1px; line-height:1.04; min-width:140px}
 .brand .sub{white-space:nowrap}
-/* tab toggle sits beside the title; the auto margin pushes the rest right */
-#tabs{margin-right:auto}
 .brand .mark{
   font-family:var(--disp); font-weight:600; font-size:26px; letter-spacing:.2px;
   font-variation-settings:'opsz' 40;
@@ -92,7 +143,9 @@ select{appearance:none; padding-right:30px;
 .btn{display:inline-flex; align-items:center; gap:7px}
 .btn:hover,select:hover,.search input:focus{border-color:var(--accent)}
 .btn.primary{background:var(--accent-dim); border-color:rgba(155,111,214,.4); color:var(--accent)}
-.menu{position:relative}
+/* A flex child of .topright (the absolute top-right block). position:relative
+   anchors the .pop dropdown. */
+.menu{position:relative; z-index:25}
 .menu .pop{
   position:absolute; right:0; top:calc(100% + 6px); background:var(--surface2);
   border:1px solid var(--line2); border-radius:10px; padding:6px; min-width:170px;
@@ -107,13 +160,17 @@ select{appearance:none; padding-right:30px;
 .menu .pop .div{height:1px; background:var(--line); margin:4px 2px}
 .menu .pop .danger:hover{background:rgba(200,60,60,.16); color:#e88}
 
-/* sync button (in .controls, before the menu) — fixed width so label changes don't reflow the toolbar */
-#syncBtn{width:88px; text-align:center}
+/* sync button — floated top-right next to the ··· menu (it comes after .menu in
+   source, so it stacks to the menu's left). Mirrors the menu's float/align/margins.
+   Fixed width so label changes don't reflow the toolbar. JS toggles display, so the
+   float only applies while it's visible. */
+/* a flex child of .topright; fixed width so label changes don't shift the menu */
+#syncBtn{width:88px; justify-content:center}
 #syncBtn[data-status="syncing"]{color:var(--muted)}
 #syncBtn[data-status="error"]{color:#e88; border-color:rgba(200,60,60,.4)}
 
 /* ---------- main ---------- */
-main{position:relative; z-index:1; max-width:1180px; margin:0 auto; padding:26px 22px 90px}
+main{position:relative; z-index:1; max-width:1180px; margin:0 auto; padding:18px 12px 80px}
 /* The page is held hidden until web fonts load + the first chip layout runs (inline
    gate in index.html, .ready added in render.ts), so cards don't flash at
    fallback-font sizes then snap. Fade in on reveal. */
@@ -123,7 +180,7 @@ html.ready body{animation:reveal .2s ease}
    one unit. The box spacing replaces the old large header top-margin. */
 .group{
   border:1px solid var(--line); border-radius:16px;
-  background:var(--bg2); padding:4px 16px 18px; margin:22px 0;
+  background:var(--bg2); padding:4px 12px 16px; margin:16px 0;
 }
 .group:first-child{margin-top:8px}
 .grouphead{
@@ -139,15 +196,15 @@ html.ready body{animation:reveal .2s ease}
 
 .card{
   background:linear-gradient(180deg,var(--surface),rgba(25,22,34,.6));
-  border:1px solid var(--line); border-radius:14px; padding:13px 50px 12px 16px;
+  border:1px solid var(--line); border-radius:14px; padding:12px 12px 12px 14px;
   position:relative; display:flex; flex-wrap:wrap; align-items:flex-start; gap:8px 7px;
   opacity:0; transform:translateY(8px); animation:rise .5s cubic-bezier(.2,.7,.2,1) forwards;
 }
 @keyframes rise{to{opacity:1; transform:none}}
-.head{flex:0 0 100%; padding-right:0}
+.head{flex:0 0 100%; padding-right:42px}   /* clear the absolute edit button */
 .card h2{
   font-family:var(--disp); font-weight:500; font-size:19px; margin:0 0 3px; line-height:1.12;
-  font-variation-settings:'opsz' 34; white-space:nowrap;
+  font-variation-settings:'opsz' 34;       /* long titles wrap instead of overflowing */
 }
 .card h2 .byline{
   font-family:var(--sans); font-style:italic; font-weight:400; font-size:12.5px;
