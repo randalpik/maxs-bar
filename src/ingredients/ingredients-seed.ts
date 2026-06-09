@@ -20,6 +20,10 @@ export interface SeedIngredient {
   citrus?: string;
   aliases?: string[];
   umbrellas?: string[];
+  /** Default physical location override. Rarely set — the category default
+   *  (defaultLocationForCat) covers almost everything; present only for the odd
+   *  bottle whose default should differ from its category. */
+  defaultLocation?: string;
 }
 
 export const INGREDIENTS: SeedIngredient[] = [

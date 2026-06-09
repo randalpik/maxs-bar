@@ -26,6 +26,8 @@ export const state: {
   key: string;
   query: string;
   page: 'recipes' | 'ingredients' | 'syrups';
+  /** Ingredients-tab sub-mode: stock toggling vs. location grouping/reorder. Session-only. */
+  igMode: 'stock' | 'location';
   stocked: Set<string>;
   /** Sync-only shadow of `stocked`: per-key {on,ts} so an un-stock can win a merge.
    *  Kept in lockstep with the Set by the stock mutators; not read by the UI. */
@@ -43,6 +45,7 @@ export const state: {
   key: 'spirit',
   query: '',
   page: 'recipes',
+  igMode: 'stock',
   stocked: new Set(),
   stockTs: {},
   ingredients: {},
@@ -246,7 +249,12 @@ function loadStockTs(): void {
       if (obj && typeof obj === 'object') {
         const out: Record<string, StockEntry> = {};
         for (const [k, v] of Object.entries(obj as Record<string, Partial<StockEntry>>))
-          if (v && typeof v.on === 'boolean') out[k] = { on: v.on, ts: Number(v.ts) || 0 };
+          if (v && typeof v.on === 'boolean') {
+            const e: StockEntry = { on: v.on, ts: Number(v.ts) || 0 };
+            if (typeof v.loc === 'string') e.loc = v.loc;
+            if (typeof v.pos === 'number') e.pos = v.pos;
+            out[k] = e;
+          }
         state.stockTs = out;
         return;
       }
@@ -275,6 +283,18 @@ export function saveStock(): void {
 export function toggleStock(key: string): void {
   if (state.stocked.has(key)) state.stocked.delete(key);
   else state.stocked.add(key);
+  saveStock();
+}
+
+/** Assign physical location + position to stocked ingredients (Location mode drag /
+ *  imported placements). Stamps a fresh ts on each so the placement wins a merge.
+ *  Only touches keys that are currently stocked; persists once. */
+export function setStockPlacement(updates: Array<{ key: string; loc: string; pos: number }>): void {
+  const now = Date.now();
+  for (const { key, loc, pos } of updates) {
+    if (!state.stocked.has(key)) continue;
+    state.stockTs[key] = { on: true, ts: now, loc, pos };
+  }
   saveStock();
 }
 

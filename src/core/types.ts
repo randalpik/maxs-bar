@@ -74,6 +74,9 @@ export interface IngredientOverride {
   /** Extra recipe-text names that resolve to this ingredient. Replaces the seed's
    *  list when present. */
   aliases?: string[];
+  /** Physical location this ingredient defaults to when freshly stocked. Stored only
+   *  when it differs from the category default (defaultLocationForCat). */
+  defaultLocation?: string;
   /** A removed seed ingredient (always renders unstocked in recipes; hidden from the list). */
   removed?: boolean;
   /** Epoch-ms of the last edit, stamped by setIngredientOverride. Sync-internal:
@@ -112,6 +115,12 @@ export interface Derived {
 export interface StockEntry {
   on: boolean;
   ts: number;
+  /** Physical location (Location mode), set when the user places/reorders the item.
+   *  Absent ⇒ render falls back to the ingredient's default location. Dropped when the
+   *  item is un-stocked (its former placement is intentionally lost). */
+  loc?: string;
+  /** Sort position within its location group. Co-set with `loc`. */
+  pos?: number;
 }
 
 /** The full cross-device payload — the four user-state slices plus the timestamps

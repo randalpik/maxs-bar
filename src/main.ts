@@ -4,7 +4,8 @@ import { seedClassify, runtimeCatalog, isSeedKey, reconcileStock } from './ingre
 import { state, load, toggleStock, hasSeed, resetAll } from './core/state';
 import { fillKeySel, render, layoutCards, updateIngredientChip } from './ui/render';
 import { openModal, closeModal, saveModal, updatePreview, deleteEditing } from './ui/modal';
-import { openIgModal, closeIgModal, saveIgModal, resetIgModal, removeIgModal, fillIgCat, initIgBuilder } from './ui/igmodal';
+import { openIgModal, closeIgModal, saveIgModal, resetIgModal, removeIgModal, fillIgCat, fillIgLoc, initIgBuilder } from './ui/igmodal';
+import { initLocationDrag } from './ui/drag';
 import { openSeedModal, closeSeedModal, confirmSeed, seedModalForced } from './ui/seedmodal';
 import { confirmModal } from './ui/confirm';
 import {
@@ -85,6 +86,13 @@ $('#modeSeg').addEventListener('click', e => {
   [...$('#modeSeg').children].forEach(x => x.classList.toggle('on', x === b));
   fillKeySel(); render();
 });
+$('#igModeSeg').addEventListener('click', e => {
+  const b = (e.target as HTMLElement).closest('button');
+  if (!b) return;
+  state.igMode = b.dataset.mode as 'stock' | 'location';
+  [...$('#igModeSeg').children].forEach(x => x.classList.toggle('on', x === b));
+  render();
+});
 $<HTMLSelectElement>('#keySel').addEventListener('change', e => { state.key = (e.target as HTMLSelectElement).value; render(); });
 $<HTMLInputElement>('#search').addEventListener('input', e => { state.query = (e.target as HTMLInputElement).value; render(); });
 $('#searchClear').addEventListener('click', () => {
@@ -115,6 +123,8 @@ $('#main').addEventListener('click', e => {
   if (state.page === 'ingredients') {
     const editIg = t.closest<HTMLElement>('[data-ig-edit]');
     if (editIg) { openIgModal(editIg.dataset.igEdit!); return; }
+    // Location mode: clicking a chip never toggles stock (it would fight the drag).
+    if (state.igMode === 'location') return;
     const ing = t.closest<HTMLElement>('[data-ing]');
     if (ing) { toggleStock(ing.dataset.ing!); updateIngredientChip(ing); }
     return;
@@ -218,7 +228,7 @@ window.addEventListener('resize', () => {
 /* init */
 setClassifier(seedClassify); // resolve recipe ingredients from the seed, not the regex
 load(); reconcileStock(state.records); // clean up any pre-existing stuck stock state
-fillKeySel(); fillIgCat(); initIgBuilder(); render();
+fillKeySel(); fillIgCat(); fillIgLoc(); initIgBuilder(); initLocationDrag(); render();
 history.replaceState({ page: state.page, query: state.query }, ''); // seed initial nav entry
 if (!hasSeed()) openSeedModal({ forced: true });
 initSync(); // resume a stored session (no-op when signed out); app works fully logged-out

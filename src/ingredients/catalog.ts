@@ -2,6 +2,7 @@ import type { Classified, Recipe } from '../core/types';
 import { state, derive, saveStock } from '../core/state';
 import { sentenceCase, titleCase, SPIRIT_FAMILIES } from '../parser/parser';
 import { ingredientKey, umbrellasForCat } from './ingredients';
+import { defaultLocationForCat } from './locations';
 import type { Catalog, IngredientEntry } from './ingredients';
 import { INGREDIENTS } from './ingredients-seed';
 import type { SeedIngredient } from './ingredients-seed';
@@ -149,6 +150,7 @@ export function runtimeCatalog(records: Recipe[]): Catalog {
       umbrellas,
       aliases: ov?.aliases ?? s.aliases ?? [],
       umbrella: umbrellas[0] ?? 'self:' + s.key,
+      defaultLoc: ov?.defaultLocation ?? s.defaultLocation ?? defaultLocationForCat(ov?.cat ?? s.cat, ov?.disp ?? s.disp),
       count: 0,
     });
   }
@@ -167,6 +169,7 @@ export function runtimeCatalog(records: Recipe[]): Catalog {
       umbrellas,
       aliases: ov.aliases ?? [],
       umbrella: umbrellas[0] ?? 'self:' + key,
+      defaultLoc: ov.defaultLocation ?? defaultLocationForCat(cat, disp),
       count: 0,
     });
   }
@@ -215,6 +218,7 @@ export function editableEntry(key: string): IngredientEntry | undefined {
     umbrellas,
     aliases: ov?.aliases ?? s.aliases ?? [],
     umbrella: umbrellas[0] ?? 'self:' + key,
+    defaultLoc: ov?.defaultLocation ?? s.defaultLocation ?? defaultLocationForCat(ov?.cat ?? s.cat, ov?.disp ?? s.disp),
     count: 0,
   };
 }

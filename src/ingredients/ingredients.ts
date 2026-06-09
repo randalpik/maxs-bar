@@ -1,6 +1,7 @@
 import type { Ingredient, Recipe } from '../core/types';
 import { state, derive } from '../core/state';
 import { iconFor } from './icons';
+import { defaultLocationForCat } from './locations';
 import { titleCase } from '../parser/parser';
 
 /* ============================================================
@@ -101,6 +102,8 @@ export interface IngredientEntry {
   aliases: string[];
   /** Primary umbrella for stock-list visual clustering (umbrellas[0] or self). */
   umbrella: string;
+  /** Effective default physical location (override ?? seed ?? category default). */
+  defaultLoc: string;
   count: number;
 }
 
@@ -170,6 +173,7 @@ export function buildCatalog(records: Recipe[]): Catalog {
       umbrellas: ov?.umbrellas ?? umbrellas,
       aliases: ov?.aliases ?? [],
       umbrella: umbrellas[0] ?? 'self:' + key,
+      defaultLoc: defaultLocationForCat(ov?.cat ?? i.cat, ov?.disp ?? i.disp),
       count: 0,
     });
   }

@@ -117,6 +117,9 @@ header.page-ingredients #addBtn, header.page-syrups #addBtn{display:none}
 /* the ingredient add button mirrors the recipe one, but only on the ingredients page */
 #addIgBtn{display:none}
 header.page-ingredients #addIgBtn{display:inline-flex}
+/* the stock/location switch is the inverse of #modeSeg: ingredients page only */
+#igModeSeg{display:none}
+header.page-ingredients #igModeSeg{display:inline-flex}
 select,.btn,.search input{
   font-family:var(--mono); font-size:12px; color:var(--text);
   background:var(--surface); border:1px solid var(--line2); border-radius:9px;
@@ -265,6 +268,24 @@ html.ready body{animation:reveal .2s ease}
 .chip.ig{cursor:pointer; transition:background .1s}
 .chip.ig:hover{border-color:var(--line2)}
 .chip.ig .tag{color:var(--faint)}
+
+/* ---------- location mode (drag-to-place) ---------- */
+/* empty groups stay a usable drop target; touch-action:none so a drag doesn't scroll */
+.loc-grid{min-height:72px}
+.loc-grid .chip{cursor:grab; touch-action:none}
+/* Fixed-HEIGHT chips so dragging between sections is smooth (width is still sized
+ *  per-chip by the fitter). The name box is always two lines tall with its text
+ *  vertically centred, so one-line and two-line names occupy the same height. */
+.chip.loc-chip{justify-content:center; gap:5px}
+.chip.loc-chip .nm{height:26px; display:flex; align-items:center; justify-content:center; overflow:hidden}
+/* Opaque while keeping the exact apparent colour: the same 6% overlay .chip uses,
+ *  painted over an opaque --bg2 (the group panel behind it) instead of letting it
+ *  show through — so a lifted drag chip isn't see-through. */
+.chip.loc-chip{background-color:var(--bg2); background-image:linear-gradient(rgba(244,239,230,.06),rgba(244,239,230,.06))}
+.chip.drag-src{opacity:.35; border-style:dashed}
+.chip.drag-ghost{position:fixed; z-index:1000; margin:0; pointer-events:none; cursor:grabbing;
+  box-shadow:0 8px 24px rgba(0,0,0,.45); border-color:var(--accent)}
+body.dragging-loc{cursor:grabbing; user-select:none}
 
 .empty{color:var(--faint); text-align:center; padding:70px 0; font-size:13px}
 

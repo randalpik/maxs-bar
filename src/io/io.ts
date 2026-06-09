@@ -1,4 +1,4 @@
-import { state, save, saveIngredients, saveStock, deriveRecords, SEED_KEY, RECIPES_KEY } from '../core/state';
+import { state, save, saveIngredients, saveStock, setStockPlacement, deriveRecords, SEED_KEY, RECIPES_KEY } from '../core/state';
 import { parseLine } from '../parser/parser';
 import { parseCSV } from '../parser/csv';
 import { runtimeCatalog, reconcileStock } from '../ingredients/catalog';
@@ -116,7 +116,9 @@ export function importStockJSON(text: string): void {
   let data;
   try { data = JSON.parse(text); } catch { return; }
   const known = new Set(runtimeCatalog(state.records).entries.map(e => e.key));
-  state.stocked = parseStockImport(data, known);
-  saveStock();
+  const { stocked, placements } = parseStockImport(data, known);
+  state.stocked = stocked;
+  saveStock();                                   // create on:true entries for the imported keys
+  if (placements.length) setStockPlacement(placements);   // then layer in locations + positions
   render();
 }

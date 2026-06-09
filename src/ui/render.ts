@@ -8,6 +8,7 @@ import {
 } from '../ingredients/ingredients';
 import type { StockCtx, IngredientEntry } from '../ingredients/ingredients';
 import { runtimeCatalog } from '../ingredients/catalog';
+import { LOCATION_ORDER, LOCATION_LABEL, DEFAULT_LOCATION } from '../ingredients/locations';
 import { parseSyrups } from '../recipes/syrups';
 import type { Syrup } from '../recipes/syrups';
 import { $ } from '../core/dom';
@@ -236,25 +237,57 @@ export function updateIngredientChip(el: HTMLElement): void {
   $('#count').textContent = `${n} of ${chips.length} stocked`;
 }
 
-function igChipHTML(e: IngredientEntry, stocked: boolean): string {
-  const cls = 'chip ig' + (stocked ? '' : ' unstocked');
-  const title = stocked ? IG_TITLE.stocked : IG_TITLE.out;
+function igChipHTML(e: IngredientEntry, stocked: boolean, locMode = false): string {
+  // Location mode shows only stocked items; the grab affordance replaces the
+  // out-of-stock flag (clicking can't toggle here — it would fight the drag).
+  const cls = 'chip ig' + (locMode ? ' loc-chip' : stocked ? '' : ' unstocked');
+  const title = locMode ? `Drag to place ${e.disp}` : stocked ? IG_TITLE.stocked : IG_TITLE.out;
   return `<div class="${cls}" data-ing="${esc(e.key)}" title="${esc(title)}">`
     + `<button type="button" class="ig-edit-btn" data-ig-edit="${esc(e.key)}" title="Edit ${esc(e.disp)}" tabindex="-1">`
     + `<svg width="15" height="15" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4"><path d="M11 2l3 3-8 8-4 1 1-4z"/></svg></button>`
     + (e.shape ? icon(e.shape, e.color) : '<span class="ph"></span>')
     + `<span class="nm">${esc(e.disp)}</span>`
-    + `<span class="qwrap"><span class="tag">${e.count} use${e.count === 1 ? '' : 's'}</span></span>`
+    + (locMode ? '' : `<span class="qwrap"><span class="tag">${e.count} use${e.count === 1 ? '' : 's'}</span></span>`)
     + findBtn(e.key, e.disp)
     + `</div>`;
+}
+
+/** Location mode: only stocked items, bucketed into the physical-location groups (all
+ *  shown, empty ones included as drop targets) and ordered by stored position. The
+ *  effective location is the stored placement (stockTs.loc) or the ingredient default. */
+function renderIngredientsLocation(entries: IngredientEntry[]): void {
+  const stocked = entries.filter(e => state.stocked.has(e.key));
+  $('#count').textContent = `${stocked.length} stocked`;
+
+  const byLoc = new Map<string, IngredientEntry[]>(LOCATION_ORDER.map(id => [id, []]));
+  for (const e of stocked) {
+    const loc = state.stockTs[e.key]?.loc ?? e.defaultLoc;
+    (byLoc.get(loc) ?? byLoc.get(DEFAULT_LOCATION)!).push(e);
+  }
+
+  let html = '';
+  for (const id of LOCATION_ORDER) {
+    const items = byLoc.get(id)!;
+    items.sort((a, b) => {
+      const pa = state.stockTs[a.key]?.pos ?? Infinity, pb = state.stockTs[b.key]?.pos ?? Infinity;
+      return pa - pb || a.disp.localeCompare(b.disp);
+    });
+    const body = items.map(e => igChipHTML(e, true, true)).join('');
+    html += `<section class="group"><div class="grouphead"><span class="lbl">${esc(LOCATION_LABEL[id])}</span>`
+      + `<span class="cnt">${items.length}</span><span class="rule"></span></div>`
+      + `<div class="ig-grid loc-grid" data-loc="${esc(id)}">${body}</div></section>`;
+  }
+  main.innerHTML = html;
+  scheduleLayout();
 }
 
 export function renderIngredients(): void {
   const { entries } = runtimeCatalog(state.records);
   const total = entries.length;
+  if (!total) { main.innerHTML = '<div class="empty">No ingredients yet.</div>'; $('#count').textContent = '0 of 0 stocked'; return; }
+  if (state.igMode === 'location') { renderIngredientsLocation(entries); return; }
   const stockedCount = entries.reduce((n, e) => n + (state.stocked.has(e.key) ? 1 : 0), 0);
   $('#count').textContent = `${stockedCount} of ${total} stocked`;
-  if (!total) { main.innerHTML = '<div class="empty">No ingredients yet.</div>'; return; }
 
   // Section by the render-time display grouping; entries store the raw category.
   const byCat = new Map<string, IngredientEntry[]>();
@@ -316,6 +349,9 @@ function layoutChipGroup(container: HTMLElement): void {
   // Shrink each chip to its widest wrapped line — no dead horizontal space.
   const widths = chips.map(chipNeededWidth);
   chips.forEach((c, k) => { c.style.width = widths[k] + 'px'; });
+  // Location-mode chips get a fixed two-line name box in CSS, so they're already
+  // uniform height — skip equalization (and don't pin a height that fights it).
+  if (container.classList.contains('loc-grid')) return;
   // Equalize every chip to the tallest; CSS distributes contents top-to-bottom.
   const maxH = Math.max(...chips.map(c => c.offsetHeight));
   chips.forEach(c => { c.style.height = maxH + 'px'; });

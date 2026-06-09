@@ -1,5 +1,6 @@
 import { state, setIngredientOverride, resetIngredientOverride } from '../core/state';
 import { CATEGORY_ORDER, CATEGORY_LABEL } from '../ingredients/ingredients';
+import { LOCATIONS, defaultLocationForCat } from '../ingredients/locations';
 import { editableEntry, isKnownKey, isSeedKey, UMBRELLA_PARENTS, reconcileStock } from '../ingredients/catalog';
 import { icon } from '../ingredients/icons';
 import { titleCase, FAMILY_LABEL } from '../parser/parser';
@@ -36,6 +37,17 @@ export function fillIgCat(): void {
   for (const c of CATEGORY_ORDER) {
     const o = document.createElement('option');
     o.value = c; o.textContent = CATEGORY_LABEL[c] || titleCase(c);
+    sel.appendChild(o);
+  }
+}
+
+/** Populate the default-location <select> once, from the location list. */
+export function fillIgLoc(): void {
+  const sel = $<HTMLSelectElement>('#igLoc');
+  sel.innerHTML = '';
+  for (const l of LOCATIONS) {
+    const o = document.createElement('option');
+    o.value = l.id; o.textContent = l.label;
     sel.appendChild(o);
   }
 }
@@ -130,6 +142,7 @@ export function openIgModal(key: string | null, prefillName = ''): void {
     $<HTMLInputElement>('#igName').value = prefillName;
     $<HTMLInputElement>('#igAbv').value = '';
     sel.value = CATEGORY_ORDER[0]!;
+    $<HTMLSelectElement>('#igLoc').value = defaultLocationForCat(CATEGORY_ORDER[0]!);
     $<HTMLElement>('#igRemove').style.display = 'none';
     $<HTMLElement>('#igReset').style.display = 'none';
   } else {
@@ -151,6 +164,7 @@ export function openIgModal(key: string | null, prefillName = ''): void {
       sel.appendChild(o);
     }
     sel.value = entry.cat;
+    $<HTMLSelectElement>('#igLoc').value = entry.defaultLoc;
     $<HTMLElement>('#igRemove').style.display = 'block';
     // Reset only applies to seed ingredients with an edit (added ones use Remove).
     $<HTMLElement>('#igReset').style.display = (isSeedKey(key) && state.ingredients[key]) ? 'block' : 'none';
@@ -169,9 +183,14 @@ export function saveIgModal(): void {
   // ABV entered as a percentage; persist as a 0–1 fraction (blank → 0).
   const pct = parseFloat($<HTMLInputElement>('#igAbv').value);
   const abv = Number.isFinite(pct) ? Math.max(0, Math.min(1, pct / 100)) : 0;
+  const cat = $<HTMLSelectElement>('#igCat').value;
+  // Store the default location only when it deviates from the category default —
+  // otherwise leave it undefined so no redundant override is kept.
+  const loc = $<HTMLSelectElement>('#igLoc').value;
+  const defaultLocation = loc === defaultLocationForCat(cat, disp) ? undefined : loc;
   const patch = {
-    disp, cat: $<HTMLSelectElement>('#igCat').value, color: editingColor, shape: editingShape, abv,
-    umbrellas: [...editingUmbrellas], aliases: [...editingAliases],
+    disp, cat, color: editingColor, shape: editingShape, abv,
+    umbrellas: [...editingUmbrellas], aliases: [...editingAliases], defaultLocation,
   };
   if (editingKey) {
     setIngredientOverride(editingKey, patch);

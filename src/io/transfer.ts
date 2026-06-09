@@ -1,5 +1,6 @@
 import type { Recipe, RecipeOverride, IngredientOverride } from '../core/types';
 import { state } from '../core/state';
+import { LOCATION_ORDER } from '../ingredients/locations';
 import { buildIngredientsExport, type IngredientDiffEntry } from '../ingredients/ingredients-export';
 
 /* ============================================================
@@ -93,19 +94,53 @@ export function isIngredientsExport(v: unknown): v is IngredientsExport {
   return !!v && typeof v === 'object' && Array.isArray((v as IngredientsExport).ingredients);
 }
 
-/* ---------- stock list (flat key array) ---------- */
+/* ---------- stock list (key array, optionally carrying location) ---------- */
 
-/** The stocked keys, sorted. A stock list is deliberately just a flat list of
- *  keys — syncing it touches every ingredient, unlike the scoped override diffs. */
-export function buildStockExport(): string[] {
-  return [...state.stocked].sort();
+/** One exported stocked ingredient: its key, plus its physical-location placement
+ *  (loc + pos) when the user has placed it in Location mode. Bare `{key}` for items
+ *  left at their default location. */
+export interface StockExportEntry {
+  key: string;
+  loc?: string;
+  pos?: number;
+}
+
+/** The stocked keys with their location placements, sorted by (location, position,
+ *  key) for a stable, human-readable round-trip. Placement is read from the stock
+ *  shadow map; un-placed items export as a bare key. */
+export function buildStockExport(): StockExportEntry[] {
+  const out: StockExportEntry[] = [...state.stocked].map(key => {
+    const e = state.stockTs[key];
+    return e && typeof e.loc === 'string'
+      ? { key, loc: e.loc, pos: typeof e.pos === 'number' ? e.pos : 0 }
+      : { key };
+  });
+  const li = (e: StockExportEntry) => (e.loc ? LOCATION_ORDER.indexOf(e.loc) : -1);
+  out.sort((a, b) => li(a) - li(b) || (a.pos ?? 0) - (b.pos ?? 0) || a.key.localeCompare(b.key));
+  return out;
 }
 
 /** Reset everything to unstocked, then stock each listed key that exists in the
  *  current catalog — keys with no matching ingredient are ignored, so a stock list
- *  syncs cleanly across slightly different ingredient sets. */
-export function parseStockImport(keys: unknown, known: Set<string>): Set<string> {
-  const out = new Set<string>();
-  if (Array.isArray(keys)) for (const k of keys) if (typeof k === 'string' && known.has(k)) out.add(k);
-  return out;
+ *  syncs cleanly across slightly different ingredient sets. Accepts both the new
+ *  object form (with location) and the legacy flat string[]; returns the stocked set
+ *  plus any location placements to apply. */
+export function parseStockImport(
+  data: unknown,
+  known: Set<string>,
+): { stocked: Set<string>; placements: Array<{ key: string; loc: string; pos: number }> } {
+  const stocked = new Set<string>();
+  const placements: Array<{ key: string; loc: string; pos: number }> = [];
+  if (Array.isArray(data)) {
+    for (const item of data) {
+      if (typeof item === 'string') { if (known.has(item)) stocked.add(item); continue; }
+      if (item && typeof item === 'object' && typeof (item as StockExportEntry).key === 'string') {
+        const e = item as StockExportEntry;
+        if (!known.has(e.key)) continue;
+        stocked.add(e.key);
+        if (typeof e.loc === 'string') placements.push({ key: e.key, loc: e.loc, pos: typeof e.pos === 'number' ? e.pos : 0 });
+      }
+    }
+  }
+  return { stocked, placements };
 }
