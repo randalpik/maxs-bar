@@ -133,6 +133,7 @@ $('#main').addEventListener('click', e => {
   if (b) openModal(b.dataset.edit!);
 });
 
+$('#mClose').addEventListener('click', closeModal);
 $('#mCancel').addEventListener('click', closeModal);
 $('#mSave').addEventListener('click', saveModal);
 $('#mDelete').addEventListener('click', () => { void deleteEditing(); });
@@ -140,16 +141,19 @@ $('#overlay').addEventListener('click', e => { if (e.target === $('#overlay')) c
 $('#fName').addEventListener('input', updatePreview);
 $('#fRecipe').addEventListener('input', updatePreview);
 
+$('#igClose').addEventListener('click', closeIgModal);
 $('#igCancel').addEventListener('click', closeIgModal);
 $('#igSave').addEventListener('click', saveIgModal);
 $('#igReset').addEventListener('click', resetIgModal);
 $('#igRemove').addEventListener('click', removeIgModal);
 $('#igOverlay').addEventListener('click', e => { if (e.target === $('#igOverlay')) closeIgModal(); });
 
+$('#seedClose').addEventListener('click', closeSeedModal);
 $('#seedConfirm').addEventListener('click', confirmSeed);
 $('#seedCancel').addEventListener('click', closeSeedModal);
 $('#seedOverlay').addEventListener('click', e => { if (e.target === $('#seedOverlay')) closeSeedModal(); });
 
+$('#acctX').addEventListener('click', closeAcctModal);
 $('#acctCreate').addEventListener('click', () => { void createAccount(); });
 $('#acctSignin').addEventListener('click', () => { void doSignIn(); });
 $('#acctSignout').addEventListener('click', doSignOut);

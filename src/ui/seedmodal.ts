@@ -33,6 +33,8 @@ export function openSeedModal(opts: { forced: boolean }): void {
   fillSeedSel();
   $('#seedTitle').textContent = forced ? 'Choose a starter list' : 'Switch seed';
   $<HTMLElement>('#seedCancel').style.display = forced ? 'none' : 'block';
+  $<HTMLElement>('#seedClose').style.display = forced ? 'none' : 'grid'; // no dismiss on first run
+
   $('#seedOverlay').classList.add('open');
 }
 

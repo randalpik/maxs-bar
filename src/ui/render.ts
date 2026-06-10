@@ -38,7 +38,13 @@ function matchQuery(d: Derived): boolean {
   if (!state.query) return true;
   const q = state.query.toLowerCase();
   if (d.rec.name.toLowerCase().includes(q)) return true;
-  return d.p.ingredients.some(i => i.disp.toLowerCase().includes(q) || i.name.toLowerCase().includes(q));
+  if (d.p.method.toLowerCase().includes(q)) return true; // shaken / stirred / built
+  // Beyond the ingredient name, match its structural words too: unit (oz, tsp…),
+  // category (spirit, syrup…), spirit family (whiskey…), role (dash, top…) and
+  // process (muddle, float, garnish…) — so e.g. "muddle" or "tsp" find recipes.
+  return d.p.ingredients.some(i =>
+    [i.disp, i.name, i.cat, i.fam, i.unit, i.role, i.process]
+      .some(v => v != null && v.toLowerCase().includes(q)));
 }
 
 export function esc(s: unknown): string {
@@ -341,7 +347,7 @@ function chipNeededWidth(c: HTMLElement): number {
 }
 
 /** Fit each chip in a container to its widest wrapped line, then equalize heights. */
-function layoutChipGroup(container: HTMLElement): void {
+export function layoutChipGroup(container: HTMLElement): void {
   const chips = [...container.querySelectorAll<HTMLElement>('.chip')];
   if (!chips.length) return;
   chips.forEach(c => { c.style.height = ''; c.style.width = ''; });

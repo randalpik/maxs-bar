@@ -107,6 +107,10 @@ header.bar .search{display:inline-flex}
 .seg button{
   background:transparent; color:var(--muted); border:0; font-family:var(--mono);
   font-size:11px; letter-spacing:.12em; text-transform:uppercase; padding:8px 13px; cursor:pointer;
+  /* selects/buttons render at 33px (UA line-height:normal → ~15px line-box + 16px
+     padding + 2px border). Match that line-box so the bordered .seg (button + its own
+     2px border) also lands at 33px; the 11px font's own normal line-box is ~1px short. */
+  line-height:15px;
 }
 .seg button.on{background:var(--accent-dim); color:var(--accent)}
 /* recipe-only controls hide on the ingredients + syrups pages */
@@ -296,9 +300,23 @@ body.dragging-loc{cursor:grabbing; user-select:none}
 }
 .overlay.open{display:flex}
 .modal{
+  position:relative;
   width:min(620px,100%); background:var(--bg2); border:1px solid var(--line2);
   border-radius:16px; padding:22px; box-shadow:0 30px 80px rgba(0,0,0,.6);
 }
+/* edge-overlapping close button — straddles the modal's top-right corner, a
+   deliberate redundancy with the Cancel/Close action in the footer */
+.modal-x{
+  position:absolute; top:-13px; right:-13px; z-index:3;
+  width:32px; height:32px; padding:0; display:grid; place-items:center;
+  border:1px solid var(--line2); border-radius:50%;
+  background:var(--surface2); color:var(--muted); cursor:pointer;
+  box-shadow:0 6px 18px rgba(0,0,0,.5);
+  transition:color .1s, border-color .1s, background .1s;
+}
+/* keep the fill opaque on hover — accent-dim is translucent and would let the
+   straddled edge show through */
+.modal-x:hover{color:var(--accent); border-color:var(--accent)}
 .seed-modal{width:min(440px,100%)}
 /* confirmation modal — stacks above any open overlay */
 .confirm-overlay{z-index:60; align-items:center}
@@ -308,7 +326,7 @@ body.dragging-loc{cursor:grabbing; user-select:none}
 .btn.danger:hover{border-color:#e88}
 .seed-modal .field select{
   width:100%; font-family:var(--mono); font-size:14px; color:var(--text);
-  background-color:var(--surface); border:1px solid var(--line2); border-radius:9px; padding:11px 12px; outline:none;
+  background-color:var(--surface); border:1px solid var(--line2); border-radius:9px; padding:11px 30px 11px 12px; outline:none;
 }
 .seed-modal .field select:focus{border-color:var(--accent)}
 .modal h3{font-family:var(--disp); font-weight:500; font-size:24px; margin:0 0 4px}
@@ -337,7 +355,9 @@ body.dragging-loc{cursor:grabbing; user-select:none}
 .acct-who strong{color:var(--text); font-weight:500}
 
 /* edit ingredient modal + icon builder */
-.ig-modal{width:min(520px,100%)}
+/* wide enough for the Forms "Default" row (role · counts-as · process · display) to
+   sit on a single line */
+.ig-modal{width:min(640px,100%)}
 /* Cap the modal height and scroll only the body, so a long forms/units list can't
    push the title or the Save/Cancel bar off-screen. The overlay reserves 6vh top+bottom. */
 .ig-modal{display:flex; flex-direction:column; max-height:88vh}
@@ -350,7 +370,7 @@ body.dragging-loc{cursor:grabbing; user-select:none}
    basis so the label sits on one line (even with the ABV field present). */
 .ig-fields .field:has(#igLoc){flex:1.5}
 .ig-fields .ig-abv{flex:0 0 76px}
-.ig-fields select{width:100%; font-size:14px; padding:11px 12px}
+.ig-fields select{width:100%; font-size:14px; padding:11px 30px 11px 12px}
 .ig-builder{border:1px solid var(--line2); border-radius:12px; padding:13px 14px; margin-bottom:18px}
 .ig-builder-head{display:flex; align-items:center; justify-content:space-between; margin-bottom:12px}
 .ig-builder-head .plbl{font-size:9px; letter-spacing:.18em; text-transform:uppercase; color:var(--faint)}
@@ -392,12 +412,12 @@ body.dragging-loc{cursor:grabbing; user-select:none}
 /* multi-field add row for the forms / units editors */
 .rel-compose{display:flex; flex-wrap:wrap; align-items:center; gap:8px}
 .rel-compose .rel-add{min-width:120px; flex:1 1 120px}
-.rel-compose select{width:auto; font-size:13px; padding:9px 10px}
+.rel-compose select{width:auto; font-size:13px; padding:9px 28px 9px 10px}
 .rel-compose input[type=number]{width:64px; flex:0 0 auto}
 .rel-compose #igFormUnit{width:auto; min-width:90px; flex:0 1 110px; font-size:13px}
 .rel-compose .btn{flex:0 0 auto}
 /* the ingredient's default-measure row, sitting above the keyword-form chips */
 .ig-default-form{display:flex; flex-wrap:wrap; align-items:center; gap:8px; margin-bottom:10px}
 .ig-default-form .dlbl{font-size:10px; letter-spacing:.14em; text-transform:uppercase; color:var(--muted)}
-.ig-default-form select{width:auto; font-size:13px; padding:9px 10px}
+.ig-default-form select{width:auto; font-size:13px; padding:9px 28px 9px 10px}
 .ig-default-form input{width:auto; min-width:90px; flex:0 1 110px; font-size:13px}

@@ -1,7 +1,7 @@
 import { state, save } from '../core/state';
 import { parseLine } from '../parser/parser';
 import { nowISO } from '../core/util';
-import { render, chipHTML } from './render';
+import { render, chipHTML, layoutChipGroup } from './render';
 import { confirmModal } from './confirm';
 import { $ } from '../core/dom';
 
@@ -38,6 +38,8 @@ export function updatePreview(): void {
   $('#pvChips').innerHTML = (p && p.ingredients.length)
     ? p.ingredients.map(i => chipHTML(i)).join('')
     : '<span style="color:var(--faint);font-size:11px">…</span>';
+  // Fit/equalize the preview chips the same way every #main chip group is fitted.
+  requestAnimationFrame(() => layoutChipGroup($('#pvChips')));
 }
 
 export function saveModal(): void {

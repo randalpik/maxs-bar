@@ -65,7 +65,7 @@
       <svg width="13" height="13" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="7" cy="7" r="5"/><path d="M11 11l3.5 3.5"/></svg>
       <input id="search" placeholder="filter…" autocomplete="off">
       <button type="button" class="search-clear" id="searchClear" aria-label="Clear filter" tabindex="-1">
-        <svg width="12" height="12" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"><path d="M3 3l10 10M13 3L3 13"/></svg>
+        <svg width="12" height="12" viewBox="0 0 16 16" fill="currentColor"><rect x="1.5" y="7.15" width="13" height="1.7" rx=".85" transform="rotate(45 8 8)"/><rect x="1.5" y="7.15" width="13" height="1.7" rx=".85" transform="rotate(-45 8 8)"/></svg>
       </button>
     </label>
     <button class="btn primary" id="addBtn">+ Add</button>
@@ -78,6 +78,7 @@
 <!-- add / edit modal -->
 <div class="overlay" id="overlay">
   <div class="modal">
+    <button type="button" class="modal-x" id="mClose" aria-label="Close"><svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor"><rect x="2.5" y="7.15" width="11" height="1.7" rx=".85" transform="rotate(45 8 8)"/><rect x="2.5" y="7.15" width="11" height="1.7" rx=".85" transform="rotate(-45 8 8)"/></svg></button>
     <h3 id="mTitle">Add cocktail</h3>
     <p class="hint">Format: <code>Name: 2 spirit, 3/4 lime, 3/4 syrup (method)</code>. Units default to oz. Tokens: <code>top</code>, <code>float</code>, <code>dash</code>, <code>muddled</code>, <code>(built)</code>, <code>(stirred)</code>. The recipe string is the source of truth.</p>
     <div class="field"><label>Name</label><input id="fName" placeholder="Daiquiri" autocomplete="off"></div>
@@ -95,10 +96,11 @@
 <!-- edit ingredient modal -->
 <div class="overlay" id="igOverlay">
   <div class="modal ig-modal">
+    <button type="button" class="modal-x" id="igClose" aria-label="Close"><svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor"><rect x="2.5" y="7.15" width="11" height="1.7" rx=".85" transform="rotate(45 8 8)"/><rect x="2.5" y="7.15" width="11" height="1.7" rx=".85" transform="rotate(-45 8 8)"/></svg></button>
     <h3 id="igTitle">Edit ingredient</h3>
     <div class="ig-scroll">
+    <div class="field ig-name"><label>Name</label><input id="igName" autocomplete="off"></div>
     <div class="ig-fields">
-      <div class="field"><label>Name</label><input id="igName" autocomplete="off"></div>
       <div class="field"><label>Category</label><select id="igCat"></select></div>
       <div class="field"><label>Default location</label><select id="igLoc"></select></div>
       <div class="field ig-abv"><label>ABV <span class="opt">%</span></label><input id="igAbv" type="number" min="0" max="100" step="0.5" inputmode="decimal" autocomplete="off"></div>
@@ -163,6 +165,7 @@
 <!-- choose / switch seed modal -->
 <div class="overlay" id="seedOverlay">
   <div class="modal seed-modal">
+    <button type="button" class="modal-x" id="seedClose" aria-label="Close"><svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor"><rect x="2.5" y="7.15" width="11" height="1.7" rx=".85" transform="rotate(45 8 8)"/><rect x="2.5" y="7.15" width="11" height="1.7" rx=".85" transform="rotate(-45 8 8)"/></svg></button>
     <h3 id="seedTitle">Choose a starter list</h3>
     <p class="hint">Pick a set of recipes to start from. <strong>Classics</strong> is the canonical cocktail list; <strong>Max's List</strong> adds Max's originals on top; <strong>Empty</strong> starts blank. Your own added &amp; edited recipes carry over when you switch.</p>
     <div class="field"><label>Starter list</label><select id="seedSel"></select></div>
@@ -176,6 +179,7 @@
 <!-- account / sync modal -->
 <div class="overlay" id="acctOverlay">
   <div class="modal acct-modal">
+    <button type="button" class="modal-x" id="acctX" aria-label="Close"><svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor"><rect x="2.5" y="7.15" width="11" height="1.7" rx=".85" transform="rotate(45 8 8)"/><rect x="2.5" y="7.15" width="11" height="1.7" rx=".85" transform="rotate(-45 8 8)"/></svg></button>
     <h3 id="acctTitle">Sign in &amp; sync</h3>
     <p class="hint">Sync your bar across devices. A household can share one account to keep everyone in sync. Backing up your data (Export) is recommended.</p>
     <div id="acctSignedOut">
@@ -201,6 +205,7 @@
 <!-- confirmation modal (stacks above any open modal) -->
 <div class="overlay confirm-overlay" id="confirmOverlay">
   <div class="modal confirm-modal">
+    <button type="button" class="modal-x" id="cfClose" aria-label="Close"><svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor"><rect x="2.5" y="7.15" width="11" height="1.7" rx=".85" transform="rotate(45 8 8)"/><rect x="2.5" y="7.15" width="11" height="1.7" rx=".85" transform="rotate(-45 8 8)"/></svg></button>
     <h3 id="cfTitle">Confirm</h3>
     <p class="cf-msg" id="cfMsg"></p>
     <div class="actions">

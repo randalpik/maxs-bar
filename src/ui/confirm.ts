@@ -26,6 +26,7 @@ export function confirmModal(opts: ConfirmOpts): Promise<boolean> {
   const overlay = $('#confirmOverlay');
   const ok = $<HTMLButtonElement>('#cfOk');
   const cancel = $<HTMLButtonElement>('#cfCancel');
+  const close = $<HTMLButtonElement>('#cfClose');
   const prevFocus = document.activeElement as HTMLElement | null;
 
   $('#cfTitle').textContent = opts.title;
@@ -42,6 +43,7 @@ export function confirmModal(opts: ConfirmOpts): Promise<boolean> {
       document.removeEventListener('keydown', onKey, true);
       ok.removeEventListener('click', onOk);
       cancel.removeEventListener('click', onCancel);
+      close.removeEventListener('click', onCancel);
       overlay.removeEventListener('click', onBackdrop);
       prevFocus?.focus?.();
       resolve(result);
@@ -57,6 +59,7 @@ export function confirmModal(opts: ConfirmOpts): Promise<boolean> {
     active = done;
     ok.addEventListener('click', onOk);
     cancel.addEventListener('click', onCancel);
+    close.addEventListener('click', onCancel);
     overlay.addEventListener('click', onBackdrop);
     document.addEventListener('keydown', onKey, true); // capture: beat the global handler
     overlay.classList.add('open');
