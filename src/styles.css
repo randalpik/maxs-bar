@@ -338,8 +338,17 @@ body.dragging-loc{cursor:grabbing; user-select:none}
 
 /* edit ingredient modal + icon builder */
 .ig-modal{width:min(520px,100%)}
+/* Cap the modal height and scroll only the body, so a long forms/units list can't
+   push the title or the Save/Cancel bar off-screen. The overlay reserves 6vh top+bottom. */
+.ig-modal{display:flex; flex-direction:column; max-height:88vh}
+.ig-modal h3{flex:0 0 auto}
+.ig-modal .ig-scroll{flex:1 1 auto; min-height:0; overflow-y:auto; margin:0 -22px; padding:14px 22px 4px}
+.ig-modal .actions{flex:0 0 auto; border-top:1px solid var(--line); padding-top:16px}
 .ig-fields{display:flex; gap:14px; margin-bottom:16px}
 .ig-fields .field{flex:1; min-width:0; margin-bottom:0}
+/* the "Default location" label is the widest of the row — give its field extra
+   basis so the label sits on one line (even with the ABV field present). */
+.ig-fields .field:has(#igLoc){flex:1.5}
 .ig-fields .ig-abv{flex:0 0 76px}
 .ig-fields select{width:100%; font-size:14px; padding:11px 12px}
 .ig-builder{border:1px solid var(--line2); border-radius:12px; padding:13px 14px; margin-bottom:18px}
@@ -380,3 +389,15 @@ body.dragging-loc{cursor:grabbing; user-select:none}
 .rel-chip button:hover{opacity:1}
 .rel-add{width:auto; min-width:160px; font-size:13px}
 .rel-empty{color:var(--faint); font-size:12px; font-style:italic}
+/* multi-field add row for the forms / units editors */
+.rel-compose{display:flex; flex-wrap:wrap; align-items:center; gap:8px}
+.rel-compose .rel-add{min-width:120px; flex:1 1 120px}
+.rel-compose select{width:auto; font-size:13px; padding:9px 10px}
+.rel-compose input[type=number]{width:64px; flex:0 0 auto}
+.rel-compose #igFormUnit{width:auto; min-width:90px; flex:0 1 110px; font-size:13px}
+.rel-compose .btn{flex:0 0 auto}
+/* the ingredient's default-measure row, sitting above the keyword-form chips */
+.ig-default-form{display:flex; flex-wrap:wrap; align-items:center; gap:8px; margin-bottom:10px}
+.ig-default-form .dlbl{font-size:10px; letter-spacing:.14em; text-transform:uppercase; color:var(--muted)}
+.ig-default-form select{width:auto; font-size:13px; padding:9px 10px}
+.ig-default-form input{width:auto; min-width:90px; flex:0 1 110px; font-size:13px}

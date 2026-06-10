@@ -1,7 +1,9 @@
-import type { Classified, Recipe } from '../core/types';
+import type { Classified, Form, Recipe } from '../core/types';
 import { state, derive, saveStock } from '../core/state';
-import { sentenceCase, titleCase, SPIRIT_FAMILIES } from '../parser/parser';
+import { sentenceCase, titleCase, SPIRIT_FAMILIES, BASE_UNITS, setUnits } from '../parser/parser';
+import type { UnitDef } from '../core/types';
 import { ingredientKey, umbrellasForCat, CONSUMABLE } from './ingredients';
+import { CATEGORY_BY_ID, CATEGORIES } from './categories';
 import { defaultLocationForCat } from './locations';
 import type { Catalog, IngredientEntry } from './ingredients';
 import { INGREDIENTS } from './ingredients-seed';
@@ -20,14 +22,73 @@ const FALLBACK_COLOR = '#8C857A';
 /** key -> committed ingredient (incl. effective generics like "rum"). */
 const byKey = new Map<string, SeedIngredient>(INGREDIENTS.map(i => [i.key, i]));
 
-/** Recipe-text name -> key: identity, citrus juice/peel/wheel/… forms (derived from
- *  cat:"citrus"), and each ingredient's declared aliases. */
+/** A category's default trailing forms (citrus juice/wedge/peel, bitters dash) — read
+ *  straight from the category table. Garnish is never a category default (real garnishes
+ *  declare it per-ingredient). An ingredient with explicit `forms` overrides this. */
+function synthForms(cat: string): Form[] | undefined {
+  return CATEGORY_BY_ID.get(cat)?.forms;
+}
+
+/** The no-override baseline forms for a key+category: explicit seed forms, else the
+ *  category default, else the universal default (a bare oz pour). Used by the modal to
+ *  decide whether the edited forms differ from the default (and so need storing). */
+export function baselineForms(key: string | null, cat: string): Form[] {
+  const seed = key ? byKey.get(key) : undefined;
+  return seed?.forms ?? synthForms(cat) ?? [{ keyword: '', role: 'pour' }];
+}
+
+/** Migrate a legacy stored form: the old `role:'garnish'` (when garnish was a measure)
+ *  becomes a bare `count` carrying the `garnish` process. Harmless for current forms. */
+function normalizeForms(forms?: Form[]): Form[] | undefined {
+  return forms?.map(f =>
+    (f.role as string) === 'garnish' ? { ...f, role: 'count' as const, process: f.process ?? 'garnish' } : f);
+}
+
+/** The forms in effect for a key: explicit override forms, else explicit seed forms,
+ *  else the category default. Drives the alias index and the classifier. */
+function formsFor(cat: string, seedForms?: Form[], ovForms?: Form[]): Form[] | undefined {
+  return normalizeForms(ovForms) ?? seedForms ?? synthForms(cat);
+}
+
+/** Register a key's form keywords/aliases as "<key> <token>" → key, so every form of
+ *  an ingredient (lime / lime juice / lime wedge / lime peel …) resolves to one key.
+ *  Generalises the former hardcoded citrus loop — citrus synth reproduces it exactly. */
+function indexForms(index: Map<string, string>, key: string, forms?: Form[]): void {
+  for (const f of forms ?? [])
+    for (const tok of [f.keyword, ...(f.aliases ?? [])])
+      index.set((key + ' ' + tok).trim(), key);
+}
+
+/** Recipe-text name -> key: identity, each ingredient's declared aliases, and its
+ *  trailing forms (citrus juice/peel/wheel/… synthesised from cat, or explicit). */
 const aliasIndex = new Map<string, string>();
 for (const ing of INGREDIENTS) {
   aliasIndex.set(ing.key, ing.key);
   for (const a of ing.aliases ?? []) aliasIndex.set(a.toLowerCase(), ing.key);
-  if (ing.cat === 'citrus') for (const f of ['', ' juice', ' peel', ' wheel', ' twist', ' wedge', ' wedges']) aliasIndex.set((ing.key + f).trim(), ing.key);
+  indexForms(aliasIndex, ing.key, formsFor(ing.cat, ing.forms));
 }
+
+/** The full leading-unit registry the parser should recognise: the built-in base set
+ *  plus every extra unit declared by any seed ingredient or live override (later id
+ *  wins). Feeds setUnits at startup and after any ingredient edit, so a unit declared
+ *  on one ingredient (e.g. bread → "slice") is recognised positionally everywhere. */
+export function effectiveUnits(): UnitDef[] {
+  const m = new Map<string, UnitDef>(BASE_UNITS.map(u => [u.id, u]));
+  // Every unit a form references ("wedge","sprig","slice") registers as a discrete unit
+  // (volOz null) — base wins on a name clash. This is the single source of count-units;
+  // declaring one in a form's "counts as" makes it recognised globally + positionally.
+  const add = (forms?: Form[]) => {
+    for (const f of forms ?? []) if (f.unit && !m.has(f.unit)) m.set(f.unit, { id: f.unit, volOz: null });
+  };
+  for (const c of CATEGORIES) add(c.forms);
+  for (const ing of INGREDIENTS) add(ing.forms);
+  for (const ov of Object.values(state.ingredients)) if (!ov.removed) add(ov.forms);
+  return [...m.values()];
+}
+
+/** Re-derive and install the parser's recognised unit registry. Call after any change
+ *  to ingredient definitions (edit, import, sync pull) so newly-declared units parse. */
+export function refreshUnits(): void { setUnits(effectiveUnits()); }
 
 /** Every key any seed ingredient lists as an umbrella parent (incl. self-references). */
 const UMBRELLA_REFS = new Set<string>(INGREDIENTS.flatMap(i => i.umbrellas ?? []));
@@ -98,7 +159,8 @@ export function seedClassify(name: string): Classified {
     return {
       cat: ing.cat, shape: ing.shape ?? '', color: ing.color, abv: ov?.abv ?? ing.abv,
       disp: ing.disp, fam: familyOf(key, ov?.umbrellas ?? ing.umbrellas),
-      syrup: ing.syrup, citrus: ing.citrus,
+      syrup: ing.syrup, citrus: ing.citrus, key,
+      forms: formsFor(ing.cat, ing.forms, ov?.forms),
     };
   }
   // User-added ingredient — classify from its override alone.
@@ -106,7 +168,8 @@ export function seedClassify(name: string): Classified {
   return {
     cat, shape: ov!.shape ?? '', color: ov!.color ?? FALLBACK_COLOR, abv: ov!.abv ?? 0,
     disp: ov!.disp ?? titleCase(key), fam: familyOf(key, ov!.umbrellas),
-    citrus: cat === 'citrus' ? key : undefined,
+    citrus: cat === 'citrus' ? key : undefined, key,
+    forms: formsFor(cat, undefined, ov!.forms),
   };
 }
 
@@ -149,8 +212,9 @@ export function runtimeCatalog(records: Recipe[]): Catalog {
       abv: ov?.abv ?? s.abv,
       umbrellas,
       aliases: ov?.aliases ?? s.aliases ?? [],
+      forms: formsFor(ov?.cat ?? s.cat, s.forms, ov?.forms),
       umbrella: umbrellas.filter(u => u !== CONSUMABLE)[0] ?? 'self:' + s.key,
-      defaultLoc: ov?.defaultLocation ?? s.defaultLocation ?? defaultLocationForCat(ov?.cat ?? s.cat, ov?.disp ?? s.disp),
+      defaultLoc: ov?.defaultLocation ?? s.defaultLocation ?? defaultLocationForCat(ov?.cat ?? s.cat),
       count: 0,
     });
   }
@@ -168,8 +232,9 @@ export function runtimeCatalog(records: Recipe[]): Catalog {
       abv: ov.abv ?? 0,
       umbrellas,
       aliases: ov.aliases ?? [],
+      forms: formsFor(cat, undefined, ov.forms),
       umbrella: umbrellas.filter(u => u !== CONSUMABLE)[0] ?? 'self:' + key,
-      defaultLoc: ov.defaultLocation ?? defaultLocationForCat(cat, disp),
+      defaultLoc: ov.defaultLocation ?? defaultLocationForCat(cat),
       count: 0,
     });
   }
@@ -221,8 +286,9 @@ export function editableEntry(key: string): IngredientEntry | undefined {
     abv: ov?.abv ?? s.abv,
     umbrellas,
     aliases: ov?.aliases ?? s.aliases ?? [],
+    forms: formsFor(ov?.cat ?? s.cat, s.forms, ov?.forms),
     umbrella: umbrellas.filter(u => u !== CONSUMABLE)[0] ?? 'self:' + key,
-    defaultLoc: ov?.defaultLocation ?? s.defaultLocation ?? defaultLocationForCat(ov?.cat ?? s.cat, ov?.disp ?? s.disp),
+    defaultLoc: ov?.defaultLocation ?? s.defaultLocation ?? defaultLocationForCat(ov?.cat ?? s.cat),
     count: 0,
   };
 }

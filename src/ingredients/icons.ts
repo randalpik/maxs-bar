@@ -1,4 +1,6 @@
 import type { Ingredient } from '../core/types';
+import { unitDef } from '../parser/parser';
+import { CATEGORY_BY_ID } from './categories';
 
 /* ============================================================
    Icons — wireframe outline + flat color fill
@@ -49,56 +51,37 @@ export function fmtOz(v: number): string {
   return s + ' oz';
 }
 
+/** The recipe-chip icon shape, in precedence: the matched trailing form's icon (citrus
+ *  wedge→wedge, peel→twist), then the ingredient's own shape (carried from the seed/
+ *  override classifier — every seed entry already declares one), then the category's
+ *  fallback icon. Unknowns carry no shape and no category → iconless. */
 export function iconFor(i: Ingredient): string | null {
-  if (i.cat === 'unknown') return null; // unrecognised recipe ingredient -> no icon
-  // Extracts, solutions and tinctures get the dropper bottle regardless of category.
-  if (/\b(extract|solution|tincture)\b/i.test(i.disp)) return 'dropper';
-  const d = i.disp.toLowerCase();
-  if (/candied ginger/.test(d)) return 'ginger';
-  const liquid = i.role === 'pour' || i.role === 'float' || i.role === 'measure' || i.role === 'dash' || i.role === 'top';
-  switch (i.cat) {
-    case 'spirit': return 'squircle';
-    case 'liqueur': return 'hexagon';
-    case 'fortified': return 'glass';
-    case 'brew': return 'can';
-    case 'syrup': return 'bottle';
-    case 'bitters': return 'triangle';
-    case 'egg': return 'egg';
-    case 'sugar': return 'cube';
-    case 'herb': return 'sprig';
-    case 'spice': return 'seed';
-    case 'citrus':
-      if (liquid) return 'circle';                // juice: filled colored circle
-      if (i.role === 'count') return 'wedge';     // wedge: citrus segment (unit "wedge")
-      if (/wheel/.test(d)) return 'wheel';        // wheel: hollow colored ring
-      if (/peel|twist/.test(d)) return 'twist';   // peel/twist: curl
-      return null;                                // bare fruit etc. stay iconless
-    case 'fruit':
-      if (/cherry/.test(d)) return 'cherry';
-      if (/raspberr/.test(d)) return 'berry';
-      return liquid ? 'droplet' : null;
-    // Soda, dairy, espresso, and any other non-alcoholic, non-citrus liquid → droplet.
-    default: return (i.cat === 'soda' || liquid) ? 'droplet' : null;
-  }
+  return i.formIcon ?? i.shape ?? CATEGORY_BY_ID.get(i.cat)?.icon ?? null;
 }
 
-function baseAmountTag(i: Ingredient): { amount: string | null; tag: string | null } {
+/** Pluralise a unit for the amount tag: an explicit registry plural, else a simple rule
+ *  (…s/x/z/ch/sh → +es, e.g. pinch→pinches; otherwise +s). */
+function pluralize(unit: string): string {
+  return /(s|x|z|ch|sh)$/.test(unit) ? unit + 'es' : unit + 's';
+}
+function unitLabel(unit: string | null, qty: number): string {
+  if (!unit) return '';
+  return qty === 1 ? unit : (unitDef(unit)?.plural ?? pluralize(unit));
+}
+
+/** The amount (quantity slot) for an ingredient's measure. */
+function measureAmount(i: Ingredient): string | null {
   switch (i.role) {
-    case 'pour': return { amount: fmtOz(i.qty || 0), tag: null };
-    case 'float': return { amount: fmtOz(i.qty || 0), tag: 'float' };
-    case 'measure': return { amount: (+(i.qty || 0)) + ' tsp', tag: null };
-    case 'count': { const n = i.qty || 1; return { amount: n + ' ' + (n === 1 ? 'wedge' : 'wedges'), tag: null }; }
-    case 'egg': return { amount: (i.qty || 1) + ' ' + i.eggMod, tag: null };
-    case 'dash': return { amount: 'dash', tag: null };
-    case 'bitters': return { amount: 'dash', tag: null };
-    case 'top': return { amount: 'top', tag: null };
-    default: return { amount: 'garnish', tag: null };
+    case 'pour': return i.qty != null ? fmtOz(i.qty) : null; // no qty → blank
+    case 'measure': return (+(i.qty || 0)) + ' ' + (i.unit ?? 'tsp');
+    case 'count': { const n = i.qty || 1; const u = unitLabel(i.unit, n); return u ? n + ' ' + u : String(n); }
+    case 'dash': return 'dash';
+    case 'top': return 'top';
   }
 }
 
+/** The amount + the gray process tag — two orthogonal slots. The process (float/muddle/
+ *  garnish/grate) is the chip's gray word; the amount is the quantity. */
 export function amountTag(i: Ingredient): { amount: string | null; tag: string | null } {
-  const r = baseAmountTag(i);
-  // "muddled" is additive: keep the ingredient's real amount, just flag the treatment.
-  if (i.prefix === 'muddled') r.tag = 'muddle';
-  return r;
+  return { amount: measureAmount(i), tag: i.process };
 }

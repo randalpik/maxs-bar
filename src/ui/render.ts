@@ -4,7 +4,7 @@ import { FAMILY_LABEL, SPIRIT_FAMILIES, METHOD_ORDER, titleCase } from '../parse
 import { icon, amountTag } from '../ingredients/icons';
 import {
   buildStockCtx, isAvailable, missingCount, ingredientKey, effectiveChip,
-  sectionFor, SECTION_ORDER, SECTION_LABEL,
+  SECTION_ORDER, SECTION_LABEL,
 } from '../ingredients/ingredients';
 import type { StockCtx, IngredientEntry } from '../ingredients/ingredients';
 import { runtimeCatalog } from '../ingredients/catalog';
@@ -289,12 +289,11 @@ export function renderIngredients(): void {
   const stockedCount = entries.reduce((n, e) => n + (state.stocked.has(e.key) ? 1 : 0), 0);
   $('#count').textContent = `${stockedCount} of ${total} stocked`;
 
-  // Section by the render-time display grouping; entries store the raw category.
+  // Section == category now; group directly by the entry's category.
   const byCat = new Map<string, IngredientEntry[]>();
   for (const e of entries) {
-    const sec = sectionFor(e.cat, e.disp, e.key);
-    let arr = byCat.get(sec);
-    if (!arr) { arr = []; byCat.set(sec, arr); }
+    let arr = byCat.get(e.cat);
+    if (!arr) { arr = []; byCat.set(e.cat, arr); }
     arr.push(e);
   }
   const cats = [...SECTION_ORDER, ...[...byCat.keys()].filter(c => !SECTION_ORDER.includes(c))];

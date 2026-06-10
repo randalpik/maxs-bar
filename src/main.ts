@@ -1,6 +1,6 @@
 import './styles.css';
 import { setClassifier } from './parser/parser';
-import { seedClassify, runtimeCatalog, isSeedKey, reconcileStock } from './ingredients/catalog';
+import { seedClassify, runtimeCatalog, isSeedKey, reconcileStock, refreshUnits } from './ingredients/catalog';
 import { state, load, toggleStock, hasSeed, resetAll } from './core/state';
 import { fillKeySel, render, layoutCards, updateIngredientChip } from './ui/render';
 import { openModal, closeModal, saveModal, updatePreview, deleteEditing } from './ui/modal';
@@ -228,6 +228,7 @@ window.addEventListener('resize', () => {
 /* init */
 setClassifier(seedClassify); // resolve recipe ingredients from the seed, not the regex
 load(); reconcileStock(state.records); // clean up any pre-existing stuck stock state
+refreshUnits(); // install base units + any the user declared on an ingredient
 fillKeySel(); fillIgCat(); fillIgLoc(); initIgBuilder(); initLocationDrag(); render();
 history.replaceState({ page: state.page, query: state.query }, ''); // seed initial nav entry
 if (!hasSeed()) openSeedModal({ forced: true });

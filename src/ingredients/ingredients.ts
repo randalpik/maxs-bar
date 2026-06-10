@@ -1,4 +1,4 @@
-import type { Ingredient, Recipe } from '../core/types';
+import type { Form, Ingredient, Recipe } from '../core/types';
 import { state, derive } from '../core/state';
 import { iconFor } from './icons';
 import { defaultLocationForCat } from './locations';
@@ -22,90 +22,26 @@ import { titleCase } from '../parser/parser';
    ingredientKey, so stocking "Lemon" covers its juice/peel/wheel.)
    ============================================================ */
 
-/** Display (section) categories for the ingredients page — coarse buckets derived
- *  from the raw category via sectionFor at render time. NOT a stored namespace. */
-export const SECTION_ORDER = [
-  "spirit",
-  "liqueur",
-  "fortified",
-  "syrup",
-  "citrus",
-  "fruit",
-  "mixer",
-  "brew",
-  "bitters",
-  "extract",
-  "herbspice",
-  "sugar",
-  "dairyegg",
-  "other",
-];
-export const SECTION_LABEL: Record<string, string> = {
-  spirit: "Spirits",
-  liqueur: "Liqueurs",
-  fortified: "Wines",
-  syrup: "Syrups",
-  citrus: "Citrus",
-  fruit: "Fruit",
-  mixer: "Mixers",
-  brew: "Brews",
-  bitters: "Bitters",
-  extract: "Extracts",
-  herbspice: "Herbs & spices",
-  sugar: "Sugar",
-  dairyegg: "Dairy & egg",
-  other: "Other",
-};
+// The category taxonomy (single namespace, == display sections) lives in categories.ts;
+// re-exported here so existing call sites keep importing from ingredients.ts.
+export { CATEGORY_ORDER, CATEGORY_LABEL, SECTION_ORDER, SECTION_LABEL, CATEGORY_BY_ID, CATEGORIES } from './categories';
+export type { CategoryDef } from './categories';
+import { CATEGORY_BY_ID } from './categories';
 
 /** The special umbrella marking an ingredient as consumable on its own. Unlike a real
  *  umbrella it isn't a matchable generic parent — it only bumps the ingredients-page
  *  use count by 1 and is skipped when picking an entry's visual cluster key. */
 export const CONSUMABLE = 'consumable';
 
-/** Raw categories — the single stored namespace (seed + overrides). These carry the
- *  distinctions the parser/icons need (egg≠dairy, herb≠spice, soda≠fruit); the edit
- *  modal offers exactly these so an override stores the same category the seed uses. */
-export const CATEGORY_ORDER = [
-  "spirit",
-  "liqueur",
-  "fortified",
-  "syrup",
-  "citrus",
-  "fruit",
-  "soda",
-  "brew",
-  "bitters",
-  "herb",
-  "spice",
-  "sugar",
-  "dairy",
-  "egg",
-  "other",
-];
-export const CATEGORY_LABEL: Record<string, string> = {
-  spirit: "Spirit",
-  liqueur: "Liqueur",
-  fortified: "Wine",
-  syrup: "Syrup",
-  citrus: "Citrus",
-  fruit: "Fruit",
-  soda: "Soda",
-  brew: "Brew",
-  bitters: "Bitters",
-  herb: "Herb",
-  spice: "Spice",
-  sugar: "Sugar",
-  dairy: "Dairy",
-  egg: "Egg",
-  other: "Other",
-};
-
 /** Stable identity for an ingredient. For citrus, this folds every derivative
  *  (juice, peel, wheel, twist) onto the fruit itself, so stocking "Lemon" covers
  *  them all. Otherwise it's the canonical display name, lowercased, with a
  *  trailing " juice" stripped. This is what the stocked set stores. */
 export function ingredientKey(i: Ingredient): string {
-  if (i.cat === 'citrus' && i.citrus) return i.citrus;
+  // The classifier's resolved key folds every form to one stock identity (lime juice/
+  // wedge/peel → "lime"; egg white/yolk → "egg"). Unknowns carry no key, so fall back
+  // to the display name (minus a trailing " juice").
+  if (i.key) return i.key;
   return i.disp.toLowerCase().replace(/\s+juice$/, '');
 }
 
@@ -120,30 +56,15 @@ export function effectiveChip(i: Ingredient): { disp: string; color: string; sha
   };
 }
 
-/** Render-time section grouping for the ingredients page (presentation only — not a
- *  stored category). Regroups raw categories into coarser buckets: extracts split out,
- *  cranberry/pomegranate/pineapple juices as store-bought mixers, soda → mixers,
- *  herbs+spices and dairy+egg merged. Operates on the raw category + display name + key. */
-export function sectionFor(cat: string, disp: string, key: string): string {
-  if (/extract/i.test(disp)) return 'extract';
-  if (cat === 'fruit' && (key === 'cranberry' || key === 'pomegranate' || key === 'pineapple')) return 'mixer';
-  if (cat === 'soda') return 'mixer';
-  if (cat === 'herb' || cat === 'spice') return 'herbspice';
-  if (cat === 'dairy' || cat === 'egg') return 'dairyegg';
-  return cat;
-}
-
-/** Umbrella parents a *user-added* ingredient belongs to, derived from its catalog
- *  category so a generic recipe ingredient (e.g. "syrup") matches when it's stocked.
- *  Spirits are intentionally omitted — no family is captured when adding, so a lone
- *  added spirit shouldn't blanket-satisfy every recipe calling for "spirit". */
+/** Umbrella parents a *user-added* ingredient belongs to. The category default (e.g.
+ *  syrup→[syrup], bitters→[bitters]) comes from the category table; vermouth/chartreuse
+ *  are name heuristics so a generic recipe ingredient matches when stocked. Spirits are
+ *  intentionally omitted — a lone added spirit shouldn't satisfy every "spirit" call. */
 export function umbrellasForCat(cat: string, disp: string): string[] {
-  if (cat === 'syrup') return ['syrup'];
-  if (cat === 'bitters') return ['bitters'];
   const d = disp.toLowerCase();
   if (/vermouth/.test(d)) return ['vermouth'];
   if (/chartreuse/.test(d)) return ['chartreuse'];
-  return [];
+  return CATEGORY_BY_ID.get(cat)?.umbrellas ?? [];
 }
 
 export interface IngredientEntry {
@@ -158,6 +79,9 @@ export interface IngredientEntry {
   umbrellas: string[];
   /** Extra recipe-text names that resolve here (seed + user override). */
   aliases: string[];
+  /** Effective trailing forms (explicit override/seed, else the category default).
+   *  Surfaced so the modal can show & edit citrus's juice/wedge/peel mechanism. */
+  forms?: Form[];
   /** Primary umbrella for stock-list visual clustering (umbrellas[0] or self). */
   umbrella: string;
   /** Effective default physical location (override ?? seed ?? category default). */
@@ -231,7 +155,7 @@ export function buildCatalog(records: Recipe[]): Catalog {
       umbrellas: ov?.umbrellas ?? umbrellas,
       aliases: ov?.aliases ?? [],
       umbrella: umbrellas[0] ?? 'self:' + key,
-      defaultLoc: defaultLocationForCat(ov?.cat ?? i.cat, ov?.disp ?? i.disp),
+      defaultLoc: defaultLocationForCat(ov?.cat ?? i.cat),
       count: 0,
     });
   }

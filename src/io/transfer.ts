@@ -84,6 +84,7 @@ export function parseIngredientsImport(data: IngredientsExport): Record<string, 
     if ('abv' in e) ov.abv = e.abv;
     if (e.aliases?.length) ov.aliases = e.aliases;
     if (e.umbrellas?.length) ov.umbrellas = e.umbrellas;
+    if (e.forms?.length) ov.forms = e.forms;
     out[e.key] = ov;
   }
   for (const k of data.removed ?? []) out[String(k)] = { removed: true };

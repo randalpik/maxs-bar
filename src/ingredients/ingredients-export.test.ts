@@ -34,7 +34,7 @@ describe('buildIngredientsExport (seed-format diff)', () => {
   it('skips a no-op edit (override fields all equal to the seed)', () => {
     // The modal now stores the raw category (same namespace as the seed), so a save
     // with no real change writes the seed's own values — this must NOT count as a diff.
-    state.ingredients = { cranberry: { disp: 'Cranberry juice', cat: 'fruit', color: '#B5293A', shape: 'droplet', abv: 0 } };
+    state.ingredients = { cranberry: { disp: 'Cranberry juice', cat: 'mixer', color: '#B5293A', shape: 'droplet', abv: 0 } };
     expect(buildIngredientsExport().ingredients).toHaveLength(0);
   });
 

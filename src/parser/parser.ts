@@ -1,4 +1,4 @@
-import type { Classified, Ingredient, ParsedLine, Role } from "../core/types";
+import type { Classified, Form, Ingredient, ParsedLine, Process, Role, UnitDef } from "../core/types";
 
 /* ============================================================
    Cocktail shorthand parser
@@ -63,6 +63,44 @@ export function setClassifier(fn: (name: string) => Classified): void {
   activeClassifier = fn;
 }
 
+/** The leading-unit registry: the units the parser recognises in the `qty <unit>`
+ *  slot. Volumetric units carry their oz-per-unit (feeding the alcohol estimate);
+ *  a null volOz marks a discrete/count unit (e.g. "slice"). This is the built-in
+ *  base set — the app injects base + user-declared units via setUnits at startup,
+ *  so new units resolve without editing this file. ml/cl/tbsp now convert by their
+ *  real volume (previously any non-tsp unit was treated as oz). */
+export const BASE_UNITS: UnitDef[] = [
+  { id: "oz", volOz: 1 },
+  { id: "tsp", volOz: 1 / 6 },
+  { id: "tbsp", volOz: 1 / 2 },
+  { id: "ml", volOz: 1 / 29.5735 },
+  { id: "cl", volOz: 1 / 2.95735 },
+];
+
+let unitRegistry = new Map<string, UnitDef>(BASE_UNITS.map((u) => [u.id, u]));
+/** Replace the recognised unit set (base + user-declared). Mirrors setClassifier:
+ *  units are positional/global, so they can't ride the per-name classifier. */
+export function setUnits(units: UnitDef[]): void {
+  unitRegistry = new Map(units.map((u) => [u.id, u]));
+}
+export const unitDef = (id: string | null): UnitDef | undefined =>
+  id ? unitRegistry.get(id) : undefined;
+
+const escapeRe = (s: string): string => s.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+
+/** The trailing form (citrus wedge/peel/…) a name carries, if any. Scans the
+ *  ingredient's forms for a keyword/alias appearing as a whole word in the name.
+ *  The bare/default form (empty keyword) is skipped here — it shapes display only,
+ *  not role — and is consulted directly by parseIngredient. */
+function matchForm(lname: string, forms: Form[]): Form | null {
+  for (const f of forms) {
+    if (!f.keyword) continue;
+    for (const tok of [f.keyword, ...(f.aliases ?? [])])
+      if (new RegExp(`\\b${escapeRe(tok)}\\b`, "i").test(lname)) return f;
+  }
+  return null;
+}
+
 const FRAC: Record<string, number> = {
   "1/2": 0.5,
   "1/4": 0.25,
@@ -106,51 +144,61 @@ export function parseIngredient(raw: string): Ingredient {
     qty = parseNum(qm[1]!.replace(/\s/g, ""));
     s = s.slice(qm[0].length);
   }
-  const um = s.match(/^(oz|tsp|tbsp|ml|cl)\s+/i);
-  if (um) {
-    unit = um[1]!.toLowerCase();
-    s = s.slice(um[0].length);
+  // Leading unit: the first token, if it's a registered unit (oz/tsp/… + any the user
+  // has declared). Token-matched against the injected registry, not a literal regex,
+  // so new units resolve without editing the parser.
+  const utok = s.match(/^(\S+)\s+/);
+  if (utok && unitRegistry.has(utok[1]!.toLowerCase())) {
+    unit = utok[1]!.toLowerCase();
+    s = s.slice(utok[0].length);
   }
   const name = s.trim();
   const info = activeClassifier(name);
   const lname = name.toLowerCase();
-  const isCount = /\bwedges?\b/.test(lname);
-  const isPeel = /\b(peel|wheel|twist)\b/.test(lname);
+  // Forms (citrus wedge/peel, egg white/yolk, …) come from the classifier, so the parser
+  // stays seed-free and generic. A *keyword* form matches a trailing word; the *default*
+  // form (empty keyword) is the ingredient's bare-measure rule (citrus pour+juice, bitters
+  // dash, egg count). Either one decides the measure.
+  const forms = info.forms ?? [];
+  const form = matchForm(lname, forms);       // matched trailing keyword (wedge/peel/white)
+  const defForm = forms.find((f) => !f.keyword); // the ingredient's bare-measure default
+  const discreteUnit = unit != null && unitDef(unit)?.volOz == null;
+  // Amount/measure ladder. `top`/`dash` prefixes set the measure directly; `float`/
+  // `muddled` are PROCESS words (handled below), so they fall through to the normal
+  // measure. No implicit garnish — garnish is a process declared on a form, not a measure.
   let role: Role;
-  // "muddled" is a treatment, not a role — it must NOT short-circuit type resolution
-  // (e.g. "4 lime wedges muddled" is still a count of wedges). It carries through on
-  // `prefix` and only adds the "muddle" tag at render time (see amountTag).
   if (prefix === "top") role = "top";
-  else if (prefix === "float") role = "float";
   else if (prefix === "dash") role = "dash";
-  else if (info.cat === "egg") role = "egg";
-  else if (info.cat === "bitters") role = "bitters";
-  else if (isCount) role = "count";
+  else if (form) role = form.role;
+  else if (qty != null && discreteUnit) role = "count"; // e.g. "1 slice bread"
   else if (qty != null && unit === "tsp") role = "measure";
-  else if (qty != null) role = "pour";
-  else role = "garnish";
-  if (role === "pour" && !unit) unit = "oz";
-  if (role === "count") unit = "wedge";
+  else if (defForm) role = defForm.role; // citrus pour, bitters dash, egg/cherry count
+  else role = "pour"; // bare number or nothing → pour (blank amount when no quantity)
+  if (role === "pour" && !unit) unit = defForm?.unit ?? "oz"; // oz unless the default form names another
+  // A count form (keyword like "wedge", or the bare default like mint→"sprig") carries
+  // its own unit word, or stays a bare count; a leading discrete unit (slice) keeps the
+  // unit it was parsed with.
+  if (role === "count") {
+    if (form) unit = form.unit ?? null;
+    else if (!discreteUnit && defForm) unit = defForm.unit ?? null;
+  }
 
-  const liquid =
-    role === "pour" ||
-    role === "float" ||
-    role === "measure" ||
-    role === "dash";
+  // Process/positional word (gray tag), orthogonal to the amount: an explicit float/
+  // muddle prefix wins, else the form's default process (garnish/grate). Mutually
+  // exclusive — one slot — so "muddled mint" shows muddle, not muddle+garnish.
+  const process: Process | null =
+    prefix === "float" ? "float"
+    : prefix === "muddled" ? "muddle"
+    : (form?.process ?? defForm?.process ?? null);
+
+  const liquid = role === "pour" || role === "measure" || role === "dash";
   let disp = info.disp;
-  let eggMod: string | null = null;
-  if (info.cat === "egg") {
-    const w = lname.split(/\s+/).filter((x) => x && x !== "egg");
-    eggMod = w[0] || "whole";
-    disp = "Egg";
-  } else if (isPeel) {
-    disp = sentenceCase(name);
-  } else if (info.cat === "bitters") {
-    disp = sentenceCase(name);
-  } else if ((info.cat === "citrus" || info.cat === "fruit") && liquid) {
-    // Only append " juice" when the display name doesn't already carry it —
-    // non-citrus juices (pineapple, cranberry, pomegranate) seed disp as
-    // "Pineapple juice" etc., so blind concatenation produced "juice juice".
+  if (form && (form.disp === "asis" || form.disp === "sentence")) {
+    disp = sentenceCase(name); // peel/wheel/twist, egg white/yolk render the keyword
+  } else if (liquid && qty != null && (form?.disp === "juice" || defForm?.disp === "juice")) {
+    // Append " juice" once, only for an actual poured quantity (a bare "lime" garnish-y
+    // mention stays "Lime"). Non-citrus juices already carry it in disp, so guard against
+    // doubling.
     disp = /\bjuice$/i.test(info.disp) ? info.disp : info.disp + " juice";
   }
 
@@ -161,14 +209,16 @@ export function parseIngredient(raw: string): Ingredient {
     qty,
     unit,
     role,
-    prefix,
+    process,
     cat: info.cat,
     fam: info.fam || null,
     color: info.color,
     abv: info.abv,
     citrus: info.citrus || null,
     syrup: info.syrup || null,
-    eggMod,
+    shape: info.shape || null,
+    key: info.key ?? null,
+    formIcon: form?.icon ?? null,
   };
 }
 
@@ -199,9 +249,14 @@ export function parseLine(line: string): ParsedLine | null {
 }
 
 export function volOz(i: Ingredient): number {
-  if (i.role === "pour" || i.role === "float") return i.qty || 0;
-  if (i.role === "measure") return (i.qty || 0) / 6;
-  if (i.role === "dash" || i.role === "bitters") return 0.03 * (i.qty || 1);
+  // A dash is a fixed splash (bitters resolve to dash too), independent of any unit.
+  if (i.role === "dash") return 0.03 * (i.qty || 1);
+  // Otherwise the volume comes from the unit (oz=1, tsp=1/6, …); discrete units
+  // (volOz null, e.g. wedge/slice) and unitless garnishes contribute nothing.
+  const u = unitDef(i.unit);
+  if (u && u.volOz != null) return u.volOz * (i.qty || 0);
+  // A pour with no explicit unit is in oz (a float resolves to a pour + float process).
+  if (i.role === "pour") return i.qty || 0;
   return 0;
 }
 

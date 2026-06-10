@@ -1,13 +1,50 @@
+/** How much of an ingredient — the amount/measure axis (the chip's quantity slot). */
 export type Role =
   | 'pour'
-  | 'float'
   | 'measure'
   | 'count'
-  | 'egg'
   | 'dash'
-  | 'bitters'
-  | 'top'
-  | 'garnish';
+  | 'top';
+
+/** A process/positional word shown in the chip's gray tag slot, orthogonal to the
+ *  amount. `float`/`muddle` come from explicit recipe prefixes; `garnish`/`grate` are
+ *  per-ingredient defaults declared on a form. One slot, so mutually exclusive. */
+export type Process = 'float' | 'muddle' | 'garnish' | 'grate';
+
+/** A leading measure/count unit recognised in the `qty <unit> name` slot
+ *  ("2 tsp sugar", "1 slice bread"). `volOz` is the ounces one unit contributes to
+ *  the alcohol estimate; `null` marks a discrete unit (a count like "slice") that
+ *  adds no volume and renders as "N <unit>(s)". This is the global, extensible set
+ *  the parser recognises positionally — see UNIT registry in parser.ts. */
+export interface UnitDef {
+  id: string;
+  /** Amount-tag plural; defaults to `id + "s"`. */
+  plural?: string;
+  volOz: number | null;
+}
+
+/** A trailing form keyword that reshapes how an ingredient resolves — the citrus
+ *  juice/wedge/peel mechanism, generalised to data. An empty `keyword` is the
+ *  bare/default form, which only carries a display treatment (citrus → "… juice"
+ *  when poured). Forms are per-ingredient (synthesised for citrus/fruit by the
+ *  classifier, or authored in the edit modal) and reach the parser via Classified. */
+export interface Form {
+  /** Trailing token after the name ("wedge","peel"); '' = the bare/default form. */
+  keyword: string;
+  /** Extra trailing tokens that resolve to this same form ("wedges","juice"). */
+  aliases?: string[];
+  role: Role;
+  /** Display/amount unit for count forms ("wedge","sprig","pinch"); else the registry. */
+  unit?: string;
+  /** Default process word for this form (garnish, grate), shown in the gray tag slot
+   *  alongside the amount. Absent ⇒ no process (float/muddle come from recipe prefixes). */
+  process?: Process;
+  /** Display treatment: 'juice' appends " juice" (once) when poured; 'sentence'/'asis'
+   *  render the verbatim recipe name in sentence case. Absent ⇒ the classifier's disp. */
+  disp?: 'juice' | 'sentence' | 'asis';
+  /** Icon shape hint for this form ("wedge","twist","wheel"). */
+  icon?: string;
+}
 
 /** Result of the classifier — a category/colour/abv resolved against a name. */
 export interface Classified {
@@ -19,6 +56,12 @@ export interface Classified {
   fam?: string;
   syrup?: string;
   citrus?: string;
+  /** Canonical stock key the name resolved to (seed/override key); absent for unknowns.
+   *  Carried onto the parsed ingredient so ingredientKey folds every form to one key. */
+  key?: string;
+  /** Trailing forms this ingredient can take (citrus wedge/peel/…, egg white/yolk).
+   *  Consumed by the parser for role/unit/display; absent ⇒ no special forms. */
+  forms?: Form[];
 }
 
 export interface Ingredient {
@@ -28,14 +71,23 @@ export interface Ingredient {
   qty: number | null;
   unit: string | null;
   role: Role;
-  prefix: string | null;
+  /** Process/positional word (float/muddle/garnish/grate); null if none. The gray tag. */
+  process: Process | null;
   cat: string;
   fam: string | null;
   color: string;
   abv: number;
   citrus: string | null;
   syrup: string | null;
-  eggMod: string | null;
+  /** Icon shape from the classifier (seed/override shape); null for unrecognised names.
+   *  The recipe-chip icon, with formIcon and the category default as the other layers. */
+  shape: string | null;
+  /** Canonical stock key (from the classifier); null for unrecognised names. The basis
+   *  for ingredientKey, so every form of an ingredient folds to one stock identity. */
+  key: string | null;
+  /** Icon shape from the matched trailing form (citrus wedge/peel/…); null otherwise.
+   *  Lets iconFor stay form-aware without re-deriving the form. */
+  formIcon: string | null;
 }
 
 export interface ParsedLine {
@@ -74,6 +126,10 @@ export interface IngredientOverride {
   /** Extra recipe-text names that resolve to this ingredient. Replaces the seed's
    *  list when present. */
   aliases?: string[];
+  /** Trailing forms (citrus wedge/peel/…) this ingredient takes. Replaces the seed/
+   *  category-default forms when present. A form's `unit` ("sprig","slice") is what
+   *  registers a count-unit globally — there is no separate units field. */
+  forms?: Form[];
   /** Physical location this ingredient defaults to when freshly stocked. Stored only
    *  when it differs from the category default (defaultLocationForCat). */
   defaultLocation?: string;

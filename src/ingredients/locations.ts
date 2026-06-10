@@ -7,6 +7,7 @@
    from its category by defaultLocationForCat, overridable per-ingredient via the edit
    modal (IngredientOverride.defaultLocation / SeedIngredient.defaultLocation).
    ============================================================ */
+import { CATEGORY_BY_ID } from './categories';
 
 export const LOCATIONS = [
   { id: 'bar-top',      label: 'Bar top' },
@@ -23,16 +24,7 @@ export const LOCATION_LABEL: Record<string, string> = Object.fromEntries(LOCATIO
 
 export const DEFAULT_LOCATION = 'other';
 
-/** Category → sensible default location. `cat` is a raw category from CATEGORY_ORDER.
- *  "extract" is a display section (not a raw cat), detected from the display name the
- *  same way sectionFor does, so extracts land on the bottom shelf with the spirits. */
-export function defaultLocationForCat(cat: string, disp = ''): string {
-  if (/extract/i.test(disp)) return 'bottom-shelf';
-  switch (cat) {
-    case 'spirit': case 'liqueur': case 'bitters': return 'bottom-shelf';
-    case 'fortified': return 'wine-rack';
-    case 'citrus': case 'fruit': case 'dairy': case 'egg': case 'brew': return 'fridge';
-    case 'herb': case 'spice': case 'sugar': return 'pantry';
-    default: return DEFAULT_LOCATION;
-  }
+/** A category's default physical location, read from the category table. */
+export function defaultLocationForCat(cat: string): string {
+  return CATEGORY_BY_ID.get(cat)?.loc ?? DEFAULT_LOCATION;
 }

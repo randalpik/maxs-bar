@@ -1,5 +1,5 @@
 import { describe, it, expect, afterEach } from 'vitest';
-import { seedClassify, runtimeCatalog, editableEntry, SEED_KEYS, isKnownKey } from './catalog';
+import { seedClassify, runtimeCatalog, editableEntry, SEED_KEYS, isKnownKey, effectiveUnits } from './catalog';
 import { buildStockCtx, isAvailable } from './ingredients';
 import { parseIngredient } from '../parser/parser';
 import { state } from '../core/state';
@@ -18,6 +18,21 @@ describe('seedClassify', () => {
     expect(u.cat).toBe('unknown');
     expect(u.disp).toBe('Moonpetal cordial');
     expect(u.abv).toBe(0);
+  });
+});
+
+describe('effectiveUnits (the single unit registry)', () => {
+  afterEach(() => { state.ingredients = {}; });
+
+  it('is the volumetric base plus every count-unit any form references', () => {
+    const ids = new Set(effectiveUnits().map(u => u.id));
+    for (const base of ['oz', 'tsp', 'ml']) expect(ids.has(base), base).toBe(true);     // base
+    for (const cu of ['wedge', 'sprig', 'pinch', 'piece']) expect(ids.has(cu), cu).toBe(true); // from forms
+  });
+  it('picks up a count-unit a user declares on a form ("counts as")', () => {
+    state.ingredients = { bread: { disp: 'Bread', cat: 'other', forms: [{ keyword: '', role: 'count', unit: 'slice' }] } };
+    const slice = effectiveUnits().find(u => u.id === 'slice');
+    expect(slice).toEqual({ id: 'slice', volOz: null }); // discrete, recognised globally
   });
 });
 
@@ -155,11 +170,12 @@ describe('runtimeCatalog', () => {
     expect(c.fam).toBe('whiskey');  // seed umbrella → family
   });
 
-  it('stores the raw seed category (display grouping is render-time only)', () => {
+  it('stores the merged category (category == display section now)', () => {
     const cat = runtimeCatalog([]);
-    expect(cat.entries.find(e => e.key === 'milk')?.cat).toBe('dairy');        // not 'dairyegg'
-    expect(cat.entries.find(e => e.key === 'ginger beer')?.cat).toBe('soda');  // not 'mixer'
-    expect(cat.entries.find(e => e.key === 'nutmeg')?.cat).toBe('spice');      // not 'herbspice'
+    expect(cat.entries.find(e => e.key === 'milk')?.cat).toBe('dairyegg');
+    expect(cat.entries.find(e => e.key === 'ginger beer')?.cat).toBe('mixer');
+    expect(cat.entries.find(e => e.key === 'nutmeg')?.cat).toBe('herbspice');
+    expect(cat.entries.find(e => e.key === 'cranberry')?.cat).toBe('mixer');
   });
 
   it('applies an abv override to the classifier and the catalog entry', () => {

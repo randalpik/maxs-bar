@@ -1,9 +1,10 @@
 import { state, setIngredientOverride, resetIngredientOverride } from '../core/state';
-import { CATEGORY_ORDER, CATEGORY_LABEL } from '../ingredients/ingredients';
+import { CATEGORY_ORDER, CATEGORY_LABEL, CATEGORY_BY_ID } from '../ingredients/ingredients';
 import { LOCATIONS, defaultLocationForCat } from '../ingredients/locations';
-import { editableEntry, isKnownKey, isSeedKey, UMBRELLA_PARENTS, reconcileStock } from '../ingredients/catalog';
+import { editableEntry, isKnownKey, isSeedKey, UMBRELLA_PARENTS, reconcileStock, refreshUnits, baselineForms } from '../ingredients/catalog';
 import { icon } from '../ingredients/icons';
 import { titleCase, FAMILY_LABEL } from '../parser/parser';
+import type { Form, Role } from '../core/types';
 import { render, esc } from './render';
 import { $ } from '../core/dom';
 
@@ -22,11 +23,35 @@ const SHAPES = [
   'sprig', 'seed', 'ginger', 'egg', 'twist', 'cherry', 'berry',
 ];
 
+
+/** The per-ingredient measures a form can resolve to. The global leading prefixes
+ *  (top/float/dash/muddled) and quantity rules are NOT here — a form sets the AMOUNT:
+ *  a volumetric pour, a splash (dash), or a discrete count. */
+const FORM_ROLES: Role[] = ['pour', 'dash', 'count'];
+/** Process/positional words a form can default to (the gray tag). float/muddle come from
+ *  recipe prefixes, so only garnish/grate are per-ingredient defaults. */
+const FORM_PROCESSES: { val: string; label: string }[] = [
+  { val: '', label: 'no process' },
+  { val: 'garnish', label: 'garnish' },
+  { val: 'grate', label: 'grate' },
+];
+/** Display treatments a form can apply, with their stored value. */
+const FORM_DISPS: { val: string; label: string }[] = [
+  { val: '', label: 'name only' },
+  { val: 'juice', label: 'append "juice"' },
+  { val: 'asis', label: 'show keyword' },
+];
+
+/** The ingredient's editing category — tracked so a category change can swap the forms
+ *  to the new category's default (only when they were still at the old default). */
+let editingCat = '';
+
 let editingKey: string | null = null;
 let editingShape: string | null = null;
 let editingColor = '#C99A5B';
 let editingUmbrellas: string[] = [];
 let editingAliases: string[] = [];
+let editingForms: Form[] = [];
 
 const umbLabel = (u: string): string => FAMILY_LABEL[u] || titleCase(u);
 
@@ -52,8 +77,19 @@ export function fillIgLoc(): void {
   }
 }
 
+/** Show the ABV field only for alcohol-bearing categories; hide + zero it otherwise.
+ *  Zeroing on hide means a category change to a non-alcoholic one drops any stale ABV,
+ *  and saveIgModal (which already coerces blank/NaN → 0) persists abv:0. */
+function syncAbvVisibility(): void {
+  const show = !!CATEGORY_BY_ID.get($<HTMLSelectElement>('#igCat').value)?.abv;
+  $<HTMLElement>('.ig-abv').style.display = show ? '' : 'none';
+  if (!show) $<HTMLInputElement>('#igAbv').value = '0';
+}
+
 /** Wire the builder's interactive bits once at startup. */
 export function initIgBuilder(): void {
+  // ABV toggles per category; the forms may also follow the category (see onCatChange).
+  $<HTMLSelectElement>('#igCat').addEventListener('change', () => { syncAbvVisibility(); onCatChange(); });
   $('#igShapes').addEventListener('click', e => {
     const b = (e.target as HTMLElement).closest<HTMLElement>('.ig-shape');
     if (!b) return;
@@ -80,25 +116,96 @@ export function initIgBuilder(): void {
     inp.value = '';
     renderRelations();
   });
-  // Deletable chips in both lists.
+  // Forms: populate the measure/process/disp pickers once (default row + keyword-add row),
+  // then wire the editors. A form's "counts as" field is also how a count-unit is declared.
+  const roleOpts = FORM_ROLES.map(r => `<option value="${r}">${r}</option>`).join('');
+  const procOpts = FORM_PROCESSES.map(p => `<option value="${esc(p.val)}">${esc(p.label)}</option>`).join('');
+  const dispOpts = FORM_DISPS.map(d => `<option value="${esc(d.val)}">${esc(d.label)}</option>`).join('');
+  $<HTMLSelectElement>('#igFormRole').innerHTML = roleOpts;
+  $<HTMLSelectElement>('#igDefRole').innerHTML = roleOpts;
+  $<HTMLSelectElement>('#igFormProcess').innerHTML = procOpts;
+  $<HTMLSelectElement>('#igDefProcess').innerHTML = procOpts;
+  $<HTMLSelectElement>('#igFormDisp').innerHTML = dispOpts;
+  $<HTMLSelectElement>('#igDefDisp').innerHTML = dispOpts;
+  // The default (bare/empty-keyword) form: edit its measure + process + display in place.
+  $<HTMLSelectElement>('#igDefRole').addEventListener('change', e => {
+    const role = (e.target as HTMLSelectElement).value as Role;
+    setDefaultForm({ role });
+    $<HTMLInputElement>('#igDefUnit').placeholder = role === 'pour' ? 'oz' : 'counts as';
+  });
+  $<HTMLInputElement>('#igDefUnit').addEventListener('input', e =>
+    setDefaultForm({ unit: (e.target as HTMLInputElement).value.trim().toLowerCase() || undefined }));
+  $<HTMLSelectElement>('#igDefProcess').addEventListener('change', e =>
+    setDefaultForm({ process: ((e.target as HTMLSelectElement).value || undefined) as Form['process'] }));
+  $<HTMLSelectElement>('#igDefDisp').addEventListener('change', e =>
+    setDefaultForm({ disp: ((e.target as HTMLSelectElement).value || undefined) as Form['disp'] }));
+  // A keyword form (trailing word like wedge/peel/white): keyword + measure + optional
+  // count unit + process + display. A blank unit on a count = a bare number ("Egg white"/1).
+  $('#igFormAdd').addEventListener('click', () => {
+    const kw = $<HTMLInputElement>('#igFormKw').value.trim().toLowerCase();
+    if (!kw || editingForms.some(f => f.keyword === kw)) return;
+    const role = $<HTMLSelectElement>('#igFormRole').value as Role;
+    const disp = $<HTMLSelectElement>('#igFormDisp').value as Form['disp'] | '';
+    const process = $<HTMLSelectElement>('#igFormProcess').value as Form['process'] | '';
+    const unit = $<HTMLInputElement>('#igFormUnit').value.trim().toLowerCase();
+    const form: Form = { keyword: kw, role };
+    if (role === 'count' && unit) form.unit = unit;
+    if (process) form.process = process as Form['process'];
+    if (disp) form.disp = disp as Form['disp'];
+    editingForms.push(form);
+    $<HTMLInputElement>('#igFormKw').value = '';
+    $<HTMLInputElement>('#igFormUnit').value = '';
+    renderRelations();
+  });
+  // Deletable chips across the umbrella/alias/form editors.
   const del = (e: Event) => {
     const b = (e.target as HTMLElement).closest<HTMLElement>('[data-rel]');
     if (!b) return;
     const val = b.dataset.val!;
     if (b.dataset.rel === 'umb') editingUmbrellas = editingUmbrellas.filter(u => u !== val);
-    else editingAliases = editingAliases.filter(a => a !== val);
+    else if (b.dataset.rel === 'alias') editingAliases = editingAliases.filter(a => a !== val);
+    else if (b.dataset.rel === 'form') editingForms = editingForms.filter(f => f.keyword !== val);
     renderRelations();
   };
   $('#igUmbChips').addEventListener('click', del);
   $('#igAliasChips').addEventListener('click', del);
+  $('#igFormChips').addEventListener('click', del);
 }
 
-/** One deletable pill in the umbrella/alias editors. */
-function relChip(val: string, label: string, kind: 'umb' | 'alias'): string {
+/** One deletable pill in the umbrella/alias/form/unit editors. */
+function relChip(val: string, label: string, kind: 'umb' | 'alias' | 'form'): string {
   return `<span class="rel-chip">${esc(label)}<button type="button" data-rel="${kind}" data-val="${esc(val)}" title="remove" tabindex="-1">×</button></span>`;
 }
 
-/** Redraw the umbrella + alias chip lists and the umbrella dropdown options. */
+/** Summary of a keyword form chip, e.g. "wedge → count · wedge" or "peel → count · garnish · show keyword". */
+function formLabel(f: Form): string {
+  const disp = f.disp ? FORM_DISPS.find(d => d.val === f.disp)?.label ?? f.disp : '';
+  const bits = [f.role, ...(f.unit ? [f.unit] : []), ...(f.process ? [f.process] : []), ...(disp ? [disp] : [])];
+  return `${f.keyword} → ${bits.join(' · ')}`;
+}
+
+/** Update (or create) the bare/default form — the ingredient's measure with no keyword. */
+function setDefaultForm(patch: Partial<Form>): void {
+  let def = editingForms.find(f => !f.keyword);
+  if (!def) { def = { keyword: '', role: 'pour' }; editingForms.unshift(def); }
+  Object.assign(def, patch);
+  if (!def.disp) delete def.disp;
+  if (!def.process) delete def.process;
+  if (!def.unit) delete def.unit;
+}
+
+/** On category change, if the forms are still the old category's default (untouched),
+ *  swap them to the new category's default — so picking "Citrus" reveals wedge/peel,
+ *  "Bitters" shows the dash default, etc. Custom edits are left alone. */
+function onCatChange(): void {
+  const newCat = $<HTMLSelectElement>('#igCat').value;
+  if (JSON.stringify(editingForms) === JSON.stringify(baselineForms(editingKey, editingCat)))
+    editingForms = baselineForms(editingKey, newCat).map(f => ({ ...f }));
+  editingCat = newCat;
+  renderRelations();
+}
+
+/** Redraw the umbrella + alias + form + unit chip lists and the umbrella dropdown. */
 function renderRelations(): void {
   $('#igUmbChips').innerHTML = editingUmbrellas.length
     ? editingUmbrellas.map(u => relChip(u, umbLabel(u), 'umb')).join('')
@@ -113,6 +220,20 @@ function renderRelations(): void {
   sel.disabled = !avail.length;
   $('#igAliasChips').innerHTML = editingAliases.length
     ? editingAliases.map(a => relChip(a, a, 'alias')).join('')
+    : '<span class="rel-empty">none</span>';
+  // The default (empty-keyword) form drives the inline pickers; only keyword forms are chips.
+  const def = editingForms.find(f => !f.keyword);
+  const defRole = def?.role ?? 'pour';
+  $<HTMLSelectElement>('#igDefRole').value = defRole;
+  $<HTMLInputElement>('#igDefUnit').value = def?.unit ?? '';
+  // Surface the effective unit: a pour defaults to oz (the global default), a count to a
+  // bare number unless a unit is given. Placeholder (not a value) so no redundant override.
+  $<HTMLInputElement>('#igDefUnit').placeholder = defRole === 'pour' ? 'oz' : 'counts as';
+  $<HTMLSelectElement>('#igDefProcess').value = def?.process ?? '';
+  $<HTMLSelectElement>('#igDefDisp').value = def?.disp ?? '';
+  const kwForms = editingForms.filter(f => f.keyword);
+  $('#igFormChips').innerHTML = kwForms.length
+    ? kwForms.map(f => relChip(f.keyword, formLabel(f), 'form')).join('')
     : '<span class="rel-empty">none</span>';
 }
 
@@ -138,6 +259,8 @@ export function openIgModal(key: string | null, prefillName = ''): void {
     editingColor = '#C99A5B';
     editingUmbrellas = [];
     editingAliases = [];
+    editingCat = CATEGORY_ORDER[0]!;
+    editingForms = baselineForms(null, editingCat).map(f => ({ ...f }));
     $('#igTitle').textContent = 'Add ingredient';
     $<HTMLInputElement>('#igName').value = prefillName;
     $<HTMLInputElement>('#igAbv').value = '';
@@ -153,6 +276,10 @@ export function openIgModal(key: string | null, prefillName = ''): void {
     editingColor = entry.color;
     editingUmbrellas = [...entry.umbrellas];
     editingAliases = [...entry.aliases];
+    editingCat = entry.cat;
+    // Effective forms (citrus/bitters synth, egg explicit, else the bare-pour default) so
+    // the measurement mechanism — incl. each form's count-unit — is visible & editable.
+    editingForms = (entry.forms?.length ? entry.forms : baselineForms(key, entry.cat)).map(f => ({ ...f }));
     $('#igTitle').textContent = 'Edit ingredient';
     $<HTMLInputElement>('#igName').value = entry.disp;
     // ABV stored as a 0–1 fraction; shown as a percentage.
@@ -169,6 +296,7 @@ export function openIgModal(key: string | null, prefillName = ''): void {
     // Reset only applies to seed ingredients with an edit (added ones use Remove).
     $<HTMLElement>('#igReset').style.display = (isSeedKey(key) && state.ingredients[key]) ? 'block' : 'none';
   }
+  syncAbvVisibility();
   renderBuilder();
   renderRelations();
   $('#igOverlay').classList.add('open');
@@ -187,10 +315,15 @@ export function saveIgModal(): void {
   // Store the default location only when it deviates from the category default —
   // otherwise leave it undefined so no redundant override is kept.
   const loc = $<HTMLSelectElement>('#igLoc').value;
-  const defaultLocation = loc === defaultLocationForCat(cat, disp) ? undefined : loc;
+  const defaultLocation = loc === defaultLocationForCat(cat) ? undefined : loc;
+  // Store forms only when they differ from the category/seed baseline, so an untouched
+  // edit (e.g. a plain liquid's pour default, or citrus's synth set) keeps no override.
+  const isDefaultForms = JSON.stringify(editingForms) === JSON.stringify(baselineForms(editingKey, cat));
+  const forms = isDefaultForms ? undefined : editingForms.map(f => ({ ...f }));
   const patch = {
     disp, cat, color: editingColor, shape: editingShape, abv,
     umbrellas: [...editingUmbrellas], aliases: [...editingAliases], defaultLocation,
+    forms,
   };
   if (editingKey) {
     setIngredientOverride(editingKey, patch);
@@ -200,6 +333,7 @@ export function saveIgModal(): void {
     if (isKnownKey(key)) { flashName(); return; }
     setIngredientOverride(key, patch);
   }
+  refreshUnits();                  // a declared unit may now exist (or have been dropped)
   reconcileStock(state.records);   // a now-hidden ingredient (e.g. self-tag removed) shouldn't stay stocked
   closeIgModal();
   render();
@@ -208,6 +342,7 @@ export function saveIgModal(): void {
 export function resetIgModal(): void {
   if (!editingKey) return;
   resetIngredientOverride(editingKey);
+  refreshUnits();
   reconcileStock(state.records);
   closeIgModal();
   render();
@@ -218,6 +353,7 @@ export function removeIgModal(): void {
   if (!editingKey) return;
   if (isSeedKey(editingKey)) setIngredientOverride(editingKey, { removed: true });
   else resetIngredientOverride(editingKey);
+  refreshUnits();
   reconcileStock(state.records);
   closeIgModal();
   render();

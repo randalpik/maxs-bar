@@ -96,6 +96,7 @@
 <div class="overlay" id="igOverlay">
   <div class="modal ig-modal">
     <h3 id="igTitle">Edit ingredient</h3>
+    <div class="ig-scroll">
     <div class="ig-fields">
       <div class="field"><label>Name</label><input id="igName" autocomplete="off"></div>
       <div class="field"><label>Category</label><select id="igCat"></select></div>
@@ -127,6 +128,28 @@
           <input id="igAliasInput" class="rel-add" placeholder="add alias + Enter" autocomplete="off">
         </div>
       </div>
+      <div class="field">
+        <label>Forms <span class="opt">how this ingredient is measured</span></label>
+        <div class="ig-default-form">
+          <span class="dlbl">Default</span>
+          <select id="igDefRole" title="default measure"></select>
+          <input id="igDefUnit" placeholder="counts as" autocomplete="off">
+          <select id="igDefProcess" title="default process"></select>
+          <select id="igDefDisp" title="default display"></select>
+        </div>
+        <div class="rel-row">
+          <div class="rel-chips" id="igFormChips"></div>
+          <div class="rel-compose">
+            <input id="igFormKw" class="rel-add" placeholder="keyword" autocomplete="off">
+            <select id="igFormRole" title="measure"></select>
+            <input id="igFormUnit" placeholder="counts as" autocomplete="off">
+            <select id="igFormProcess" title="process"></select>
+            <select id="igFormDisp" title="display"></select>
+            <button type="button" class="btn" id="igFormAdd">Add</button>
+          </div>
+        </div>
+      </div>
+    </div>
     </div>
     <div class="actions">
       <button class="btn danger-text warn" id="igRemove" style="display:none">Remove</button>

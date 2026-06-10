@@ -4,7 +4,7 @@ Demerara: bring 1 L water and 1 kg demerara/turbinado sugar to boil
 Vanilla: add 7 g vanilla extract per 1 L simple syrup
 Orgeat: grind 2 cups of blanched almonds in food processor, boil 1.5 c. sugar and 1.25 c. water for 3 minutes, add almonds, turn to low heat and simmer for 3 minutes, increase the temperature, remove when it starts to boil, infuse for 3-8 hours, strain through 2 layers of cheesecloth, add 1 oz. brandy and 1/2 tsp. orange flower water
 Cinnamon: bring 1 L water and 12.5 g saigon cinnamon to boil, simmer for 10 min, weigh, return to heat and add equal weight sugar, bring to boil, strain
-Lapsang: bring 1 L water to boil, remove from heat and steep with 1/2 cup looseleaf lapsang tea for 20 minutes, add 1.75 cup white sugar and 1/4 cup brown sugar, steep for 5 more minutes, strain, add pinch of salt and citric acid if available.
+Lapsang: bring 1 L water to boil, remove from heat and steep with 1/2 cup looseleaf lapsang tea for 20 minutes, add 1.75 cup white sugar and 1/4 cup brown sugar, steep for 5 more minutes, strain, add pinch of salt and citric acid if available
 Lemon: infuse simple syrup with lemon peels while cooling, remove and strain
 Ginger: infuse brown sugar simple syrup with ginger pieces while cooling, remove and strain
 Honey: mix 2 parts clover honey with 1 part hot water

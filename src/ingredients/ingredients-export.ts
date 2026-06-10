@@ -1,6 +1,6 @@
 import { state } from '../core/state';
 import { titleCase } from '../parser/parser';
-import { SECTION_ORDER, sectionFor } from './ingredients';
+import { SECTION_ORDER } from './ingredients';
 import { INGREDIENTS } from './ingredients-seed';
 import type { SeedIngredient } from './ingredients-seed';
 
@@ -39,6 +39,8 @@ function mergedEntry(key: string, seed: SeedIngredient | undefined, ov: typeof s
   const umbrellas = ov.umbrellas ?? seed?.umbrellas;
   if (aliases?.length) out.aliases = aliases;
   if (umbrellas?.length) out.umbrellas = umbrellas;
+  const forms = ov.forms ?? seed?.forms;
+  if (forms?.length) out.forms = forms;
   return out;
 }
 
@@ -58,6 +60,7 @@ function sparseDiff(seed: SeedIngredient, m: SeedIngredient): IngredientDiffEntr
   if (m.abv !== seed.abv) { out.abv = m.abv; changed = true; }
   if (JSON.stringify(m.aliases ?? []) !== JSON.stringify(seed.aliases ?? [])) { out.aliases = m.aliases; changed = true; }
   if (JSON.stringify(m.umbrellas ?? []) !== JSON.stringify(seed.umbrellas ?? [])) { out.umbrellas = m.umbrellas; changed = true; }
+  if (JSON.stringify(m.forms ?? []) !== JSON.stringify(seed.forms ?? [])) { out.forms = m.forms; changed = true; }
   return changed ? out : null;
 }
 
@@ -76,7 +79,7 @@ export function buildIngredientsExport(): { ingredients: IngredientDiffEntry[]; 
     const m = mergedEntry(key, seed, ov);
     const entry = seed ? sparseDiff(seed, m) : m;   // edit → sparse; addition → full entry
     if (!entry) continue;                           // no-op edit
-    rows.push({ sec: sectionFor(m.cat, m.disp, m.key), disp: m.disp, entry });
+    rows.push({ sec: m.cat, disp: m.disp, entry });
   }
   const ord = (c: string) => { const i = SECTION_ORDER.indexOf(c); return i < 0 ? 99 : i; };
   rows.sort((a, b) => ord(a.sec) - ord(b.sec) || a.disp.localeCompare(b.disp));

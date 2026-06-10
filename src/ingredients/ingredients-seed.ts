@@ -9,6 +9,8 @@
 //   umbrellas— parent ids this is a CHILD of; a key referenced here is an effective generic,
 //              hidden from the stock list and satisfied when any child is stocked (overlap ok)
 
+import type { Form } from '../core/types';
+
 export interface SeedIngredient {
   key: string;
   disp: string;
@@ -20,6 +22,10 @@ export interface SeedIngredient {
   citrus?: string;
   aliases?: string[];
   umbrellas?: string[];
+  /** Trailing forms this ingredient takes (citrus wedge/peel/…). Omit to inherit the
+   *  category default — citrus/bitters synthesise theirs. A form's `unit` registers a
+   *  count-unit ("sprig","slice") globally. */
+  forms?: Form[];
   /** Default physical location override. Rarely set — the category default
    *  (defaultLocationForCat) covers almost everything; present only for the odd
    *  bottle whose default should differ from its category. */
@@ -73,7 +79,7 @@ export const INGREDIENTS: SeedIngredient[] = [
   {
     key: "arugula extract",
     disp: "Arugula extract",
-    cat: "herb",
+    cat: "extract",
     color: "#6B8F3F",
     shape: "dropper",
     abv: 0,
@@ -171,6 +177,7 @@ export const INGREDIENTS: SeedIngredient[] = [
     color: "#C99A3B",
     shape: "ginger",
     abv: 0,
+    forms: [{ keyword: "", role: "count", unit: "piece", process: "garnish" }],
   },
   {
     key: "cardamom bitters",
@@ -198,6 +205,7 @@ export const INGREDIENTS: SeedIngredient[] = [
     color: "#B5293A",
     shape: "cherry",
     abv: 0,
+    forms: [{ keyword: "", role: "count", process: "garnish" }],
   },
   {
     key: "chocolate bitters",
@@ -249,7 +257,7 @@ export const INGREDIENTS: SeedIngredient[] = [
   {
     key: "cranberry",
     disp: "Cranberry juice",
-    cat: "fruit",
+    cat: "mixer",
     color: "#B5293A",
     shape: "droplet",
     abv: 0,
@@ -294,11 +302,17 @@ export const INGREDIENTS: SeedIngredient[] = [
   {
     key: "egg",
     disp: "Egg",
-    cat: "egg",
+    cat: "dairyegg",
     color: "#F2EEE0",
     shape: "egg",
     abv: 0,
-    aliases: ["egg white"],
+    // Egg is a bare-count item; the white/yolk modifiers are trailing forms that show
+    // the keyword in the name ("Egg white") rather than padding the amount ("1 white").
+    forms: [
+      { keyword: "", role: "count" },
+      { keyword: "white", role: "count", disp: "asis" },
+      { keyword: "yolk", role: "count", disp: "asis" },
+    ],
   },
   {
     key: "elderflower liqueur",
@@ -338,7 +352,7 @@ export const INGREDIENTS: SeedIngredient[] = [
   {
     key: "ginger beer",
     disp: "Ginger beer",
-    cat: "soda",
+    cat: "mixer",
     color: "#C9A24B",
     shape: "droplet",
     abv: 0,
@@ -347,7 +361,7 @@ export const INGREDIENTS: SeedIngredient[] = [
   {
     key: "ginger extract",
     disp: "Ginger extract",
-    cat: "other",
+    cat: "extract",
     color: "#C99A3B",
     shape: "dropper",
     abv: 0,
@@ -468,7 +482,7 @@ export const INGREDIENTS: SeedIngredient[] = [
   {
     key: "milk",
     disp: "Milk",
-    cat: "dairy",
+    cat: "dairyegg",
     color: "#F0EDE3",
     shape: "droplet",
     abv: 0,
@@ -476,18 +490,20 @@ export const INGREDIENTS: SeedIngredient[] = [
   {
     key: "mint",
     disp: "Mint",
-    cat: "herb",
+    cat: "herbspice",
     color: "#6FAE4B",
     shape: "sprig",
     abv: 0,
+    forms: [{ keyword: "", role: "count", unit: "sprig", process: "garnish" }],
   },
   {
     key: "nutmeg",
     disp: "Nutmeg",
-    cat: "spice",
+    cat: "herbspice",
     color: "#8A5A2A",
     shape: "seed",
     abv: 0,
+    forms: [{ keyword: "", role: "count", unit: "pinch", process: "grate" }],
   },
   {
     key: "orange",
@@ -565,7 +581,7 @@ export const INGREDIENTS: SeedIngredient[] = [
   {
     key: "pomegranate",
     disp: "Pomegranate juice",
-    cat: "fruit",
+    cat: "mixer",
     color: "#9E2A3A",
     shape: "droplet",
     abv: 0,
@@ -578,6 +594,7 @@ export const INGREDIENTS: SeedIngredient[] = [
     color: "#B02A4A",
     shape: "berry",
     abv: 0,
+    forms: [{ keyword: "", role: "count", process: "garnish" }],
   },
   {
     key: "red wine",
@@ -609,7 +626,7 @@ export const INGREDIENTS: SeedIngredient[] = [
   {
     key: "saline solution",
     disp: "Saline solution",
-    cat: "other",
+    cat: "extract",
     color: "#DDE6EC",
     shape: "dropper",
     abv: 0,
@@ -638,7 +655,7 @@ export const INGREDIENTS: SeedIngredient[] = [
   {
     key: "soda water",
     disp: "Soda water",
-    cat: "soda",
+    cat: "mixer",
     color: "#DCE8EE",
     shape: "droplet",
     abv: 0,
@@ -684,7 +701,7 @@ export const INGREDIENTS: SeedIngredient[] = [
   {
     key: "tonic water",
     disp: "Tonic water",
-    cat: "soda",
+    cat: "mixer",
     color: "#DCE8EE",
     shape: "droplet",
     abv: 0,

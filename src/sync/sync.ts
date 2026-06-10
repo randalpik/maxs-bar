@@ -1,5 +1,5 @@
 import { state, buildSyncState, applySyncState, setOnMutate } from '../core/state';
-import { reconcileStock } from '../ingredients/catalog';
+import { reconcileStock, refreshUnits } from '../ingredients/catalog';
 import { render } from '../ui/render';
 import { $ } from '../core/dom';
 import {
@@ -60,7 +60,7 @@ export function syncNow(): void { if (auth) void engine.pullMerge(); }
 const engine = createSyncEngine({
   transport: httpTransport,
   getLocal: buildSyncState,
-  apply: (p) => { applySyncState(p); reconcileStock(state.records); render(); },
+  apply: (p) => { applySyncState(p); refreshUnits(); reconcileStock(state.records); render(); },
   getToken: () => auth?.token ?? null,
   getVersion: () => auth?.version ?? null,
   setVersion: (v) => { if (auth) { auth.version = v; saveAuth(); } },

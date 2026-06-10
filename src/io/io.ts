@@ -1,7 +1,7 @@
 import { state, save, saveIngredients, saveStock, setStockPlacement, deriveRecords, SEED_KEY, RECIPES_KEY } from '../core/state';
 import { parseLine } from '../parser/parser';
 import { parseCSV } from '../parser/csv';
-import { runtimeCatalog, reconcileStock } from '../ingredients/catalog';
+import { runtimeCatalog, reconcileStock, refreshUnits } from '../ingredients/catalog';
 import {
   buildRecipesExport, parseRecipesImport, isRecipesExport,
   buildIngredientsExport, parseIngredientsImport, isIngredientsExport,
@@ -106,6 +106,7 @@ export function importIngredientsJSON(text: string): void {
   if (!isIngredientsExport(data)) return;
   state.ingredients = parseIngredientsImport(data);
   saveIngredients();
+  refreshUnits();                  // imported defs may declare new units
   reconcileStock(state.records);   // imported defs may hide a previously-stocked ingredient
   render();
 }

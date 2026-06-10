@@ -61,6 +61,19 @@ describe('ingredients export/import (seed-format diff)', () => {
     state.ingredients = parseIngredientsImport(file);
     expect(bytes(buildIngredientsExport())).toBe(bytes(file));
   });
+
+  it('round-trips user-authored forms (incl. a count-unit via "counts as")', () => {
+    state.ingredients = {
+      bread: {
+        disp: 'Bread', cat: 'other', color: '#C9A36A', shape: null, abv: 0,
+        forms: [{ keyword: '', role: 'count', unit: 'slice' }],
+      },
+    };
+    const file = buildIngredientsExport();
+    state.ingredients = parseIngredientsImport(file);
+    expect(bytes(buildIngredientsExport())).toBe(bytes(file));
+    expect(state.ingredients.bread!.forms?.[0]!.unit).toBe('slice');
+  });
 });
 
 describe('stock list export/import (keys + locations)', () => {
