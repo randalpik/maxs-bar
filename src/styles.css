@@ -73,12 +73,20 @@ header.bar::before{content:''; display:inline-block; width:155px; height:50px; v
    their right edge */
 .tr-pad{float:right; width:150px; height:34px}
 header.bar:has(#syncBtn[style*="none"]) .tr-pad{width:52px}
-/* Below this width the tab switch has long since wrapped to row 2 (≈616px), so no
-   toolbar item is ever on row 1 to need the right reservation — and keeping the
-   spacer here is exactly what would force it to drop and open an oversized gap
-   (≈336px). Drop it from flow before that can happen. The 360px value is tied to the
-   specific row-1 trio (title + sync + ···); revisit it only if those change. */
-@media (max-width:360px){ .tr-pad{display:none} }
+/* The narrow-width reset. Above 720px the wide tab seg shows and wraps to row 2 on
+   its own; from 720px down the compact hamburger (#tabMenu) replaces it and becomes
+   the row-1 flow item. While that item still fits beside the brand strut + the right
+   reservation it sits on row 1, with .tr-pad keeping it clear of the absolute
+   top-right block. Below 480px there's no longer room for that trio, so instead of
+   dropping the reservation (which would let the hamburger slide up and overlap the
+   sync/··· block) we stretch the brand strut to the full row: the hamburger and all
+   controls then wrap cleanly beneath the brand/top-right row at every width down to
+   the smallest phones. .tr-pad is redundant there — removing it also avoids the
+   signed-in float-drop gap (its 150px can't fit beside the 155px strut that narrow). */
+@media (max-width:480px){
+  header.bar::before{width:100%}
+  .tr-pad{display:none}
+}
 
 /* Unwrap .controls so the tab switch and every control become individual in-flow
    items — they reflow one at a time around the struts instead of the whole controls
@@ -166,6 +174,24 @@ select{appearance:none; padding-right:30px;
 .menu .pop button:hover{background:var(--accent-dim); color:var(--accent)}
 .menu .pop .div{height:1px; background:var(--line); margin:4px 2px}
 .menu .pop .danger:hover{background:rgba(200,60,60,.16); color:#e88}
+
+/* The hamburger tab menu replaces the tab switch below 720px. It's an in-flow
+   toolbar item (unlike the ··· menu, which lives in the absolute .topright block),
+   so its pop anchors to the LEFT. Hidden by default; the media query swaps it for
+   #tabs. The label button shows the current tab so it doubles as a breadcrumb. */
+#tabMenu{display:none}
+/* Fixed width + caret pinned right so the trigger reads like the other dropdowns and
+   doesn't resize as the active-tab label changes. Sized to the widest label,
+   "Ingredients" — exactly 11ch in this monospace font (ch = one glyph advance, so
+   it's metric-independent) — plus caret 10 + gap 7 + padding 24 + border 2 = 43px. */
+#tabMenuBtn{width:calc(11ch + 43px); justify-content:space-between}
+.tabmenu .pop{left:0; right:auto; width:100%; min-width:0}
+.tabmenu .pop button.on{background:var(--accent-dim); color:var(--accent)}
+#tabMenuBtn svg{opacity:.6}
+@media (max-width:720px){
+  header.bar > #tabs{display:none}
+  header.bar > #tabMenu{display:inline-flex; vertical-align:middle; margin:5px 10px 5px 0}
+}
 
 /* sync button — floated top-right next to the ··· menu (it comes after .menu in
    source, so it stacks to the menu's left). Mirrors the menu's float/align/margins.

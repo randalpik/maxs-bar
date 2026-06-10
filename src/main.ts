@@ -19,14 +19,23 @@ import { $ } from './core/dom';
 /* ============================================================
    Wire up
    ============================================================ */
+type Page = 'recipes' | 'food' | 'ingredients' | 'syrups';
 const tabs = $('#tabs');
-/** Switch tabs: set state.page and sync the tab + toolbar classes. Caller renders. */
-function selectPage(page: 'recipes' | 'ingredients' | 'syrups'): void {
+const tabMenu = $('#tabMenu');
+const TAB_LABELS: Record<Page, string> = { recipes: 'Cocktails', food: 'Food', ingredients: 'Ingredients', syrups: 'Syrups' };
+/** Switch tabs: set state.page and sync the tab switch, the hamburger menu, and the
+ *  toolbar page classes. Caller renders. */
+function selectPage(page: Page): void {
   state.page = page;
   [...tabs.children].forEach(x => x.classList.toggle('on', (x as HTMLElement).dataset.page === page));
+  tabMenu.querySelectorAll<HTMLElement>('.pop button').forEach(x => x.classList.toggle('on', x.dataset.page === page));
+  $('#tabMenuLabel').textContent = TAB_LABELS[page];
   const bar = $('.bar');
   bar.classList.toggle('page-ingredients', page === 'ingredients');
   bar.classList.toggle('page-syrups', page === 'syrups');
+  // Cocktails and Food have different group/sort keys — re-sync the selector and
+  // normalize state.key so render() never looks up a key absent from the page.
+  fillKeySel();
 }
 /** Act on the recipe-chip "plan" button:
  *  - a hidden seed generic (e.g. rum/syrup/spirit, whose colour only shows in recipes)
@@ -67,7 +76,7 @@ function pushNav(): void {
 function restoreNav(nav: { page?: string; query?: string }): void {
   state.query = nav.query || '';
   $<HTMLInputElement>('#search').value = state.query;
-  selectPage((nav.page as 'recipes' | 'ingredients' | 'syrups') || 'recipes');
+  selectPage((nav.page as Page) || 'recipes');
   render();
 }
 window.addEventListener('popstate', e => restoreNav(e.state || { page: 'recipes', query: '' }));
@@ -75,10 +84,21 @@ window.addEventListener('popstate', e => restoreNav(e.state || { page: 'recipes'
 tabs.addEventListener('click', e => {
   const b = (e.target as HTMLElement).closest('button');
   if (!b) return;
-  selectPage(b.dataset.page as 'recipes' | 'ingredients' | 'syrups');
+  selectPage(b.dataset.page as Page);
   render();
   pushNav();
 });
+// Hamburger tab menu (<720px): same flow as the tab switch, plus open/close.
+$('#tabMenuBtn').addEventListener('click', e => { e.stopPropagation(); tabMenu.classList.toggle('open'); });
+tabMenu.querySelector('.pop')!.addEventListener('click', e => {
+  const b = (e.target as HTMLElement).closest<HTMLElement>('button[data-page]');
+  if (!b) return;
+  tabMenu.classList.remove('open');
+  selectPage(b.dataset.page as Page);
+  render();
+  pushNav();
+});
+document.addEventListener('click', () => tabMenu.classList.remove('open'));
 $('#modeSeg').addEventListener('click', e => {
   const b = (e.target as HTMLElement).closest('button');
   if (!b) return;

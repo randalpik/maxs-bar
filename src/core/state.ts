@@ -25,7 +25,7 @@ export const state: {
   mode: 'group' | 'sort';
   key: string;
   query: string;
-  page: 'recipes' | 'ingredients' | 'syrups';
+  page: 'recipes' | 'food' | 'ingredients' | 'syrups';
   /** Ingredients-tab sub-mode: stock toggling vs. location grouping/reorder. Session-only. */
   igMode: 'stock' | 'location';
   stocked: Set<string>;
@@ -77,13 +77,13 @@ export function deriveRecords(): Recipe[] {
     seen.add(k);
     const o = ov[k];
     if (o?.removed) continue;
-    if (o) out.push({ name: o.name ?? b.name, recipe: o.recipe ?? b.recipe, author: o.author ?? b.author, created: o.created ?? b.created, edited: o.edited ?? b.edited });
+    if (o) out.push({ name: o.name ?? b.name, recipe: o.recipe ?? b.recipe, author: o.author ?? b.author, created: o.created ?? b.created, edited: o.edited ?? b.edited, recipeType: o.recipeType ?? b.recipeType, foodCat: o.foodCat ?? b.foodCat });
     else out.push(b);
   }
   // User additions: override keys not present in the base (and not tombstones).
   for (const [k, o] of Object.entries(ov)) {
     if (seen.has(k) || o.removed) continue;
-    out.push({ name: o.name ?? k, recipe: o.recipe ?? '', author: o.author ?? '', created: o.created ?? '', edited: o.edited ?? '' });
+    out.push({ name: o.name ?? k, recipe: o.recipe ?? '', author: o.author ?? '', created: o.created ?? '', edited: o.edited ?? '', recipeType: o.recipeType, foodCat: o.foodCat });
   }
   return out;
 }
@@ -101,9 +101,9 @@ export function diffRecords(records: Recipe[], base: Recipe[], prev: Record<stri
     const k = r.name.toLowerCase();
     present.add(k);
     const b = baseMap.get(k);
-    if (!b) ov[k] = { name: r.name, recipe: r.recipe, author: r.author, created: r.created, edited: r.edited }; // addition
-    else if (r.recipe !== b.recipe || r.author !== b.author || r.name !== b.name) // edit
-      ov[k] = { name: r.name, recipe: r.recipe, author: r.author, created: r.created, edited: r.edited };
+    if (!b) ov[k] = { name: r.name, recipe: r.recipe, author: r.author, created: r.created, edited: r.edited, recipeType: r.recipeType, foodCat: r.foodCat }; // addition
+    else if (r.recipe !== b.recipe || r.author !== b.author || r.name !== b.name || r.recipeType !== b.recipeType || r.foodCat !== b.foodCat) // edit
+      ov[k] = { name: r.name, recipe: r.recipe, author: r.author, created: r.created, edited: r.edited, recipeType: r.recipeType, foodCat: r.foodCat };
   }
   for (const b of base) {
     const k = b.name.toLowerCase();

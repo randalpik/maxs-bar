@@ -1,6 +1,7 @@
-import type { Derived, Ingredient } from '../core/types';
+import type { Derived, FoodCat, Ingredient } from '../core/types';
 import { state, derive } from '../core/state';
 import { FAMILY_LABEL, SPIRIT_FAMILIES, METHOD_ORDER, titleCase } from '../parser/parser';
+import { FOOD_CATS, FOOD_CAT_LABEL, DEFAULT_FOOD_CAT } from '../recipes/food';
 import { icon, amountTag } from '../ingredients/icons';
 import {
   buildStockCtx, isAvailable, missingCount, ingredientKey, effectiveChip,
@@ -18,19 +19,35 @@ import { $ } from '../core/dom';
    ============================================================ */
 const main = $('#main');
 
-const KEY_OPTS: Record<'group' | 'sort', [string, string][]> = {
+const COCKTAIL_KEYS: Record<'group' | 'sort', [string, string][]> = {
   group: [['spirit', 'By spirit'], ['citrus', 'By citrus'], ['syrup', 'By syrup'], ['liqueur', 'By liqueur'], ['method', 'By method']],
   sort: [['base', 'Base spirit'], ['name', 'Name'], ['alcohol', 'Alcohol (est.)'], ['missing', 'Missing ingredients'], ['edited', 'Last modified']],
 };
+// Food drops base/method/alcohol (meaningless) and groups/sorts by its category.
+const FOOD_KEYS: Record<'group' | 'sort', [string, string][]> = {
+  group: [['category', 'By category']],
+  sort: [['category', 'Category'], ['name', 'Name'], ['missing', 'Missing ingredients'], ['edited', 'Last modified']],
+};
+
+/** The group/sort key options for the current page + mode. */
+function keyOpts(): [string, string][] {
+  return (state.page === 'food' ? FOOD_KEYS : COCKTAIL_KEYS)[state.mode];
+}
+
+/** A food recipe's category (defaulting if somehow unset). */
+function foodCatOf(d: Derived): FoodCat {
+  return d.rec.foodCat ?? DEFAULT_FOOD_CAT;
+}
 
 export function fillKeySel(): void {
   const sel = $<HTMLSelectElement>('#keySel');
   sel.innerHTML = '';
-  for (const [v, l] of KEY_OPTS[state.mode]) {
+  const opts = keyOpts();
+  for (const [v, l] of opts) {
     const o = document.createElement('option');
     o.value = v; o.textContent = l; sel.appendChild(o);
   }
-  if (!KEY_OPTS[state.mode].some(o => o[0] === state.key)) state.key = KEY_OPTS[state.mode][0]![0];
+  if (!opts.some(o => o[0] === state.key)) state.key = opts[0]![0];
   sel.value = state.key;
 }
 
@@ -85,13 +102,19 @@ export function chipHTML(i: Ingredient, ctx?: StockCtx, searchable = false): str
 }
 
 function cardHTML(d: Derived, idx: number, ctx?: StockCtx): string {
-  const baseL = d.base ? FAMILY_LABEL[d.base] || titleCase(d.base) : '—';
-  const drinks = +(d.alc / 0.6).toFixed(2);
-  const meta = [
-    `<span><b>${esc(baseL)}</b></span>`,
-    `<span>${d.p.method}</span>`,
-    `<span class="alc">${drinks} ${drinks === 1 ? 'drink' : 'drinks'}</span>`,
-  ].join('');
+  let meta: string;
+  if (d.rec.recipeType === 'food') {
+    // Food shows just its category in place of base-spirit/method/ABV.
+    meta = `<span><b>${esc(FOOD_CAT_LABEL[foodCatOf(d)])}</b></span>`;
+  } else {
+    const baseL = d.base ? FAMILY_LABEL[d.base] || titleCase(d.base) : '—';
+    const drinks = +(d.alc / 0.6).toFixed(2);
+    meta = [
+      `<span><b>${esc(baseL)}</b></span>`,
+      `<span>${d.p.method}</span>`,
+      `<span class="alc">${drinks} ${drinks === 1 ? 'drink' : 'drinks'}</span>`,
+    ].join('');
+  }
   return `<article class="card" style="animation-delay:${Math.min(idx * 28, 420)}ms">`
     + `<button class="edit" data-edit="${esc(d.rec.name)}" title="edit"><svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4"><path d="M11 2l3 3-8 8-4 1 1-4z"/></svg></button>`
     + `<div class="head"><h2>${esc(d.rec.name)}${d.rec.author ? ` <span class="byline">${esc(d.rec.author)}</span>` : ''}</h2><div class="meta">${meta}</div></div>`
@@ -105,18 +128,21 @@ function groupsFor(d: Derived): string[] {
   if (state.key === 'syrup') { const s = [...new Set(d.p.ingredients.filter(i => i.cat === 'syrup').map(i => i.syrup))]; return s.length ? (s as string[]) : ['—']; }
   if (state.key === 'liqueur') { const s = [...new Set(d.p.ingredients.filter(i => i.cat === 'liqueur').map(i => i.disp))]; return s.length ? s : ['—']; }
   if (state.key === 'method') { return [d.p.method]; }
+  if (state.key === 'category') { return [foodCatOf(d)]; }
   return ['—'];
 }
 
 function groupLabel(g: string): string {
   if (state.key === 'spirit') return FAMILY_LABEL[g] || titleCase(g);
   if (state.key === 'syrup') return g === 'generic' ? 'Syrup' : titleCase(g) + ' syrup';
+  if (state.key === 'category') return FOOD_CAT_LABEL[g as FoodCat] || titleCase(g);
   return titleCase(g);
 }
 
 function groupSortKeys(): string[] | null {
   if (state.key === 'spirit') return SPIRIT_FAMILIES;
   if (state.key === 'method') return METHOD_ORDER;
+  if (state.key === 'category') return FOOD_CATS;
   return null;
 }
 
@@ -134,8 +160,12 @@ export function render(): void {
   if (state.page === 'ingredients') { renderIngredients(); return; }
   if (state.page === 'syrups') { renderSyrups(); return; }
 
-  const data = state.records.map(derive).filter(matchQuery);
-  $('#count').textContent = state.records.length + ' recipes';
+  // Cocktails and Food share this path; each page shows only its own recipe kind.
+  const foodPage = state.page === 'food';
+  const pageRecs = state.records.filter(r => (r.recipeType === 'food') === foodPage);
+  const data = pageRecs.map(derive).filter(matchQuery);
+  $('#count').textContent = `${pageRecs.length} ${foodPage ? 'dishes' : 'recipes'}`;
+  if (!pageRecs.length) { main.innerHTML = `<div class="empty">${foodPage ? 'No food recipes yet — add one with “+ Add”.' : 'No recipes yet.'}</div>`; return; }
   if (!data.length) { main.innerHTML = '<div class="empty">No recipes match.</div>'; return; }
 
   const ctx = buildStockCtx(runtimeCatalog(state.records), state.stocked);
@@ -146,19 +176,26 @@ export function render(): void {
     else if (state.key === 'alcohol') arr.sort((a, b) => b.alc - a.alc);
     else if (state.key === 'missing') arr.sort((a, b) => missingCount(a.p.ingredients, ctx) - missingCount(b.p.ingredients, ctx) || a.rec.name.localeCompare(b.rec.name));
     else if (state.key === 'edited') arr.sort((a, b) => (b.rec.edited || '').localeCompare(a.rec.edited || '') || a.rec.name.localeCompare(b.rec.name));
+    else if (state.key === 'category') { // food category
+      const oi = (c: FoodCat) => { const x = FOOD_CATS.indexOf(c); return x < 0 ? 99 : x; };
+      arr.sort((a, b) => oi(foodCatOf(a)) - oi(foodCatOf(b)) || a.rec.name.localeCompare(b.rec.name));
+    }
     else { // base spirit
       const oi = (f: string | null) => { const x = SPIRIT_FAMILIES.indexOf(f as string); return x < 0 ? 99 : x; };
       arr.sort((a, b) => oi(a.base) - oi(b.base) || a.rec.name.localeCompare(b.rec.name));
     }
 
-    // Binnable sorts (base spirit, missing ingredients) split into category headers
+    // Binnable sorts (base spirit, missing ingredients, food category) split into category headers
     // like group mode. The array is already in bin order, so grouping it into a
     // Map (insertion-ordered) yields the bins in the right order, name-sorted within.
-    if (state.key === 'base' || state.key === 'missing') {
+    if (state.key === 'base' || state.key === 'missing' || state.key === 'category') {
       const binKey = (d: Derived): string =>
-        state.key === 'base' ? (d.base || '—') : String(missingCount(d.p.ingredients, ctx));
+        state.key === 'base' ? (d.base || '—')
+        : state.key === 'category' ? foodCatOf(d)
+        : String(missingCount(d.p.ingredients, ctx));
       const binLabel = (k: string): string => {
         if (state.key === 'base') return k === '—' ? '—' : (FAMILY_LABEL[k] || titleCase(k));
+        if (state.key === 'category') return FOOD_CAT_LABEL[k as FoodCat] || titleCase(k);
         return k === '0' ? 'Ready to make' : `${k} missing`;
       };
       const bins = new Map<string, Derived[]>();
@@ -172,7 +209,7 @@ export function render(): void {
       return;
     }
 
-    const lbl = KEY_OPTS.sort.find(o => o[0] === state.key)![1];
+    const lbl = keyOpts().find(o => o[0] === state.key)![1];
     main.innerHTML = groupSection(`Sorted · ${lbl}`, arr.length, arr.map((d, i) => cardHTML(d, i, ctx)).join(''));
     scheduleLayout();
     return;

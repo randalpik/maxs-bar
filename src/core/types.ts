@@ -98,6 +98,10 @@ export interface ParsedLine {
   ingredients: Ingredient[];
 }
 
+/** Food recipe category — the food analog of a cocktail's base/method, used purely
+ *  for cosmetic grouping on the Food tab. */
+export type FoodCat = 'meal' | 'snack' | 'dessert';
+
 /** A stored recipe record — the source of truth, persisted as CSV. */
 export interface Recipe {
   name: string;
@@ -106,6 +110,11 @@ export interface Recipe {
   edited: string;
   /** Drink author/creator. Blank for classics; set for originals. */
   author: string;
+  /** Recipe kind. Absent ⇒ cocktail (the default); only food recipes set this, so all
+   *  existing data, seeds and exports stay byte-stable. */
+  recipeType?: 'cocktail' | 'food';
+  /** Food category (Meal/Snack/Dessert). Set only on food recipes. */
+  foodCat?: FoodCat;
 }
 
 /** User edits to a derived ingredient, keyed by ingredientKey and persisted in
@@ -153,6 +162,10 @@ export interface RecipeOverride {
   author?: string;
   created?: string;
   edited?: string;
+  /** Recipe kind — carried so food recipes survive sync + JSON round-trips. Absent ⇒ cocktail. */
+  recipeType?: 'cocktail' | 'food';
+  /** Food category, carried for the same reason. Set only on food recipes. */
+  foodCat?: FoodCat;
   /** A removed seed recipe — dropped from the derived list. */
   removed?: boolean;
 }

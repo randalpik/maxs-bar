@@ -47,9 +47,24 @@
     <span class="sub" id="count">— recipes</span>
   </div>
   <div class="seg tabs" id="tabs">
-    <button data-page="recipes" class="on">Recipes</button>
+    <button data-page="recipes" class="on">Cocktails</button>
+    <button data-page="food">Food</button>
     <button data-page="ingredients">Ingredients</button>
     <button data-page="syrups">Syrups</button>
+  </div>
+  <!-- Narrow-width (<720px) replacement for the tab switch: a labelled hamburger.
+       Reuses the .menu/.pop popover pattern; selectPage keeps both in sync. -->
+  <div class="menu tabmenu" id="tabMenu">
+    <button class="btn" id="tabMenuBtn" aria-haspopup="true">
+      <span id="tabMenuLabel">Cocktails</span>
+      <svg width="10" height="6" viewBox="0 0 10 6" fill="none" stroke="currentColor" stroke-width="1.4"><path d="M1 1l4 4 4-4"/></svg>
+    </button>
+    <div class="pop">
+      <button data-page="recipes" class="on">Cocktails</button>
+      <button data-page="food">Food</button>
+      <button data-page="ingredients">Ingredients</button>
+      <button data-page="syrups">Syrups</button>
+    </div>
   </div>
   <div class="controls">
     <div class="seg" id="modeSeg">
@@ -80,8 +95,9 @@
   <div class="modal">
     <button type="button" class="modal-x" id="mClose" aria-label="Close"><svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor"><rect x="2.5" y="7.15" width="11" height="1.7" rx=".85" transform="rotate(45 8 8)"/><rect x="2.5" y="7.15" width="11" height="1.7" rx=".85" transform="rotate(-45 8 8)"/></svg></button>
     <h3 id="mTitle">Add cocktail</h3>
-    <p class="hint">Format: <code>Name: 2 spirit, 3/4 lime, 3/4 syrup (method)</code>. Units default to oz. Tokens: <code>top</code>, <code>float</code>, <code>dash</code>, <code>muddled</code>, <code>(built)</code>, <code>(stirred)</code>. The recipe string is the source of truth.</p>
+    <p class="hint" id="mHint">Format: <code>Name: 2 spirit, 3/4 lime, 3/4 syrup (method)</code>. Units default to oz. Tokens: <code>top</code>, <code>float</code>, <code>dash</code>, <code>muddled</code>, <code>(built)</code>, <code>(stirred)</code>. The recipe string is the source of truth.</p>
     <div class="field"><label>Name</label><input id="fName" placeholder="Daiquiri" autocomplete="off"></div>
+    <div class="field" id="fFoodCatField" style="display:none"><label>Category</label><select id="fFoodCat"></select></div>
     <div class="field"><label>Author <span class="opt">optional</span></label><input id="fAuthor" placeholder="leave blank for classics" autocomplete="off"></div>
     <div class="field"><label>Recipe</label><textarea id="fRecipe" placeholder="2 rum, 3/4 lime, 3/4 syrup"></textarea></div>
     <div class="preview"><div class="plbl">Parsed preview</div><div class="chips" id="pvChips"></div></div>

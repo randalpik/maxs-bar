@@ -1,5 +1,6 @@
 import type { Recipe, RecipeOverride, IngredientOverride } from '../core/types';
 import { state } from '../core/state';
+import { DEFAULT_FOOD_CAT } from '../recipes/food';
 import { LOCATION_ORDER } from '../ingredients/locations';
 import { buildIngredientsExport, type IngredientDiffEntry } from '../ingredients/ingredients-export';
 
@@ -33,7 +34,10 @@ export function buildRecipesExport(): RecipesExport {
   const removed: string[] = [];
   for (const [k, o] of Object.entries(state.recipeOverrides)) {
     if (o.removed) { removed.push(k); continue; }
-    recipes.push({ name: o.name ?? k, recipe: o.recipe ?? '', author: o.author ?? '', created: o.created ?? '', edited: o.edited ?? '' });
+    const rec: Recipe = { name: o.name ?? k, recipe: o.recipe ?? '', author: o.author ?? '', created: o.created ?? '', edited: o.edited ?? '' };
+    // Only food carries these — cocktail exports stay byte-identical.
+    if (o.recipeType === 'food') { rec.recipeType = 'food'; rec.foodCat = o.foodCat ?? DEFAULT_FOOD_CAT; }
+    recipes.push(rec);
   }
   recipes.sort((a, b) => a.name.localeCompare(b.name));
   removed.sort();
@@ -46,7 +50,9 @@ export function parseRecipesImport(data: RecipesExport): { seed?: string; overri
   const overrides: Record<string, RecipeOverride> = {};
   for (const r of data.recipes ?? []) {
     if (!r.name) continue;
-    overrides[r.name.toLowerCase()] = { name: r.name, recipe: r.recipe ?? '', author: r.author ?? '', created: r.created ?? '', edited: r.edited ?? '' };
+    const ov: RecipeOverride = { name: r.name, recipe: r.recipe ?? '', author: r.author ?? '', created: r.created ?? '', edited: r.edited ?? '' };
+    if (r.recipeType === 'food') { ov.recipeType = 'food'; ov.foodCat = r.foodCat ?? DEFAULT_FOOD_CAT; }
+    overrides[r.name.toLowerCase()] = ov;
   }
   for (const k of data.removed ?? []) overrides[String(k).toLowerCase()] = { removed: true };
   const seed = typeof data.seed === 'string' && data.seed ? data.seed : undefined;

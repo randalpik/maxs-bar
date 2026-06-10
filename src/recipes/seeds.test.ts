@@ -66,6 +66,28 @@ describe('deriveRecords + diffRecords round-trip', () => {
     expect(Object.keys(ov)).toHaveLength(3);
   });
 
+  it('food recipes round-trip recipeType + foodCat; cocktails diff to nothing', () => {
+    state.seedId = 'classics';
+    const base = resolveSeed('classics');
+    const recs = deriveRecords();
+    recs.push({ name: 'Tacos', recipe: '3 corn tortilla, pork, pineapple', created: 'x', edited: 'x', author: '', recipeType: 'food', foodCat: 'meal' });
+
+    const ov = diffRecords(recs, base);
+    expect(Object.keys(ov)).toEqual(['tacos']);              // the seed cocktails diff to nothing
+    expect(ov['tacos']?.recipeType).toBe('food');
+    expect(ov['tacos']?.foodCat).toBe('meal');
+
+    // Re-derive and confirm the food fields survive.
+    state.recipeOverrides = ov;
+    const taco = byName(deriveRecords(), 'Tacos')!;
+    expect(taco.recipeType).toBe('food');
+    expect(taco.foodCat).toBe('meal');
+
+    // Changing the category is captured as an edit.
+    taco.foodCat = 'snack';
+    expect(diffRecords([taco], base, ov)['tacos']?.foodCat).toBe('snack');
+  });
+
   it('user overrides survive a seed switch (apply -> diff -> re-apply)', () => {
     // Start on Classics with an edit + an addition.
     state.seedId = 'classics';

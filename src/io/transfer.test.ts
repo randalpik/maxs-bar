@@ -33,6 +33,24 @@ describe('recipes export/import (diff JSON)', () => {
     expect(bytes(buildRecipesExport())).toBe(bytes(file));
   });
 
+  it('round-trips a food recipe (recipeType + foodCat) and leaves cocktails bare', () => {
+    state.seedId = 'classics';
+    state.recipeOverrides = {
+      tacos: { name: 'Tacos', recipe: '3 corn tortilla, pork, pineapple, onion', author: '', created: '2026-03-01', edited: '2026-03-01', recipeType: 'food', foodCat: 'meal' },
+      daiquiri: { name: 'Daiquiri', recipe: '2 rum, 1 lime, 3/4 syrup', author: '', created: '', edited: '' },
+    };
+    const file = buildRecipesExport();
+    const taco = file.recipes.find(r => r.name === 'Tacos')!;
+    expect(taco.recipeType).toBe('food');
+    expect(taco.foodCat).toBe('meal');
+    // Cocktails carry neither field.
+    const daq = file.recipes.find(r => r.name === 'Daiquiri')!;
+    expect('recipeType' in daq).toBe(false);
+    expect('foodCat' in daq).toBe(false);
+    state.recipeOverrides = parseRecipesImport(file).overrides;
+    expect(bytes(buildRecipesExport())).toBe(bytes(file));
+  });
+
   it('sorts recipes by name and removals alphabetically (stable output)', () => {
     state.seedId = 'classics';
     state.recipeOverrides = {
