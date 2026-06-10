@@ -41,8 +41,8 @@ export const state: {
 } = {
   records: [],
   seedId: '',
-  mode: 'group',
-  key: 'spirit',
+  mode: 'sort',
+  key: 'base',
   query: '',
   page: 'recipes',
   igMode: 'stock',
