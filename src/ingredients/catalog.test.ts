@@ -3,6 +3,9 @@ import { seedClassify, runtimeCatalog, editableEntry, SEED_KEYS, isKnownKey, eff
 import { buildStockCtx, isAvailable } from './ingredients';
 import { parseIngredient } from '../parser/parser';
 import { state } from '../core/state';
+import { INGREDIENTS } from './ingredients-seed';
+import { CATEGORY_BY_ID } from './categories';
+import { LOCATION_ORDER } from './locations';
 
 const keys = (records = []) => new Set(runtimeCatalog(records).entries.map(e => e.key));
 
@@ -25,6 +28,22 @@ describe('seedClassify', () => {
     expect(seedClassify('honey').key).toBe('honey syrup');            // default = cocktail
     expect(seedClassify('honey syrup', 'food').key).toBe('honey syrup'); // explicit name works anywhere
   });
+  it('resolves grocery names (incl. former grocery-list shorthands) in both contexts', () => {
+    expect(seedClassify('tomatoes', 'food').key).toBe('tomato');
+    expect(seedClassify('fake beef', 'food').key).toBe('plant-based ground beef');
+    expect(seedClassify('maple patties', 'food').key).toBe('plant-based breakfast patties');
+    expect(seedClassify('lettuce', 'food').key).toBe('leafy greens');
+    expect(seedClassify('parm', 'food').key).toBe('parmesan cheese');
+    expect(seedClassify('pepper', 'food').key).toBe('black pepper');
+    expect(seedClassify('tajin', 'food').key).toBe('tajín');
+    expect(seedClassify('mushrooms').key).toBe('mushroom'); // unscoped — cocktail too
+  });
+  it('produce counts by category default in any context', () => {
+    const i = parseIngredient('2 mushrooms', 'food');
+    expect(i.role).toBe('count');
+    expect(i.qty).toBe(2);
+    expect(i.cat).toBe('produce');
+  });
   it('filters context-scoped forms: citrus default is juice-pour in cocktail, count in food', () => {
     const def = (ctx: 'cocktail' | 'food') =>
       seedClassify('lime', ctx).forms!.find(f => !f.keyword)!;
@@ -34,6 +53,30 @@ describe('seedClassify', () => {
     // unscoped trailing forms (wedge) survive in both
     for (const ctx of ['cocktail', 'food'] as const)
       expect(seedClassify('lime', ctx).forms!.some(f => f.keyword === 'wedge'), ctx).toBe(true);
+  });
+});
+
+describe('seed integrity', () => {
+  it('every entry has a known category, a real defaultLocation, and a unique key', () => {
+    const seen = new Set<string>();
+    for (const i of INGREDIENTS) {
+      expect(CATEGORY_BY_ID.has(i.cat), `${i.key}: cat ${i.cat}`).toBe(true);
+      if (i.defaultLocation) expect(LOCATION_ORDER, i.key).toContain(i.defaultLocation);
+      expect(seen.has(i.key), `duplicate key ${i.key}`).toBe(false);
+      seen.add(i.key);
+    }
+  });
+  it('no unscoped alias shadows another entry identity (scoped aliases are the exception)', () => {
+    const keys = new Set(INGREDIENTS.map(i => i.key));
+    for (const i of INGREDIENTS)
+      for (const a of i.aliases ?? [])
+        expect(keys.has(a.toLowerCase()), `${i.key} alias "${a}"`).toBe(false);
+  });
+  it('the per-ingredient default location: ice cream → freezer, lunchmeat → fridge', () => {
+    const byKey = new Map(runtimeCatalog([]).entries.map(e => [e.key, e]));
+    expect(byKey.get('ice cream')!.defaultLoc).toBe('freezer');
+    expect(byKey.get('plant-based lunchmeat')!.defaultLoc).toBe('fridge');
+    expect(byKey.get('veggie burgers')!.defaultLoc).toBe('freezer'); // protein category default
   });
 });
 
