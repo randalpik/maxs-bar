@@ -1,6 +1,7 @@
 import { state, setIngredientOverride, resetIngredientOverride } from '../core/state';
 import { CATEGORY_ORDER, CATEGORY_LABEL, CATEGORY_BY_ID } from '../ingredients/ingredients';
-import { LOCATIONS, defaultLocationForCat } from '../ingredients/locations';
+import { defaultLocationForCat } from '../ingredients/locations';
+import { HOME_ID, OTHER_CAT, profileCats, catLabel } from '../profiles/profiles';
 import { editableEntry, isKnownKey, isSeedKey, UMBRELLA_PARENTS, reconcileStock, refreshUnits, baselineForms } from '../ingredients/catalog';
 import { icon } from '../ingredients/icons';
 import { titleCase, FAMILY_LABEL } from '../parser/parser';
@@ -66,15 +67,31 @@ export function fillIgCat(): void {
   }
 }
 
-/** Populate the default-location <select> once, from the location list. */
+/** Populate the Home-location <select> from the Home profile's live category list
+ *  (plus the implicit Other). Home's aisles are user-editable, so openIgModal
+ *  re-runs this on every open rather than relying on the once-at-startup fill. */
 export function fillIgLoc(): void {
   const sel = $<HTMLSelectElement>('#igLoc');
   sel.innerHTML = '';
-  for (const l of LOCATIONS) {
+  const home = state.profiles[HOME_ID];
+  for (const c of home ? profileCats(home) : [OTHER_CAT]) {
     const o = document.createElement('option');
-    o.value = l.id; o.textContent = l.label;
+    o.value = c; o.textContent = catLabel(c);
     sel.appendChild(o);
   }
+}
+
+/** Select a location, surfacing one Home no longer lists as a transient "(removed)"
+ *  option — so opening and saving an untouched ingredient never silently rewrites
+ *  its stored default. */
+function setIgLocValue(loc: string): void {
+  const sel = $<HTMLSelectElement>('#igLoc');
+  if (![...sel.options].some(o => o.value === loc)) {
+    const o = document.createElement('option');
+    o.value = loc; o.textContent = `${catLabel(loc)} (removed)`;
+    sel.appendChild(o);
+  }
+  sel.value = loc;
 }
 
 /** Show the ABV field only for alcohol-bearing categories; hide + zero it otherwise.
@@ -253,6 +270,7 @@ function renderBuilder(): void {
  *  a recipe chip that nothing in the list matches). */
 export function openIgModal(key: string | null, prefillName = ''): void {
   const sel = $<HTMLSelectElement>('#igCat');
+  fillIgLoc();   // Home's aisles may have changed since the last open
   if (key === null) {
     editingKey = null;
     editingShape = null;
@@ -265,7 +283,7 @@ export function openIgModal(key: string | null, prefillName = ''): void {
     $<HTMLInputElement>('#igName').value = prefillName;
     $<HTMLInputElement>('#igAbv').value = '';
     sel.value = CATEGORY_ORDER[0]!;
-    $<HTMLSelectElement>('#igLoc').value = defaultLocationForCat(CATEGORY_ORDER[0]!);
+    setIgLocValue(defaultLocationForCat(CATEGORY_ORDER[0]!));
     $<HTMLElement>('#igRemove').style.display = 'none';
     $<HTMLElement>('#igReset').style.display = 'none';
   } else {
@@ -291,7 +309,7 @@ export function openIgModal(key: string | null, prefillName = ''): void {
       sel.appendChild(o);
     }
     sel.value = entry.cat;
-    $<HTMLSelectElement>('#igLoc').value = entry.defaultLoc;
+    setIgLocValue(entry.defaultLoc);
     $<HTMLElement>('#igRemove').style.display = 'block';
     // Reset only applies to seed ingredients with an edit (added ones use Remove).
     $<HTMLElement>('#igReset').style.display = (isSeedKey(key) && state.ingredients[key]) ? 'block' : 'none';

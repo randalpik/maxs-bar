@@ -1,7 +1,7 @@
-import type { Recipe, RecipeOverride, IngredientOverride } from '../core/types';
+import type { Recipe, RecipeOverride, IngredientOverride, Profile } from '../core/types';
 import { state } from '../core/state';
 import { DEFAULT_FOOD_CAT } from '../recipes/food';
-import { LOCATION_ORDER } from '../ingredients/locations';
+import { profileCats, isReservedCat } from '../profiles/profiles';
 import { buildIngredientsExport, type IngredientDiffEntry } from '../ingredients/ingredients-export';
 
 /* ============================================================
@@ -112,26 +112,18 @@ export interface StockExportEntry {
   pos?: number;
 }
 
-/** The stocked keys with their location placements, sorted by (location, position,
- *  key) for a stable, human-readable round-trip. Placement is read from the stock
- *  shadow map; un-placed items export as a bare key. */
+/** The stocked keys, sorted for a stable round-trip. Stock is global; placement
+ *  lives in profiles now and travels via the profile export, so this no longer
+ *  emits loc/pos (parseStockImport still reads them from old files). */
 export function buildStockExport(): StockExportEntry[] {
-  const out: StockExportEntry[] = [...state.stocked].map(key => {
-    const e = state.stockTs[key];
-    return e && typeof e.loc === 'string'
-      ? { key, loc: e.loc, pos: typeof e.pos === 'number' ? e.pos : 0 }
-      : { key };
-  });
-  const li = (e: StockExportEntry) => (e.loc ? LOCATION_ORDER.indexOf(e.loc) : -1);
-  out.sort((a, b) => li(a) - li(b) || (a.pos ?? 0) - (b.pos ?? 0) || a.key.localeCompare(b.key));
-  return out;
+  return [...state.stocked].sort().map(key => ({ key }));
 }
 
 /** Reset everything to unstocked, then stock each listed key that exists in the
  *  current catalog — keys with no matching ingredient are ignored, so a stock list
- *  syncs cleanly across slightly different ingredient sets. Accepts both the new
- *  object form (with location) and the legacy flat string[]; returns the stocked set
- *  plus any location placements to apply. */
+ *  syncs cleanly across slightly different ingredient sets. Accepts the object form
+ *  and the legacy flat string[]; old-format entries carrying loc/pos come back as
+ *  placements for the io.ts wrapper to fold into the Home profile. */
 export function parseStockImport(
   data: unknown,
   known: Set<string>,
@@ -150,4 +142,62 @@ export function parseStockImport(
     }
   }
   return { stocked, placements };
+}
+
+/* ---------- store profile (single profile JSON) ---------- */
+
+/** One exported placement: which profile category an ingredient sits in and where. */
+export interface ProfileExportPlacement {
+  key: string;
+  cat: string;
+  pos: number;
+}
+
+/** A single profile: category names + order, the two view flags, and ingredient
+ *  placements. Deliberately NO stock state (stock is global, not per-profile) and
+ *  no id/timestamps (an import mints fresh ones). */
+export interface ProfileExport {
+  name: string;
+  cats: string[];
+  hideUnstocked: boolean;
+  hideOther: boolean;
+  placements: ProfileExportPlacement[];
+}
+
+/** Export a profile, placements sorted by (category order, position, key) for a
+ *  stable, human-readable round-trip. */
+export function buildProfileExport(p: Profile): ProfileExport {
+  const placements: ProfileExportPlacement[] = Object.entries(p.placements)
+    .map(([key, pl]) => ({ key, cat: pl.cat, pos: pl.pos }));
+  const order = profileCats(p);
+  const ci = (c: string) => { const i = order.indexOf(c); return i < 0 ? order.length : i; };
+  placements.sort((a, b) => ci(a.cat) - ci(b.cat) || a.pos - b.pos || a.key.localeCompare(b.key));
+  return { name: p.name, cats: [...p.cats], hideUnstocked: p.hideUnstocked, hideOther: p.hideOther, placements };
+}
+
+/** Parse a profile export: categories are free-form strings (deduped, reserved
+ *  'other' dropped — it's implicit); placements whose ingredient the current
+ *  catalog doesn't know are skipped, per the backlog. */
+export function parseProfileImport(
+  data: ProfileExport,
+  known: Set<string>,
+): { name: string; cats: string[]; hideUnstocked: boolean; hideOther: boolean; placements: ProfileExportPlacement[] } {
+  const cats: string[] = [];
+  for (const c of data.cats ?? []) {
+    const s = String(c).trim();
+    if (s && !isReservedCat(s) && !cats.some(x => x.toLowerCase() === s.toLowerCase())) cats.push(s);
+  }
+  const placements = (data.placements ?? [])
+    .filter((pl): pl is ProfileExportPlacement =>
+      !!pl && typeof pl === 'object' && typeof pl.key === 'string' && typeof pl.cat === 'string' && known.has(pl.key))
+    .map(pl => ({ key: pl.key, cat: pl.cat, pos: typeof pl.pos === 'number' ? pl.pos : 0 }));
+  const name = typeof data.name === 'string' && data.name.trim() ? data.name.trim() : 'Imported profile';
+  return { name, cats, hideUnstocked: !!data.hideUnstocked, hideOther: !!data.hideOther, placements };
+}
+
+/** Recognise our profile-export JSON shape. */
+export function isProfileExport(v: unknown): v is ProfileExport {
+  return !!v && typeof v === 'object'
+    && Array.isArray((v as ProfileExport).cats)
+    && Array.isArray((v as ProfileExport).placements);
 }

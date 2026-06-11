@@ -1,4 +1,4 @@
-import type { RecipeOverride, IngredientOverride, StockEntry, SyncPayload } from '../core/types';
+import type { RecipeOverride, IngredientOverride, StockEntry, SyncPayload, Profile } from '../core/types';
 
 /* ============================================================
    Per-key last-write-wins merge (pure — no state, DOM or I/O).
@@ -56,6 +56,27 @@ export function mergeStock(local: Record<string, StockEntry>, remote: Record<str
   return mergeMap(local, remote, e => e.ts);
 }
 
+/** Two-level merge for store profiles. Meta (name, cats, flags, deleted) is
+ *  whole-profile LWW on the profile `ts` — a deletion is a tombstone competing like
+ *  any other meta edit, so a later edit legitimately resurrects. Placements merge
+ *  per-ingredient on their own `ts` regardless of which side won the meta, so
+ *  concurrent drags on different items both survive a profile rename/reorder.
+ *  A tombstone keeps its placements empty (deleteProfile drops them; merging into
+ *  a tombstone would just carry dead weight the resurrection path doesn't need). */
+export function mergeProfiles(local: Record<string, Profile>, remote: Record<string, Profile>): Record<string, Profile> {
+  const out: Record<string, Profile> = { ...local };
+  for (const id of Object.keys(remote)) {
+    const rv = remote[id]!;
+    const lv = out[id];
+    if (lv === undefined) { out[id] = rv; continue; }
+    const meta = pick(lv, lv.ts, rv, rv.ts);
+    out[id] = meta.deleted
+      ? { ...meta, placements: {} }
+      : { ...meta, placements: mergeMap(lv.placements ?? {}, rv.placements ?? {}, p => p.ts) };
+  }
+  return out;
+}
+
 /** Merge two full payloads. `seedId` is a single scalar, resolved by its own LWW
  *  (`seedTs`); each override slice merges per key. Convergent + idempotent. */
 export function mergePayload(local: SyncPayload, remote: SyncPayload): SyncPayload {
@@ -69,5 +90,6 @@ export function mergePayload(local: SyncPayload, remote: SyncPayload): SyncPaylo
     recipeOverrides: mergeRecipeOverrides(local.recipeOverrides, remote.recipeOverrides),
     ingredients: mergeIngredients(local.ingredients, remote.ingredients),
     stockTs: mergeStock(local.stockTs, remote.stockTs),
+    profiles: mergeProfiles(local.profiles ?? {}, remote.profiles ?? {}),
   };
 }

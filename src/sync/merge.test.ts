@@ -1,12 +1,12 @@
 import { describe, it, expect } from 'vitest';
-import type { SyncPayload } from '../core/types';
-import { mergePayload, mergeStock, mergeIngredients } from './merge';
+import type { Profile, SyncPayload } from '../core/types';
+import { mergePayload, mergeStock, mergeIngredients, mergeProfiles } from './merge';
 
 /* Merge is the highest-risk part of sync: it must converge regardless of order, never
    clobber a concurrent unrelated edit, and let deletions and legacy data behave sanely. */
 
 const P = (p: Partial<SyncPayload>): SyncPayload => ({
-  seedId: 'classics', seedTs: 0, recipeOverrides: {}, ingredients: {}, stockTs: {}, ...p,
+  seedId: 'classics', seedTs: 0, recipeOverrides: {}, ingredients: {}, stockTs: {}, profiles: {}, ...p,
 });
 
 /** Order-independent canonical form, so we compare merged *state*, not key insertion order. */
@@ -85,6 +85,63 @@ describe('ingredient merge (union + LWW; reset has no tombstone)', () => {
   });
 });
 
+describe('profile merge (meta whole-profile LWW + per-placement LWW)', () => {
+  const prof = (over: Partial<Profile>): Profile => ({
+    id: 'p1', name: 'Store', ts: 0, cats: ['a'], hideUnstocked: false, hideOther: false, placements: {}, ...over,
+  });
+
+  it('unions profiles added on different devices', () => {
+    const m = mergeProfiles({ p1: prof({ id: 'p1', ts: 5 }) }, { p2: prof({ id: 'p2', name: 'Other store', ts: 5 }) });
+    expect(Object.keys(m).sort()).toEqual(['p1', 'p2']);
+  });
+
+  it('meta is whole-profile LWW: a newer rename beats an older reorder', () => {
+    const renamed = prof({ name: 'Renamed', cats: ['a', 'b'], ts: 200 });
+    const reordered = prof({ name: 'Store', cats: ['b', 'a'], ts: 100 });
+    const m = mergeProfiles({ p1: renamed }, { p1: reordered });
+    expect(m.p1!.name).toBe('Renamed');
+    expect(m.p1!.cats).toEqual(['a', 'b']);   // the older reorder loses with the rest of the meta
+  });
+
+  it('concurrent placements on different ingredients both survive a meta merge', () => {
+    const a = prof({ ts: 200, placements: { gin: { cat: 'a', pos: 0, ts: 150 } } });
+    const b = prof({ ts: 100, placements: { rum: { cat: 'a', pos: 1, ts: 180 } } });
+    const m = mergeProfiles({ p1: a }, { p1: b });
+    expect(m.p1!.placements['gin']).toMatchObject({ cat: 'a', pos: 0 });
+    expect(m.p1!.placements['rum']).toMatchObject({ cat: 'a', pos: 1 });
+  });
+
+  it('per-placement LWW: the newer drag wins per ingredient even if its meta lost', () => {
+    const a = prof({ ts: 200, placements: { gin: { cat: 'a', pos: 0, ts: 100 } } });
+    const b = prof({ ts: 100, placements: { gin: { cat: 'a', pos: 5, ts: 300 } } });
+    expect(mergeProfiles({ p1: a }, { p1: b }).p1!.placements['gin']!.pos).toBe(5);
+  });
+
+  it('a later delete beats an earlier edit, and drops placements', () => {
+    const edit = prof({ ts: 100, placements: { gin: { cat: 'a', pos: 0, ts: 100 } } });
+    const del = prof({ ts: 200, deleted: true, placements: {} });
+    const m = mergeProfiles({ p1: edit }, { p1: del });
+    expect(m.p1!.deleted).toBe(true);
+    expect(m.p1!.placements).toEqual({});
+  });
+
+  it('a later edit resurrects an earlier delete', () => {
+    const del = prof({ ts: 100, deleted: true, placements: {} });
+    const edit = prof({ ts: 200, name: 'Back again' });
+    const m = mergeProfiles({ p1: del }, { p1: edit });
+    expect(m.p1!.deleted).toBeUndefined();
+    expect(m.p1!.name).toBe('Back again');
+  });
+
+  it('payloads without profiles (pre-profiles clients) merge as empty', () => {
+    const withP = P({ profiles: { p1: prof({ ts: 5 }) } });
+    const without = P({});
+    delete without.profiles;
+    expect(mergePayload(withP, without).profiles!.p1!.name).toBe('Store');
+    expect(mergePayload(without, withP).profiles!.p1!.name).toBe('Store');
+  });
+});
+
 describe('seed scalar (LWW by seedTs)', () => {
   it('the more recently chosen seed wins', () => {
     const a = P({ seedId: 'classics', seedTs: 100 });
@@ -100,12 +157,14 @@ describe('convergence + idempotency', () => {
     recipeOverrides: { x: { recipe: 'ax', edited: '2026-01-02T00:00:00.000Z' }, y: { removed: true, edited: '2026-01-05T00:00:00.000Z' } },
     ingredients: { gin: { color: '#a', ts: 10 } },
     stockTs: { lime: { on: true, ts: 10 }, rum: { on: false, ts: 5 } },
+    profiles: { home: { id: 'home', name: 'Home', ts: 10, cats: ['fridge'], hideUnstocked: false, hideOther: false, placements: { gin: { cat: 'fridge', pos: 0, ts: 10 } } } },
   });
   const b = P({
     seedId: 'maxs-list', seedTs: 20,
     recipeOverrides: { x: { recipe: 'bx', edited: '2026-01-01T00:00:00.000Z' }, z: { recipe: 'bz', edited: '2026-01-03T00:00:00.000Z' } },
     ingredients: { gin: { color: '#b', ts: 20 }, lime: { cat: 'citrus', ts: 7 } },
     stockTs: { lime: { on: false, ts: 20 }, rum: { on: true, ts: 1 } },
+    profiles: { home: { id: 'home', name: 'Home base', ts: 20, cats: ['fridge', 'pantry'], hideUnstocked: false, hideOther: false, placements: { gin: { cat: 'pantry', pos: 1, ts: 5 }, rum: { cat: 'fridge', pos: 2, ts: 8 } } } },
   });
   const c = P({
     seedId: 'empty', seedTs: 15,
@@ -143,5 +202,8 @@ describe('convergence + idempotency', () => {
     expect(m.stockTs.lime!.on).toBe(false);               // ts 20 un-stock wins
     expect(m.stockTs.rum!.on).toBe(false);                // ts 5 off > ts 1 on
     expect(m.stockTs.mint!.on).toBe(true);                // present in c only
+    expect(m.profiles!.home!.name).toBe('Home base');      // meta ts 20 > 10
+    expect(m.profiles!.home!.placements['gin']!.cat).toBe('fridge');  // placement ts 10 > 5 despite meta losing
+    expect(m.profiles!.home!.placements['rum']!.cat).toBe('fridge');  // union
   });
 });

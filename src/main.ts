@@ -1,15 +1,17 @@
 import './styles.css';
 import { setClassifier } from './parser/parser';
 import { seedClassify, runtimeCatalog, isSeedKey, reconcileStock, refreshUnits } from './ingredients/catalog';
-import { state, load, toggleStock, hasSeed, resetAll } from './core/state';
+import { state, load, toggleStock, hasSeed, resetAll, setCurrentProfile } from './core/state';
+import { CATEGORIES_ID } from './profiles/profiles';
 import { fillKeySel, render, layoutCards, updateIngredientChip } from './ui/render';
 import { openModal, closeModal, saveModal, updatePreview, deleteEditing } from './ui/modal';
 import { openIgModal, closeIgModal, saveIgModal, resetIgModal, removeIgModal, fillIgCat, fillIgLoc, initIgBuilder } from './ui/igmodal';
+import { openProfileModal, closeProfileModal, saveProfileModal, deleteProfileModal, pickProfileImport, initProfCatDrag } from './ui/profilemodal';
 import { initLocationDrag } from './ui/drag';
 import { openSeedModal, closeSeedModal, confirmSeed, seedModalForced } from './ui/seedmodal';
 import { confirmModal } from './ui/confirm';
 import {
-  exportRecipesJSON, exportIngredientsJSON, exportStockJSON,
+  exportRecipesJSON, exportIngredientsJSON, exportStockJSON, exportProfileJSON,
   importRecipes, importIngredientsJSON, importStockJSON,
 } from './io/io';
 import { initSync, syncNow } from './sync/sync';
@@ -113,6 +115,16 @@ $('#igModeSeg').addEventListener('click', e => {
   [...$('#igModeSeg').children].forEach(x => x.classList.toggle('on', x === b));
   render();
 });
+// Profile selector: a profile id switches the view; the Add sentinel opens the
+// modal instead (reverting the select — creation re-points it on save).
+$<HTMLSelectElement>('#profileSel').addEventListener('change', e => {
+  const sel = e.target as HTMLSelectElement;
+  if (sel.value === '__add') { sel.value = state.profileId; openProfileModal(null); return; }
+  setCurrentProfile(sel.value);
+  render();
+});
+$('#editProfileBtn').addEventListener('click', () => { if (state.profileId !== CATEGORIES_ID) openProfileModal(state.profileId); });
+$('#exportProfileBtn').addEventListener('click', exportProfileJSON);
 $<HTMLSelectElement>('#keySel').addEventListener('change', e => { state.key = (e.target as HTMLSelectElement).value; render(); });
 $<HTMLInputElement>('#search').addEventListener('input', e => { state.query = (e.target as HTMLInputElement).value; render(); });
 $('#searchClear').addEventListener('click', () => {
@@ -143,8 +155,9 @@ $('#main').addEventListener('click', e => {
   if (state.page === 'ingredients') {
     const editIg = t.closest<HTMLElement>('[data-ig-edit]');
     if (editIg) { openIgModal(editIg.dataset.igEdit!); return; }
-    // Location mode: clicking a chip never toggles stock (it would fight the drag).
-    if (state.igMode === 'location') return;
+    // Location mode (real profiles only — Categories ignores the stale sub-mode):
+    // clicking a chip never toggles stock (it would fight the drag).
+    if (state.igMode === 'location' && state.profileId !== CATEGORIES_ID) return;
     const ing = t.closest<HTMLElement>('[data-ing]');
     if (ing) { toggleStock(ing.dataset.ing!); updateIngredientChip(ing); }
     return;
@@ -168,6 +181,13 @@ $('#igReset').addEventListener('click', resetIgModal);
 $('#igRemove').addEventListener('click', removeIgModal);
 $('#igOverlay').addEventListener('click', e => { if (e.target === $('#igOverlay')) closeIgModal(); });
 
+$('#profClose').addEventListener('click', closeProfileModal);
+$('#profCancel').addEventListener('click', closeProfileModal);
+$('#profSave').addEventListener('click', () => { void saveProfileModal(); });
+$('#profDelete').addEventListener('click', () => { void deleteProfileModal(); });
+$('#profImport').addEventListener('click', pickProfileImport);
+$('#profileOverlay').addEventListener('click', e => { if (e.target === $('#profileOverlay')) closeProfileModal(); });
+
 $('#seedClose').addEventListener('click', closeSeedModal);
 $('#seedConfirm').addEventListener('click', confirmSeed);
 $('#seedCancel').addEventListener('click', closeSeedModal);
@@ -182,7 +202,7 @@ $('#acctOverlay').addEventListener('click', e => { if (e.target === $('#acctOver
 $('#syncBtn').addEventListener('click', () => syncNow());
 $('#acctPass').addEventListener('keydown', e => { if (e.key === 'Enter') { e.preventDefault(); void doSignIn(); } });
 
-document.addEventListener('keydown', e => { if (e.key === 'Escape' && !seedModalForced()) { closeModal(); closeIgModal(); closeSeedModal(); closeAcctModal(); } });
+document.addEventListener('keydown', e => { if (e.key === 'Escape' && !seedModalForced()) { closeModal(); closeIgModal(); closeSeedModal(); closeAcctModal(); closeProfileModal(); } });
 
 const menu = $('#menu');
 $('#menuBtn').addEventListener('click', e => { e.stopPropagation(); menu.classList.toggle('open'); });
@@ -253,7 +273,7 @@ window.addEventListener('resize', () => {
 setClassifier(seedClassify); // resolve recipe ingredients from the seed, not the regex
 load(); reconcileStock(state.records); // clean up any pre-existing stuck stock state
 refreshUnits(); // install base units + any the user declared on an ingredient
-fillKeySel(); fillIgCat(); fillIgLoc(); initIgBuilder(); initLocationDrag(); render();
+fillKeySel(); fillIgCat(); fillIgLoc(); initIgBuilder(); initLocationDrag(); initProfCatDrag(); render();
 history.replaceState({ page: state.page, query: state.query }, ''); // seed initial nav entry
 if (!hasSeed()) openSeedModal({ forced: true });
 initSync(); // resume a stored session (no-op when signed out); app works fully logged-out

@@ -1,12 +1,14 @@
 import { describe, it, expect, afterEach } from 'vitest';
 import { state } from '../core/state';
+import type { Profile } from '../core/types';
 import {
   buildRecipesExport, parseRecipesImport,
   buildIngredientsExport, parseIngredientsImport,
   buildStockExport, parseStockImport,
+  buildProfileExport, parseProfileImport, isProfileExport,
 } from './transfer';
 
-/* The contract for all three formats: import(file) followed by the paired export
+/* The contract for all the formats: import(file) followed by the paired export
    reproduces the same file, byte-for-byte. */
 const bytes = (v: unknown) => JSON.stringify(v, null, 2);
 
@@ -105,22 +107,18 @@ describe('stock list export/import (keys + locations)', () => {
     expect(buildStockExport()).toEqual(file);
   });
 
-  it('round-trips locations + positions', () => {
-    state.stocked = new Set(['white rum', 'lime', 'gin']);
+  it('no longer emits loc/pos (placement lives in profiles) but still reads old files', () => {
+    state.stocked = new Set(['white rum', 'lime']);
     state.stockTs = {
       'white rum': { on: true, ts: 1, loc: 'bottom-shelf', pos: 0 },
-      gin: { on: true, ts: 1, loc: 'bottom-shelf', pos: 1 },
       lime: { on: true, ts: 1, loc: 'fridge', pos: 0 },
     };
-    const file = buildStockExport();
-    const known = new Set(['white rum', 'lime', 'gin']);
-    const { stocked, placements } = parseStockImport(file, known);
-    // Re-apply into a fresh shadow map the way importStockJSON does.
-    state.stocked = stocked;
-    state.stockTs = {};
-    for (const k of stocked) state.stockTs[k] = { on: true, ts: 1 };
-    for (const p of placements) state.stockTs[p.key] = { on: true, ts: 1, loc: p.loc, pos: p.pos };
-    expect(buildStockExport()).toEqual(file);
+    expect(buildStockExport()).toEqual([{ key: 'lime' }, { key: 'white rum' }]); // bare keys, sorted
+    // An old-format file's placements still come back, for the Home-profile fold.
+    const old = [{ key: 'white rum', loc: 'bottom-shelf', pos: 0 }, { key: 'lime', loc: 'fridge', pos: 0 }];
+    const { stocked, placements } = parseStockImport(old, new Set(['white rum', 'lime']));
+    expect([...stocked].sort()).toEqual(['lime', 'white rum']);
+    expect(placements).toEqual(old);
   });
 
   it('accepts the legacy flat string[] form', () => {
@@ -134,5 +132,54 @@ describe('stock list export/import (keys + locations)', () => {
     const known = new Set(['lime', 'lemon']);
     const { stocked } = parseStockImport([{ key: 'lime', loc: 'fridge', pos: 0 }, { key: 'xyzzy', loc: 'fridge', pos: 1 }], known);
     expect([...stocked].sort()).toEqual(['lime']);
+  });
+});
+
+describe('profile export/import (single profile JSON)', () => {
+  const profile: Profile = {
+    id: 'p-test', name: 'Liquor store', ts: 123,
+    cats: ['spirits aisle', 'mixers aisle'],
+    hideUnstocked: true, hideOther: false,
+    placements: {
+      gin: { cat: 'spirits aisle', pos: 1, ts: 5 },
+      rum: { cat: 'spirits aisle', pos: 0, ts: 5 },
+      tonic: { cat: 'mixers aisle', pos: 0, ts: 5 },
+      'cocktail onion': { cat: 'other', pos: 0, ts: 5 },
+    },
+  };
+
+  it('round-trips cats, flags and placements; drops id/timestamps/stock', () => {
+    const file = buildProfileExport(profile);
+    expect(isProfileExport(file)).toBe(true);
+    expect('id' in file).toBe(false);
+    expect(file.placements.map(p => p.key)).toEqual(['rum', 'gin', 'tonic', 'cocktail onion']); // (cat order, pos, key)
+    const known = new Set(['gin', 'rum', 'tonic', 'cocktail onion']);
+    const parsed = parseProfileImport(file, known);
+    const reimported: Profile = {
+      id: 'p-new', name: parsed.name, ts: 0, cats: parsed.cats,
+      hideUnstocked: parsed.hideUnstocked, hideOther: parsed.hideOther,
+      placements: Object.fromEntries(parsed.placements.map(pl => [pl.key, { cat: pl.cat, pos: pl.pos, ts: 0 }])),
+    };
+    expect(bytes(buildProfileExport(reimported))).toBe(bytes(file));
+  });
+
+  it('skips placements for ingredients the catalog does not know', () => {
+    const file = buildProfileExport(profile);
+    const parsed = parseProfileImport(file, new Set(['gin', 'tonic']));
+    expect(parsed.placements.map(p => p.key).sort()).toEqual(['gin', 'tonic']);
+    expect(parsed.cats).toEqual(profile.cats);   // cats import verbatim regardless
+  });
+
+  it('drops a reserved/duplicate category but keeps the rest', () => {
+    const junk = { name: ' My store ', cats: ['Aisle 1', 'other', 'aisle 1', 'Aisle 2'], placements: [] };
+    const parsed = parseProfileImport(junk as never, new Set());
+    expect(parsed.name).toBe('My store');
+    expect(parsed.cats).toEqual(['Aisle 1', 'Aisle 2']);
+  });
+
+  it('rejects junk shapes', () => {
+    expect(isProfileExport(null)).toBe(false);
+    expect(isProfileExport({ name: 'x' })).toBe(false);
+    expect(isProfileExport({ cats: [], placements: [] })).toBe(true);
   });
 });

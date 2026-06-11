@@ -1,4 +1,4 @@
-import type { Derived, FoodCat, Ingredient } from '../core/types';
+import type { Derived, FoodCat, Ingredient, Profile } from '../core/types';
 import { state, derive } from '../core/state';
 import { FAMILY_LABEL, SPIRIT_FAMILIES, METHOD_ORDER, titleCase } from '../parser/parser';
 import { FOOD_CATS, FOOD_CAT_LABEL, DEFAULT_FOOD_CAT } from '../recipes/food';
@@ -9,7 +9,7 @@ import {
 } from '../ingredients/ingredients';
 import type { StockCtx, IngredientEntry } from '../ingredients/ingredients';
 import { runtimeCatalog } from '../ingredients/catalog';
-import { LOCATION_ORDER, LOCATION_LABEL, DEFAULT_LOCATION } from '../ingredients/locations';
+import { CATEGORIES_ID, HOME_ID, OTHER_CAT, profileCats, effectiveCat, catLabel } from '../profiles/profiles';
 import { parseSyrups } from '../recipes/syrups';
 import type { Syrup } from '../recipes/syrups';
 import { $ } from '../core/dom';
@@ -281,9 +281,10 @@ export function updateIngredientChip(el: HTMLElement): void {
 }
 
 function igChipHTML(e: IngredientEntry, stocked: boolean, locMode = false): string {
-  // Location mode shows only stocked items; the grab affordance replaces the
-  // out-of-stock flag (clicking can't toggle here — it would fight the drag).
-  const cls = 'chip ig' + (locMode ? ' loc-chip' : stocked ? '' : ' unstocked');
+  // Location mode keeps the out-of-stock styling (hide-unstocked off shows unstocked
+  // chips in place) but swaps the toggle affordance for the grab one — clicking
+  // can't toggle here, it would fight the drag.
+  const cls = 'chip ig' + (locMode ? ' loc-chip' : '') + (stocked ? '' : ' unstocked');
   const title = locMode ? `Drag to place ${e.disp}` : stocked ? IG_TITLE.stocked : IG_TITLE.out;
   return `<div class="${cls}" data-ing="${esc(e.key)}" title="${esc(title)}">`
     + `<button type="button" class="ig-edit-btn" data-ig-edit="${esc(e.key)}" title="Edit ${esc(e.disp)}" tabindex="-1">`
@@ -295,40 +296,79 @@ function igChipHTML(e: IngredientEntry, stocked: boolean, locMode = false): stri
     + `</div>`;
 }
 
-/** Location mode: only stocked items, bucketed into the physical-location groups (all
- *  shown, empty ones included as drop targets) and ordered by stored position. The
- *  effective location is the stored placement (stockTs.loc) or the ingredient default. */
-function renderIngredientsLocation(entries: IngredientEntry[]): void {
-  const stocked = entries.filter(e => state.stocked.has(e.key));
-  $('#count').textContent = `${stocked.length} stocked`;
+/** Profile view (any real profile — Home or custom): ingredients bucketed into the
+ *  profile's categories by effectiveCat and ordered by stored position. Both sub-modes
+ *  share this grouping; they differ in affordance and filters. Stock mode shows every
+ *  ingredient with the toggle chip (walk the store, grab things). Location mode swaps
+ *  in draggable chips, renders empty groups as drop targets, and honours hideUnstocked
+ *  (drop unstocked entries — Location mode only, per the backlog). hideOther drops the
+ *  implicit Other group in both modes, which also makes it undraggable-into. */
+function renderProfile(p: Profile, entries: IngredientEntry[]): void {
+  const locMode = state.igMode === 'location';
+  const shown = locMode && p.hideUnstocked ? entries.filter(e => state.stocked.has(e.key)) : entries;
+  const stockedCount = entries.reduce((n, e) => n + (state.stocked.has(e.key) ? 1 : 0), 0);
+  $('#count').textContent = locMode ? `${stockedCount} stocked` : `${stockedCount} of ${entries.length} stocked`;
 
-  const byLoc = new Map<string, IngredientEntry[]>(LOCATION_ORDER.map(id => [id, []]));
-  for (const e of stocked) {
-    const loc = state.stockTs[e.key]?.loc ?? e.defaultLoc;
-    (byLoc.get(loc) ?? byLoc.get(DEFAULT_LOCATION)!).push(e);
-  }
+  const cats = profileCats(p).filter(c => !(p.hideOther && c === OTHER_CAT));
+  const byCat = new Map<string, IngredientEntry[]>(cats.map(id => [id, []]));
+  for (const e of shown) byCat.get(effectiveCat(p, e.key, e.defaultLoc))?.push(e); // hideOther: Other entries just aren't shown
 
   let html = '';
-  for (const id of LOCATION_ORDER) {
-    const items = byLoc.get(id)!;
+  for (const id of cats) {
+    const items = byCat.get(id)!;
     items.sort((a, b) => {
-      const pa = state.stockTs[a.key]?.pos ?? Infinity, pb = state.stockTs[b.key]?.pos ?? Infinity;
+      const pa = p.placements[a.key]?.pos ?? Infinity, pb = p.placements[b.key]?.pos ?? Infinity;
       return pa - pb || a.disp.localeCompare(b.disp);
     });
-    const body = items.map(e => igChipHTML(e, true, true)).join('');
-    html += `<section class="group"><div class="grouphead"><span class="lbl">${esc(LOCATION_LABEL[id])}</span>`
-      + `<span class="cnt">${items.length}</span><span class="rule"></span></div>`
-      + `<div class="ig-grid loc-grid" data-loc="${esc(id)}">${body}</div></section>`;
+    if (locMode) {
+      const body = items.map(e => igChipHTML(e, state.stocked.has(e.key), true)).join('');
+      html += `<section class="group"><div class="grouphead"><span class="lbl">${esc(catLabel(id))}</span>`
+        + `<span class="cnt">${items.length}</span><span class="rule"></span></div>`
+        + `<div class="ig-grid loc-grid" data-cat="${esc(id)}">${body}</div></section>`;
+    } else if (items.length) {
+      html += groupSection(catLabel(id), items.length, items.map(e => igChipHTML(e, state.stocked.has(e.key))).join(''), 'ig-grid');
+    }
   }
-  main.innerHTML = html;
+  main.innerHTML = html || '<div class="empty">No ingredients to show.</div>';
   scheduleLayout();
 }
 
+/** (Re)fill the profile selector and sync the Categories-sentinel toolbar class.
+ *  Runs on every ingredients render, so the toolbar tracks profile changes from any
+ *  source — modal saves, deletions, sync pulls. The option rebuild is skipped when
+ *  nothing changed so an open dropdown isn't disturbed mid-interaction. */
+export function fillProfileSel(): void {
+  const sel = $<HTMLSelectElement>('#profileSel');
+  const customs = Object.values(state.profiles)
+    .filter(p => !p.deleted && p.id !== HOME_ID)
+    .sort((a, b) => a.name.localeCompare(b.name));
+  const opts: [string, string][] = [
+    [CATEGORIES_ID, 'Categories'],
+    [HOME_ID, state.profiles[HOME_ID]?.name ?? 'Home'],
+    ...customs.map(p => [p.id, p.name] as [string, string]),
+    ['__add', 'Add profile…'],
+  ];
+  const sig = JSON.stringify(opts) + '|' + state.profileId;
+  if (sel.dataset.sig !== sig) {
+    sel.dataset.sig = sig;
+    sel.innerHTML = '';
+    for (const [v, l] of opts) {
+      const o = document.createElement('option');
+      o.value = v; o.textContent = l; sel.appendChild(o);
+    }
+    sel.value = state.profileId;
+  }
+  $('.bar').classList.toggle('profile-categories', state.profileId === CATEGORIES_ID);
+}
+
 export function renderIngredients(): void {
+  fillProfileSel();
   const { entries } = runtimeCatalog(state.records);
   const total = entries.length;
   if (!total) { main.innerHTML = '<div class="empty">No ingredients yet.</div>'; $('#count').textContent = '0 of 0 stocked'; return; }
-  if (state.igMode === 'location') { renderIngredientsLocation(entries); return; }
+  const profile = state.profiles[state.profileId];
+  if (state.profileId !== CATEGORIES_ID && profile && !profile.deleted) { renderProfile(profile, entries); return; }
+  // Categories sentinel: the taxonomy view (igMode is meaningless here — the seg is hidden).
   const stockedCount = entries.reduce((n, e) => n + (state.stocked.has(e.key) ? 1 : 0), 0);
   $('#count').textContent = `${stockedCount} of ${total} stocked`;
 

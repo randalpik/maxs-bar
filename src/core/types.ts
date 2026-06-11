@@ -184,12 +184,42 @@ export interface Derived {
 export interface StockEntry {
   on: boolean;
   ts: number;
-  /** Physical location (Location mode), set when the user places/reorders the item.
-   *  Absent ⇒ render falls back to the ingredient's default location. Dropped when the
-   *  item is un-stocked (its former placement is intentionally lost). */
+  /** @deprecated Legacy physical location. Placement now lives in the Home profile
+   *  (Profile.placements); this is read once by the profiles migration
+   *  (seedHomeFromStock / foldLegacyPlacements) and never written anymore. */
   loc?: string;
-  /** Sort position within its location group. Co-set with `loc`. */
+  /** @deprecated Legacy sort position, co-set with `loc`. See `loc`. */
   pos?: number;
+}
+
+/** A per-profile ingredient placement: which of the profile's categories ("aisles")
+ *  the ingredient sits in, and where within it. Carries its own timestamp so
+ *  placements merge per-ingredient in sync (LWW, like StockEntry). */
+export interface Placement {
+  cat: string;
+  pos: number;
+  ts: number;
+}
+
+/** A store profile: a named, ordered list of categories plus per-ingredient
+ *  placements (e.g. liquor-store aisles). 'other' is implicit — always present,
+ *  always last, never stored in `cats`. The 'categories' profile is a sentinel
+ *  (the taxonomy view) and is never stored as a Profile. Meta fields (name, cats,
+ *  flags, deleted) sync whole-profile LWW on `ts`; placements merge per-key. */
+export interface Profile {
+  id: string;
+  name: string;
+  /** Epoch-ms of the last meta edit (name/cats/flags/deleted). */
+  ts: number;
+  /** Ordered category list, 'other' excluded (implicit last). */
+  cats: string[];
+  /** Location mode only: hide unstocked items. Enabling drops unstocked placements. */
+  hideUnstocked: boolean;
+  /** Both modes: hide the Other group (blocks dragging in/out of it). */
+  hideOther: boolean;
+  placements: Record<string, Placement>;
+  /** Deletion tombstone, competing by `ts` like recipe tombstones. Home never deletes. */
+  deleted?: true;
 }
 
 /** The full cross-device payload — the four user-state slices plus the timestamps
@@ -203,4 +233,7 @@ export interface SyncPayload {
   recipeOverrides: Record<string, RecipeOverride>;
   ingredients: Record<string, IngredientOverride>;
   stockTs: Record<string, StockEntry>;
+  /** Store profiles. Optional: absent in payloads from pre-profiles clients, which
+   *  must keep validating and merging (read as {}). */
+  profiles?: Record<string, Profile>;
 }

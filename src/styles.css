@@ -132,6 +132,18 @@ header.page-ingredients #addIgBtn{display:inline-flex}
 /* the stock/location switch is the inverse of #modeSeg: ingredients page only */
 #igModeSeg{display:none}
 header.page-ingredients #igModeSeg{display:inline-flex}
+/* profile controls: ingredients page only. With the uneditable Categories sentinel
+   selected (header.profile-categories) the sub-mode switch, Edit and Export hide
+   too — only the profile selector remains. */
+#profileSel, #editProfileBtn, #exportProfileBtn{display:none}
+header.page-ingredients #profileSel{display:inline-flex}
+header.page-ingredients #editProfileBtn,
+header.page-ingredients #exportProfileBtn{display:inline-flex}
+header.page-ingredients.profile-categories #igModeSeg,
+header.page-ingredients.profile-categories #editProfileBtn,
+header.page-ingredients.profile-categories #exportProfileBtn{display:none}
+/* fixed width like #keySel so switching profiles never reflows the toolbar */
+#profileSel{width:150px}
 select,.btn,.search input{
   font-family:var(--mono); font-size:12px; color:var(--text);
   background:var(--surface); border:1px solid var(--line2); border-radius:9px;
@@ -312,6 +324,11 @@ html.ready body{animation:reveal .2s ease}
  *  painted over an opaque --bg2 (the group panel behind it) instead of letting it
  *  show through — so a lifted drag chip isn't see-through. */
 .chip.loc-chip{background-color:var(--bg2); background-image:linear-gradient(rgba(244,239,230,.06),rgba(244,239,230,.06))}
+/* unstocked loc chips read exactly like .chip.unstocked everywhere else — same red
+ *  tint (as an overlay, so the chip stays opaque for the drag ghost), same border,
+ *  and the same hover (border lightens, tint stays — mirroring .chip.ig:hover). */
+.chip.loc-chip.unstocked{background-image:linear-gradient(rgba(195,18,46,.16),rgba(195,18,46,.16)); border-color:rgba(195,18,46,.55)}
+.chip.ig.loc-chip.unstocked:hover{border-color:var(--line2)}
 .chip.drag-src{opacity:.35; border-style:dashed}
 .chip.drag-ghost{position:fixed; z-index:1000; margin:0; pointer-events:none; cursor:grabbing;
   box-shadow:0 8px 24px rgba(0,0,0,.45); border-color:var(--accent)}
@@ -372,6 +389,41 @@ body.dragging-loc{cursor:grabbing; user-select:none}
 .modal .actions{display:flex; gap:10px; justify-content:flex-end; align-items:center}
 .modal .actions .spacer{flex:1}
 .warn{color:#e88; font-size:11px; margin-right:auto}
+
+/* add / edit store-profile modal — the category rows are the working draft:
+   drag a row to reorder (touch-action:none so it doesn't scroll), × removes,
+   the pinned Other row sits outside the drag list and takes no part. */
+.prof-modal{width:min(480px,100%)}
+/* Cap the height and scroll only the body (same pattern as .ig-modal), so a long
+   category list can't push the title or Save/Cancel bar off-screen. The drag
+   handler suppresses wheel scrolling while a row is held (touch is already
+   covered by the rows' touch-action:none). */
+.prof-modal{display:flex; flex-direction:column; max-height:88vh}
+.prof-modal h3{flex:0 0 auto}
+.prof-modal .prof-scroll{flex:1 1 auto; min-height:0; overflow-y:auto; margin:0 -22px; padding:0 22px 4px}
+.prof-modal .actions{flex:0 0 auto; border-top:1px solid var(--line); padding-top:16px}
+.prof-cats{display:flex; flex-direction:column; gap:6px}
+.prof-cat{
+  display:flex; align-items:center; gap:9px;
+  background:var(--surface); border:1px solid var(--line2); border-radius:9px;
+  padding:8px 10px; font-family:var(--mono); font-size:13px; color:var(--text);
+  cursor:grab; touch-action:none; user-select:none;
+}
+.prof-cat.drag{border-color:var(--accent); background:var(--accent-dim); cursor:grabbing}
+.prof-cat .grip{color:var(--faint); display:grid; place-items:center}
+.prof-cat .nm{flex:1; min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap}
+.prof-cat-x{
+  border:0; background:transparent; color:var(--faint); font-size:15px; line-height:1;
+  width:22px; height:22px; border-radius:6px; cursor:pointer; display:grid; place-items:center;
+}
+.prof-cat-x:hover{color:#e88; background:rgba(200,60,60,.16)}
+.prof-cat.pinned{margin-top:6px; color:var(--faint); cursor:default; border-style:dashed}
+.prof-addcat{display:flex; gap:8px; margin-top:8px}
+.prof-addcat input{width:auto; flex:1}
+.prof-check{display:flex; align-items:flex-start; gap:9px; margin:0 0 10px; font-size:13px; color:var(--text); cursor:pointer}
+.prof-check input{accent-color:var(--accent); margin-top:2px; cursor:pointer}
+.prof-check .opt{color:var(--faint); font-size:11px; margin-left:5px}
+.prof-check:last-of-type{margin-bottom:18px}
 
 /* account / sync modal */
 .acct-modal{width:min(420px,100%)}

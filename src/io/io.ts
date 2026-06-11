@@ -1,11 +1,12 @@
-import { state, save, saveIngredients, saveStock, setStockPlacement, deriveRecords, SEED_KEY, RECIPES_KEY } from '../core/state';
+import { state, save, saveIngredients, saveStock, setProfilePlacement, deriveRecords, SEED_KEY, RECIPES_KEY } from '../core/state';
+import { HOME_ID } from '../profiles/profiles';
 import { parseLine } from '../parser/parser';
 import { parseCSV } from '../parser/csv';
 import { runtimeCatalog, reconcileStock, refreshUnits } from '../ingredients/catalog';
 import {
   buildRecipesExport, parseRecipesImport, isRecipesExport,
   buildIngredientsExport, parseIngredientsImport, isIngredientsExport,
-  buildStockExport, parseStockImport,
+  buildStockExport, parseStockImport, buildProfileExport,
 } from './transfer';
 import { nowISO } from '../core/util';
 import { render } from '../ui/render';
@@ -42,6 +43,14 @@ export function exportIngredientsJSON(): void {
 /** Stocked keys as a flat list. */
 export function exportStockJSON(): void {
   download('stock.json', json(buildStockExport()), 'application/json');
+}
+
+/** The currently selected profile (toolbar Export — hidden for Categories). */
+export function exportProfileJSON(): void {
+  const p = state.profiles[state.profileId];
+  if (!p || p.deleted) return;
+  const slug = p.name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '') || 'profile';
+  download(`profile-${slug}.json`, json(buildProfileExport(p)), 'application/json');
 }
 
 /* ---------- recipe import (json | csv | txt) ---------- */
@@ -120,6 +129,7 @@ export function importStockJSON(text: string): void {
   const { stocked, placements } = parseStockImport(data, known);
   state.stocked = stocked;
   saveStock();                                   // create on:true entries for the imported keys
-  if (placements.length) setStockPlacement(placements);   // then layer in locations + positions
+  // Legacy stock files carried Home placements (loc/pos); fold them into the Home profile.
+  if (placements.length) setProfilePlacement(HOME_ID, placements.map(p => ({ key: p.key, cat: p.loc, pos: p.pos })));
   render();
 }

@@ -4,14 +4,16 @@
 
 const isObject = (v: unknown): v is Record<string, unknown> => !!v && typeof v === 'object' && !Array.isArray(v);
 
-/** A sync payload's top-level shape: { seedId, seedTs, recipeOverrides, ingredients, stockTs }. */
+/** A sync payload's top-level shape: { seedId, seedTs, recipeOverrides, ingredients,
+ *  stockTs, profiles? } — profiles stays optional so pre-profiles clients validate. */
 export function isValidPayload(v: unknown): boolean {
   if (!isObject(v)) return false;
   return typeof v.seedId === 'string'
     && typeof v.seedTs === 'number'
     && isObject(v.recipeOverrides)
     && isObject(v.ingredients)
-    && isObject(v.stockTs);
+    && isObject(v.stockTs)
+    && (v.profiles === undefined || isObject(v.profiles));
 }
 
 /** Reject an oversized document (~5 MB of JSON — far above any real bar). */

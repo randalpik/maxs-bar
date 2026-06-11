@@ -1,7 +1,8 @@
-import type { Recipe, Derived, IngredientOverride, RecipeOverride, StockEntry, SyncPayload } from './types';
+import type { Recipe, Derived, IngredientOverride, RecipeOverride, StockEntry, SyncPayload, Profile } from './types';
 import { parseLine, baseSpirit, estAlcoholOz } from '../parser/parser';
 import { parseCSV } from '../parser/csv';
 import { resolveSeed, DEFAULT_SEED } from '../recipes/seeds';
+import { CATEGORIES_ID, HOME_ID, makeHomeProfile, seedHomeFromStock, foldLegacyPlacements } from '../profiles/profiles';
 import { nowISO } from './util';
 
 /* ============================================================
@@ -16,6 +17,10 @@ export const RECIPES_KEY = 'backbar.recipes.v1';
 /** Sync-only timestamps layered beside the data above (see types: StockEntry, SyncPayload). */
 export const STOCK_TS_KEY = 'backbar.stock-ts.v1';
 export const SEED_TS_KEY = 'backbar.seed-ts.v1';
+/** Store profiles (Home + custom; the 'categories' sentinel is never stored). */
+export const PROFILES_KEY = 'backbar.profiles.v1';
+/** Current profile selection — per-device view preference, never synced. */
+export const PROFILE_SEL_KEY = 'backbar.profile-sel.v1';
 
 /** Shared, mutable app state. */
 export const state: {
@@ -38,6 +43,11 @@ export const state: {
   recipeOverrides: Record<string, RecipeOverride>;
   /** Epoch-ms the seed was last chosen (sync LWW for the seedId scalar). */
   seedTs: number;
+  /** Store profiles keyed by id (Home + custom, tombstones included); synced. */
+  profiles: Record<string, Profile>;
+  /** Current ingredients-page profile ('categories' sentinel or a profile id).
+   *  Per-device: persisted across reloads but never synced. */
+  profileId: string;
 } = {
   records: [],
   seedId: '',
@@ -51,6 +61,8 @@ export const state: {
   ingredients: {},
   recipeOverrides: {},
   seedTs: 0,
+  profiles: {},
+  profileId: CATEGORIES_ID,
 };
 
 /** True once the user has chosen a seed (false on a fresh install). */
@@ -61,7 +73,7 @@ export function hasSeed(): boolean { return !!state.seedId; }
  * saveIngredients). state.ts never imports the sync layer, so it stays clean and inert
  * logged-out and in tests; main.ts registers the callback only once a session is live.
  * applySyncState() deliberately does NOT fire it (a pulled change must not re-push). */
-export type MutationKind = 'recipes' | 'stock' | 'ingredients';
+export type MutationKind = 'recipes' | 'stock' | 'ingredients' | 'profiles';
 let onMutate: ((k: MutationKind) => void) | null = null;
 export function setOnMutate(cb: ((k: MutationKind) => void) | null): void { onMutate = cb; }
 function fireMutate(k: MutationKind): void { try { onMutate?.(k); } catch { /* sync errors never break a save */ } }
@@ -117,6 +129,7 @@ export function diffRecords(records: Recipe[], base: Recipe[], prev: Record<stri
 export function load(): void {
   loadStock();
   loadIngredients();
+  loadProfiles(); // after loadStock: first run migrates stockTs loc/pos into Home
   loadRecipeOverrides();
   state.seedTs = Number(localStorage.getItem(SEED_TS_KEY)) || 0;
   const seed = localStorage.getItem(SEED_KEY);
@@ -177,7 +190,7 @@ export function loadRecipeOverrides(): void {
  *  and the seed choice) back to a clean install. Caller re-renders and forces
  *  the seed-choice modal, since seedId is now unset. */
 export function resetAll(): void {
-  for (const k of [KEY, STOCK_KEY, STOCK_TS_KEY, INGREDIENTS_KEY, SEED_KEY, SEED_TS_KEY, RECIPES_KEY]) localStorage.removeItem(k);
+  for (const k of [KEY, STOCK_KEY, STOCK_TS_KEY, INGREDIENTS_KEY, SEED_KEY, SEED_TS_KEY, RECIPES_KEY, PROFILES_KEY, PROFILE_SEL_KEY]) localStorage.removeItem(k);
   state.stocked = new Set();
   state.stockTs = {};
   state.ingredients = {};
@@ -185,6 +198,8 @@ export function resetAll(): void {
   state.seedId = '';
   state.seedTs = 0;
   state.records = [];
+  state.profiles = { [HOME_ID]: makeHomeProfile() };
+  state.profileId = CATEGORIES_ID;
 }
 
 /** True when the device holds user data beyond the bare on-startup seed — any recipe
@@ -196,7 +211,7 @@ export function hasLocalData(): boolean {
     || Object.keys(state.ingredients).length > 0;
 }
 
-/** Snapshot the four user-state slices + their sync timestamps as a wire payload. */
+/** Snapshot the five user-state slices + their sync timestamps as a wire payload. */
 export function buildSyncState(): SyncPayload {
   return {
     seedId: state.seedId,
@@ -204,6 +219,7 @@ export function buildSyncState(): SyncPayload {
     recipeOverrides: state.recipeOverrides,
     ingredients: state.ingredients,
     stockTs: state.stockTs,
+    profiles: state.profiles,
   };
 }
 
@@ -217,12 +233,20 @@ export function applySyncState(p: SyncPayload): void {
   state.ingredients = p.ingredients ?? {};
   state.stockTs = p.stockTs ?? {};
   state.stocked = new Set(Object.entries(state.stockTs).filter(([, e]) => e.on).map(([k]) => k));
+  state.profiles = p.profiles ?? {};
+  // A pre-profiles device's payload still carries stock loc/pos: ensure Home exists
+  // and fold those legacy placements in (newer-ts only, so real placements win).
+  if (!state.profiles[HOME_ID]) state.profiles[HOME_ID] = makeHomeProfile();
+  foldLegacyPlacements(state.profiles[HOME_ID]!, state.stockTs);
+  if (state.profileId !== CATEGORIES_ID && !(state.profiles[state.profileId] && !state.profiles[state.profileId]!.deleted))
+    setCurrentProfile(CATEGORIES_ID);   // current selection was deleted on another device
   localStorage.setItem(SEED_KEY, state.seedId);
   localStorage.setItem(SEED_TS_KEY, String(state.seedTs));
   localStorage.setItem(RECIPES_KEY, JSON.stringify(state.recipeOverrides));
   localStorage.setItem(INGREDIENTS_KEY, JSON.stringify(state.ingredients));
   localStorage.setItem(STOCK_KEY, JSON.stringify([...state.stocked]));
   localStorage.setItem(STOCK_TS_KEY, JSON.stringify(state.stockTs));
+  localStorage.setItem(PROFILES_KEY, JSON.stringify(state.profiles));
   state.records = deriveRecords();
 }
 
@@ -286,16 +310,69 @@ export function toggleStock(key: string): void {
   saveStock();
 }
 
-/** Assign physical location + position to stocked ingredients (Location mode drag /
- *  imported placements). Stamps a fresh ts on each so the placement wins a merge.
- *  Only touches keys that are currently stocked; persists once. */
-export function setStockPlacement(updates: Array<{ key: string; loc: string; pos: number }>): void {
+/* ---- store profiles ----
+ * Home + custom profiles, persisted as one map and synced (per-profile meta LWW,
+ * per-placement LWW — see merge.ts). The current *selection* is a per-device view
+ * preference: persisted so it survives reload, deliberately never synced. */
+
+/** Load profiles, creating + migrating Home from the legacy stockTs loc/pos fields
+ *  on the first run of this version (gated on the key's absence, so it can't
+ *  double-migrate). Home is re-created if ever missing; the stored selection is
+ *  dropped if it no longer points at a live profile. */
+export function loadProfiles(): void {
+  try {
+    const raw = localStorage.getItem(PROFILES_KEY);
+    if (raw) {
+      const obj = JSON.parse(raw);
+      if (obj && typeof obj === 'object') state.profiles = obj;
+    } else {
+      state.profiles = { [HOME_ID]: seedHomeFromStock(state.stockTs) };
+      localStorage.setItem(PROFILES_KEY, JSON.stringify(state.profiles));
+    }
+  } catch { state.profiles = {}; }
+  if (!state.profiles[HOME_ID]) state.profiles[HOME_ID] = makeHomeProfile();
+  const sel = localStorage.getItem(PROFILE_SEL_KEY);
+  const live = sel !== null && (sel === CATEGORIES_ID || (state.profiles[sel] && !state.profiles[sel].deleted));
+  state.profileId = live ? sel! : CATEGORIES_ID;
+}
+
+export function saveProfiles(): void {
+  localStorage.setItem(PROFILES_KEY, JSON.stringify(state.profiles));
+  fireMutate('profiles');
+}
+
+/** Create or replace a profile, stamping its meta `ts` so the edit wins a merge. */
+export function upsertProfile(p: Profile): void {
+  state.profiles[p.id] = { ...p, ts: Date.now() };
+  saveProfiles();
+}
+
+/** Tombstone a custom profile (Home refuses), dropping its placements to keep the
+ *  blob small; reselects Categories if it was current. */
+export function deleteProfile(id: string): void {
+  const p = state.profiles[id];
+  if (!p || id === HOME_ID) return;
+  state.profiles[id] = { ...p, deleted: true, ts: Date.now(), placements: {} };
+  if (state.profileId === id) setCurrentProfile(CATEGORIES_ID);
+  saveProfiles();
+}
+
+/** Assign placements within a profile (Location mode drag / profile import).
+ *  Stamps a fresh ts on each so the placement wins a merge. Unlike the old
+ *  stock placement this has no stocked-only gate: with hide-unstocked off,
+ *  unstocked ingredients keep and change placement too. */
+export function setProfilePlacement(profileId: string, updates: Array<{ key: string; cat: string; pos: number }>): void {
+  const p = state.profiles[profileId];
+  if (!p || p.deleted) return;
   const now = Date.now();
-  for (const { key, loc, pos } of updates) {
-    if (!state.stocked.has(key)) continue;
-    state.stockTs[key] = { on: true, ts: now, loc, pos };
-  }
-  saveStock();
+  for (const { key, cat, pos } of updates) p.placements[key] = { cat, pos, ts: now };
+  saveProfiles();
+}
+
+/** Switch the ingredients-page profile. A view preference — no mutate fire. */
+export function setCurrentProfile(id: string): void {
+  state.profileId = id;
+  localStorage.setItem(PROFILE_SEL_KEY, id);
 }
 
 /** Per-ingredient overrides, persisted separately from recipes and stock. */

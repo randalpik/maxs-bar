@@ -1,15 +1,17 @@
-import { state, setStockPlacement } from '../core/state';
+import { state, setProfilePlacement } from '../core/state';
+import { CATEGORIES_ID } from '../profiles/profiles';
 import { render } from './render';
 import { $ } from '../core/dom';
 
 /* ============================================================
    Location-mode drag-to-reorder (pointer-based, touch + mouse)
 
-   Active only on the ingredients page in Location mode. A chip is dragged by its body
-   (the edit/find inset buttons keep working). We float a clone under the pointer and
+   Active only on the ingredients page in Location mode with a real profile selected
+   (the Categories sentinel has no placements). A chip is dragged by its body (the
+   edit/find inset buttons keep working). We float a clone under the pointer and
    move the ORIGINAL chip through the DOM as a live placeholder, so on drop the DOM
    order of each touched .loc-grid IS the desired order — we read it back and persist
-   (loc + sequential pos) via setStockPlacement, then re-render.
+   (profile category + sequential pos) via setProfilePlacement, then re-render.
 
    Pairs with CSS `.loc-grid .chip{touch-action:none}` so a drag doesn't scroll.
    ============================================================ */
@@ -24,16 +26,16 @@ let startX = 0, startY = 0, grabDX = 0, grabDY = 0;
 let dragging = false;
 
 function active(): boolean {
-  return state.page === 'ingredients' && state.igMode === 'location';
+  return state.page === 'ingredients' && state.igMode === 'location' && state.profileId !== CATEGORIES_ID;
 }
 
 function gridFromPoint(x: number, y: number): HTMLElement | null {
   const el = document.elementFromPoint(x, y) as HTMLElement | null;
   if (!el) return null;
-  const direct = el.closest<HTMLElement>('.loc-grid[data-loc]');
+  const direct = el.closest<HTMLElement>('.loc-grid[data-cat]');
   if (direct) return direct;
   // Pointer over a section's padding/header — fall back to that section's grid.
-  return el.closest('section.group')?.querySelector<HTMLElement>('.loc-grid[data-loc]') ?? null;
+  return el.closest('section.group')?.querySelector<HTMLElement>('.loc-grid[data-cat]') ?? null;
 }
 
 /** The chip in `grid` to insert the placeholder before (null ⇒ append), given the
@@ -102,10 +104,10 @@ function beginDrag(): void {
   document.body.classList.add('dragging-loc');
 }
 
-/** Persist the order of one grid: sequential pos, the grid's location, for every chip. */
-function placementsFor(grid: HTMLElement): Array<{ key: string; loc: string; pos: number }> {
-  const loc = grid.dataset.loc!;
-  return [...grid.querySelectorAll<HTMLElement>('.chip.ig')].map((c, pos) => ({ key: c.dataset.ing!, loc, pos }));
+/** Persist the order of one grid: sequential pos, the grid's category, for every chip. */
+function placementsFor(grid: HTMLElement): Array<{ key: string; cat: string; pos: number }> {
+  const cat = grid.dataset.cat!;
+  return [...grid.querySelectorAll<HTMLElement>('.chip.ig')].map((c, pos) => ({ key: c.dataset.ing!, cat, pos }));
 }
 
 function onUp(e: PointerEvent): void {
@@ -115,7 +117,7 @@ function onUp(e: PointerEvent): void {
   window.removeEventListener('pointercancel', onUp);
   if (!dragging) { chip = null; pointerId = -1; return; }
 
-  const destGrid = chip!.closest<HTMLElement>('.loc-grid[data-loc]');
+  const destGrid = chip!.closest<HTMLElement>('.loc-grid[data-cat]');
   ghost?.remove();
   chip?.classList.remove('drag-src');
   document.body.classList.remove('dragging-loc');
@@ -123,7 +125,7 @@ function onUp(e: PointerEvent): void {
   if (destGrid) {
     const updates = placementsFor(destGrid);
     if (sourceGrid && sourceGrid !== destGrid) updates.push(...placementsFor(sourceGrid));
-    setStockPlacement(updates);
+    setProfilePlacement(state.profileId, updates);
   }
   chip = ghost = sourceGrid = null;
   pointerId = -1;
@@ -141,7 +143,7 @@ export function initLocationDrag(): void {
     const c = t.closest<HTMLElement>('.chip.ig');
     if (!c) return;
     chip = c;
-    sourceGrid = c.closest<HTMLElement>('.loc-grid[data-loc]');
+    sourceGrid = c.closest<HTMLElement>('.loc-grid[data-cat]');
     pointerId = pe.pointerId;
     startX = pe.clientX;
     startY = pe.clientY;

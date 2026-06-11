@@ -7,7 +7,7 @@ import { createSyncEngine, type Transport } from './sync-engine';
    the destructive sign-in adopt. (The merge itself is exhaustively covered in merge.test.) */
 
 const P = (p: Partial<SyncPayload>): SyncPayload =>
-  ({ seedId: 'classics', seedTs: 0, recipeOverrides: {}, ingredients: {}, stockTs: {}, ...p });
+  ({ seedId: 'classics', seedTs: 0, recipeOverrides: {}, ingredients: {}, stockTs: {}, profiles: {}, ...p });
 const ro = (recipe: string, edited: string) => ({ recipe, edited });
 
 /** A fake server: monotonic version counter, optimistic-concurrency on baseVersion. */

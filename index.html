@@ -71,6 +71,9 @@
       <button data-mode="sort" class="on">Sort</button>
       <button data-mode="group">Group</button>
     </div>
+    <select id="profileSel" title="store profile"></select>
+    <button class="btn" id="editProfileBtn">Edit</button>
+    <button class="btn" id="exportProfileBtn">Export</button>
     <div class="seg" id="igModeSeg">
       <button data-mode="stock" class="on">Stock</button>
       <button data-mode="location">Location</button>
@@ -118,7 +121,7 @@
     <div class="field ig-name"><label>Name</label><input id="igName" autocomplete="off"></div>
     <div class="ig-fields">
       <div class="field"><label>Category</label><select id="igCat"></select></div>
-      <div class="field"><label>Default location</label><select id="igLoc"></select></div>
+      <div class="field"><label>Home location</label><select id="igLoc"></select></div>
       <div class="field ig-abv"><label>ABV <span class="opt">%</span></label><input id="igAbv" type="number" min="0" max="100" step="0.5" inputmode="decimal" autocomplete="off"></div>
     </div>
     <div class="ig-builder">
@@ -175,6 +178,34 @@
       <span class="spacer"></span>
       <button class="btn" id="igCancel">Cancel</button>
       <button class="btn primary" id="igSave">Save</button>
+    </div>
+  </div>
+</div>
+<!-- add / edit store profile modal -->
+<div class="overlay" id="profileOverlay">
+  <div class="modal prof-modal">
+    <button type="button" class="modal-x" id="profClose" aria-label="Close"><svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor"><rect x="2.5" y="7.15" width="11" height="1.7" rx=".85" transform="rotate(45 8 8)"/><rect x="2.5" y="7.15" width="11" height="1.7" rx=".85" transform="rotate(-45 8 8)"/></svg></button>
+    <h3 id="profTitle">Add profile</h3>
+    <div class="prof-scroll">
+    <p class="hint">Group ingredients in the order you encounter them — store aisles, shelves at home. Drag categories to reorder; <strong>Other</strong> always sits last and catches everything unplaced.</p>
+    <div class="field"><label>Name</label><input id="profName" placeholder="Liquor store" autocomplete="off"></div>
+    <div class="field"><label>Categories</label>
+      <div class="prof-cats" id="profCats"></div>
+      <div class="prof-cat pinned"><span class="nm">Other</span></div>
+      <div class="prof-addcat">
+        <input id="profCatInput" placeholder="add category + Enter" autocomplete="off">
+        <button type="button" class="btn" id="profCatAdd">Add</button>
+      </div>
+    </div>
+    <label class="prof-check"><input type="checkbox" id="profHideUnstocked"><span>Hide unstocked <span class="opt">Location mode drops out-of-stock items</span></span></label>
+    <label class="prof-check"><input type="checkbox" id="profHideOther"><span>Hide Other <span class="opt">in both modes; uncheck to drag items in or out of it</span></span></label>
+    </div>
+    <div class="actions">
+      <button class="btn" id="profImport">Import from file…</button>
+      <button class="btn danger-text warn" id="profDelete">Delete</button>
+      <span class="spacer"></span>
+      <button class="btn" id="profCancel">Cancel</button>
+      <button class="btn primary" id="profSave">Save</button>
     </div>
   </div>
 </div>
