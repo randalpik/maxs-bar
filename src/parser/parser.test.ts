@@ -176,6 +176,43 @@ describe('parseLine', () => {
   });
 });
 
+describe('food parse context', () => {
+  it('counts a bare quantity instead of pouring oz', () => {
+    const i = parseIngredient('2 naan', 'food'); // unknown name — the universal fallback
+    expect(i.role).toBe('count');
+    expect(i.qty).toBe(2);
+    expect(i.unit).toBeNull();
+  });
+  it('counts citrus instead of pouring juice', () => {
+    const i = parseIngredient('1 lime', 'food');
+    expect(i.role).toBe('count');
+    expect(i.disp).toBe('Lime');        // no " juice" append
+    expect(i.key).toBe('lime');          // same stock identity as cocktail context
+  });
+  it('keeps a bare unqualified name a blank chip (no implicit oz, no "1")', () => {
+    const i = parseIngredient('salt', 'food');
+    expect(i.role).toBe('pour');
+    expect(i.qty).toBeNull();
+    expect(i.unit).toBeNull();
+  });
+  it('explicit units parse identically in both contexts', () => {
+    const f = parseIngredient('2 tsp sugar', 'food');
+    const c = parseIngredient('2 tsp sugar');
+    expect(f.role).toBe(c.role);
+    expect(f.unit).toBe('tsp');
+  });
+  it('cocktail context is the default and keeps the oz-pour shorthand', () => {
+    const i = parseIngredient('1 lime');
+    expect(i.role).toBe('pour');
+    expect(i.unit).toBe('oz');
+    expect(i.disp).toBe('Lime juice');
+  });
+  it('parseLine threads the context to every ingredient', () => {
+    const p = parseLine('Tacos: 2 lime, 1 avocado', 'food')!;
+    expect(p.ingredients.map(i => i.role)).toEqual(['count', 'count']);
+  });
+});
+
 describe('baseSpirit & estAlcoholOz', () => {
   it('picks the dominant spirit family', () => {
     expect(baseSpirit(parseLine('Daiquiri: 2 rum, 3/4 lime, 3/4 syrup')!)).toBe('cane');

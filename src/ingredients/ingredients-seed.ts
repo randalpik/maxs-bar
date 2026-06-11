@@ -21,6 +21,11 @@ export interface SeedIngredient {
   syrup?: string;
   citrus?: string;
   aliases?: string[];
+  /** Aliases that resolve only in one parse context. A scoped alias shadows another
+   *  entry's identity key in its context (cocktail "honey" → honey syrup, while food
+   *  "honey" stays the raw honey entry) — see buildAliasIndex in catalog.ts. */
+  cocktailAliases?: string[];
+  foodAliases?: string[];
   umbrellas?: string[];
   /** Trailing forms this ingredient takes (citrus wedge/peel/…). Omit to inherit the
    *  category default — citrus/bitters synthesise theirs. A form's `unit` registers a
@@ -385,6 +390,16 @@ export const INGREDIENTS: SeedIngredient[] = [
     umbrellas: ["chartreuse"],
   },
   {
+    // Raw pantry honey — distinct stockable from the made syrup. In cocktail context
+    // "honey" still means honey syrup (its cocktailAlias shadows this identity).
+    key: "honey",
+    disp: "Honey",
+    cat: "other",
+    color: "#D6A93B",
+    shape: "droplet",
+    abv: 0,
+  },
+  {
     key: "honey syrup",
     disp: "Honey syrup",
     cat: "syrup",
@@ -392,7 +407,7 @@ export const INGREDIENTS: SeedIngredient[] = [
     shape: "bottle",
     abv: 0,
     syrup: "honey",
-    aliases: ["honey"],
+    cocktailAliases: ["honey"],
     umbrellas: ["syrup"],
   },
   {

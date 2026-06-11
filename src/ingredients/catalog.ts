@@ -1,4 +1,4 @@
-import type { Classified, Form, Recipe } from '../core/types';
+import type { Classified, Form, ParseCtx, Recipe } from '../core/types';
 import { state, derive, saveStock } from '../core/state';
 import { sentenceCase, titleCase, SPIRIT_FAMILIES, BASE_UNITS, setUnits } from '../parser/parser';
 import type { UnitDef } from '../core/types';
@@ -59,13 +59,32 @@ function indexForms(index: Map<string, string>, key: string, forms?: Form[]): vo
       index.set((key + ' ' + tok).trim(), key);
 }
 
-/** Recipe-text name -> key: identity, each ingredient's declared aliases, and its
- *  trailing forms (citrus juice/peel/wheel/… synthesised from cat, or explicit). */
-const aliasIndex = new Map<string, string>();
-for (const ing of INGREDIENTS) {
-  aliasIndex.set(ing.key, ing.key);
-  for (const a of ing.aliases ?? []) aliasIndex.set(a.toLowerCase(), ing.key);
-  indexForms(aliasIndex, ing.key, formsFor(ing.cat, ing.forms));
+/** Recipe-text name -> key, one index per parse context. Built in precedence passes:
+ *  identities, then unscoped aliases + form tokens, then context-scoped aliases — so a
+ *  scoped alias deliberately shadows another entry's identity in its context (cocktail
+ *  "honey" → honey syrup over the raw honey entry) without depending on seed order.
+ *  Form tokens index unfiltered in both contexts (resolution is generous; the *forms a
+ *  classification returns* are what get context-filtered). */
+function buildAliasIndex(ctx: ParseCtx): Map<string, string> {
+  const idx = new Map<string, string>();
+  for (const ing of INGREDIENTS) idx.set(ing.key, ing.key);
+  for (const ing of INGREDIENTS) {
+    for (const a of ing.aliases ?? []) idx.set(a.toLowerCase(), ing.key);
+    indexForms(idx, ing.key, formsFor(ing.cat, ing.forms));
+  }
+  for (const ing of INGREDIENTS)
+    for (const a of (ctx === 'food' ? ing.foodAliases : ing.cocktailAliases) ?? [])
+      idx.set(a.toLowerCase(), ing.key);
+  return idx;
+}
+const ALIAS_INDEX: Record<ParseCtx, Map<string, string>> = {
+  cocktail: buildAliasIndex('cocktail'),
+  food: buildAliasIndex('food'),
+};
+
+/** The forms in effect in a parse context: scoped forms apply only in their own. */
+function ctxForms(forms: Form[] | undefined, ctx: ParseCtx): Form[] | undefined {
+  return forms?.filter(f => !f.ctx || f.ctx === ctx);
 }
 
 /** The full leading-unit registry the parser should recognise: the built-in base set
@@ -145,10 +164,12 @@ function resolveUserKey(lname: string): string | undefined {
  *  (key/alias/citrus form) or, failing that, a user override (added key or user alias).
  *  A seed key classifies from the committed entry (with overrides); a non-seed key from
  *  its override alone; anything unresolved is a neutral unknown. So user-added and
- *  user-aliased ingredients classify in recipe text just like seed ones. */
-export function seedClassify(name: string): Classified {
+ *  user-aliased ingredients classify in recipe text just like seed ones. The parse
+ *  context picks the alias index and filters the returned forms (user aliases stay
+ *  context-free). */
+export function seedClassify(name: string, ctx: ParseCtx = 'cocktail'): Classified {
   const lname = name.toLowerCase();
-  const key = aliasIndex.get(lname) ?? resolveUserKey(lname);
+  const key = ALIAS_INDEX[ctx].get(lname) ?? resolveUserKey(lname);
   if (!key) return { cat: 'unknown', shape: '', color: FALLBACK_COLOR, abv: 0, disp: sentenceCase(name) };
   const ing = byKey.get(key);
   const ov = state.ingredients[key];
@@ -160,7 +181,7 @@ export function seedClassify(name: string): Classified {
       cat: ing.cat, shape: ing.shape ?? '', color: ing.color, abv: ov?.abv ?? ing.abv,
       disp: ing.disp, fam: familyOf(key, ov?.umbrellas ?? ing.umbrellas),
       syrup: ing.syrup, citrus: ing.citrus, key,
-      forms: formsFor(ing.cat, ing.forms, ov?.forms),
+      forms: ctxForms(formsFor(ing.cat, ing.forms, ov?.forms), ctx),
     };
   }
   // User-added ingredient — classify from its override alone.
@@ -169,7 +190,7 @@ export function seedClassify(name: string): Classified {
     cat, shape: ov!.shape ?? '', color: ov!.color ?? FALLBACK_COLOR, abv: ov!.abv ?? 0,
     disp: ov!.disp ?? titleCase(key), fam: familyOf(key, ov!.umbrellas),
     citrus: cat === 'citrus' ? key : undefined, key,
-    forms: formsFor(cat, undefined, ov!.forms),
+    forms: ctxForms(formsFor(cat, undefined, ov!.forms), ctx),
   };
 }
 

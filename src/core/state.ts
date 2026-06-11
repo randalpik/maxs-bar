@@ -408,6 +408,6 @@ export function resetIngredientOverride(key: string): void {
 }
 
 export function derive(rec: Recipe): Derived {
-  const p = parseLine(`${rec.name}: ${rec.recipe}`)!;
+  const p = parseLine(`${rec.name}: ${rec.recipe}`, rec.recipeType ?? 'cocktail')!;
   return { rec, p, base: baseSpirit(p), alc: estAlcoholOz(p) };
 }

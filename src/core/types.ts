@@ -23,6 +23,13 @@ export interface UnitDef {
   volOz: number | null;
 }
 
+/** The parsing context a recipe line is read in. Food recipes drop the cocktail
+ *  shorthand defaults (bare number ⇒ oz pour, citrus ⇒ juice) and resolve
+ *  context-scoped aliases differently (cocktail "honey" = honey syrup; food
+ *  "honey" = honey). Absent everywhere ⇒ 'cocktail', so all existing call sites
+ *  and data keep their behavior. */
+export type ParseCtx = 'cocktail' | 'food';
+
 /** A trailing form keyword that reshapes how an ingredient resolves — the citrus
  *  juice/wedge/peel mechanism, generalised to data. An empty `keyword` is the
  *  bare/default form, which only carries a display treatment (citrus → "… juice"
@@ -44,6 +51,10 @@ export interface Form {
   disp?: 'juice' | 'sentence' | 'asis';
   /** Icon shape hint for this form ("wedge","twist","wheel"). */
   icon?: string;
+  /** Context this form applies in; absent ⇒ both. The classifier filters by the
+   *  active recipe's context, so e.g. citrus carries a cocktail juice-pour default
+   *  AND a food count default under the same empty keyword. */
+  ctx?: ParseCtx;
 }
 
 /** Result of the classifier — a category/colour/abv resolved against a name. */
@@ -111,8 +122,8 @@ export interface Recipe {
   /** Drink author/creator. Blank for classics; set for originals. */
   author: string;
   /** Recipe kind. Absent ⇒ cocktail (the default); only food recipes set this, so all
-   *  existing data, seeds and exports stay byte-stable. */
-  recipeType?: 'cocktail' | 'food';
+   *  existing data, seeds and exports stay byte-stable. Doubles as the parse context. */
+  recipeType?: ParseCtx;
   /** Food category (Meal/Snack/Dessert). Set only on food recipes. */
   foodCat?: FoodCat;
 }
@@ -163,7 +174,7 @@ export interface RecipeOverride {
   created?: string;
   edited?: string;
   /** Recipe kind — carried so food recipes survive sync + JSON round-trips. Absent ⇒ cocktail. */
-  recipeType?: 'cocktail' | 'food';
+  recipeType?: ParseCtx;
   /** Food category, carried for the same reason. Set only on food recipes. */
   foodCat?: FoodCat;
   /** A removed seed recipe — dropped from the derived list. */

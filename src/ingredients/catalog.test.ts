@@ -19,6 +19,22 @@ describe('seedClassify', () => {
     expect(u.disp).toBe('Moonpetal cordial');
     expect(u.abv).toBe(0);
   });
+  it('resolves a context-scoped alias over the shadowed identity (honey)', () => {
+    expect(seedClassify('honey', 'cocktail').key).toBe('honey syrup'); // scoped alias wins
+    expect(seedClassify('honey', 'food').key).toBe('honey');          // identity holds
+    expect(seedClassify('honey').key).toBe('honey syrup');            // default = cocktail
+    expect(seedClassify('honey syrup', 'food').key).toBe('honey syrup'); // explicit name works anywhere
+  });
+  it('filters context-scoped forms: citrus default is juice-pour in cocktail, count in food', () => {
+    const def = (ctx: 'cocktail' | 'food') =>
+      seedClassify('lime', ctx).forms!.find(f => !f.keyword)!;
+    expect(def('cocktail').role).toBe('pour');
+    expect(def('cocktail').disp).toBe('juice');
+    expect(def('food').role).toBe('count');
+    // unscoped trailing forms (wedge) survive in both
+    for (const ctx of ['cocktail', 'food'] as const)
+      expect(seedClassify('lime', ctx).forms!.some(f => f.keyword === 'wedge'), ctx).toBe(true);
+  });
 });
 
 describe('effectiveUnits (the single unit registry)', () => {

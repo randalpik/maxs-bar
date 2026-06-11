@@ -16,9 +16,12 @@ import type { Form } from '../core/types';
    ============================================================ */
 
 /** Citrus's trailing forms: juice (the poured default), a counted wedge, and the
- *  verbatim peel/wheel/twist garnishes. The one place this set is defined. */
+ *  verbatim peel/wheel/twist garnishes. The one place this set is defined. The bare
+ *  default splits by parse context: cocktail "1 lime" pours an oz of juice, food
+ *  "1 lime" counts a lime. Wedge/peel/wheel/twist apply in both. */
 const CITRUS_FORMS: Form[] = [
-  { keyword: '', aliases: ['juice'], role: 'pour', disp: 'juice' },
+  { keyword: '', aliases: ['juice'], role: 'pour', disp: 'juice', ctx: 'cocktail' },
+  { keyword: '', role: 'count', ctx: 'food' },
   { keyword: 'wedge', aliases: ['wedges'], role: 'count', unit: 'wedge', icon: 'wedge' },
   { keyword: 'peel', role: 'count', process: 'garnish', disp: 'asis', icon: 'twist' },
   { keyword: 'wheel', role: 'count', process: 'garnish', disp: 'asis', icon: 'wheel' },

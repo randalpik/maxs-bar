@@ -1,4 +1,4 @@
-import type { Classified, Form, Ingredient, ParsedLine, Process, Role, UnitDef } from "../core/types";
+import type { Classified, Form, Ingredient, ParseCtx, ParsedLine, Process, Role, UnitDef } from "../core/types";
 
 /* ============================================================
    Cocktail shorthand parser
@@ -57,9 +57,10 @@ function unknownClassify(name: string): Classified {
 }
 
 /** The classifier parseIngredient uses. Swappable so the app (and tests) resolve
- *  ingredients from the committed seed rather than any built-in table. */
-let activeClassifier: (name: string) => Classified = unknownClassify;
-export function setClassifier(fn: (name: string) => Classified): void {
+ *  ingredients from the committed seed rather than any built-in table. The parse
+ *  context rides along so context-scoped aliases and forms resolve per recipe kind. */
+let activeClassifier: (name: string, ctx: ParseCtx) => Classified = unknownClassify;
+export function setClassifier(fn: (name: string, ctx: ParseCtx) => Classified): void {
   activeClassifier = fn;
 }
 
@@ -124,7 +125,7 @@ export function parseNum(t: string): number | null {
   return null;
 }
 
-export function parseIngredient(raw: string): Ingredient {
+export function parseIngredient(raw: string, ctx: ParseCtx = "cocktail"): Ingredient {
   let s = raw.trim();
   let prefix: string | null = null;
   const pm = s.match(/^(top|float|dash|muddled)\s+/i);
@@ -153,7 +154,7 @@ export function parseIngredient(raw: string): Ingredient {
     s = s.slice(utok[0].length);
   }
   const name = s.trim();
-  const info = activeClassifier(name);
+  const info = activeClassifier(name, ctx);
   const lname = name.toLowerCase();
   // Forms (citrus wedge/peel, egg white/yolk, …) come from the classifier, so the parser
   // stays seed-free and generic. A *keyword* form matches a trailing word; the *default*
@@ -173,8 +174,14 @@ export function parseIngredient(raw: string): Ingredient {
   else if (qty != null && discreteUnit) role = "count"; // e.g. "1 slice bread"
   else if (qty != null && unit === "tsp") role = "measure";
   else if (defForm) role = defForm.role; // citrus pour, bitters dash, egg/cherry count
+  // Universal fallback, by context: cocktail shorthand pours a bare number ("2 rum" =
+  // 2 oz); food counts it ("2 naan" = 2 naan). A bare unqualified name stays a blank
+  // pour chip in both.
+  else if (ctx === "food" && qty != null) role = "count";
   else role = "pour"; // bare number or nothing → pour (blank amount when no quantity)
-  if (role === "pour" && !unit) unit = defForm?.unit ?? "oz"; // oz unless the default form names another
+  // The implicit-oz default is cocktail shorthand only; food pours stay unitless
+  // unless the default form names a unit (volOz then resolves them to nothing).
+  if (role === "pour" && !unit) unit = defForm?.unit ?? (ctx === "cocktail" ? "oz" : null);
   // A count form (keyword like "wedge", or the bare default like mint→"sprig") carries
   // its own unit word, or stays a bare count; a leading discrete unit (slice) keeps the
   // unit it was parsed with.
@@ -222,7 +229,7 @@ export function parseIngredient(raw: string): Ingredient {
   };
 }
 
-export function parseLine(line: string): ParsedLine | null {
+export function parseLine(line: string, ctx: ParseCtx = "cocktail"): ParsedLine | null {
   const idx = line.indexOf(":");
   if (idx < 0) return null;
   const name = line.slice(0, idx).trim();
@@ -244,7 +251,7 @@ export function parseLine(line: string): ParsedLine | null {
     body,
     method,
     hasMethod,
-    ingredients: parts.map(parseIngredient),
+    ingredients: parts.map((p) => parseIngredient(p, ctx)),
   };
 }
 

@@ -59,7 +59,7 @@ export function closeModal(): void { $('#overlay').classList.remove('open'); }
 export function updatePreview(): void {
   const nm = $<HTMLInputElement>('#fName').value.trim() || 'Cocktail';
   const rc = $<HTMLTextAreaElement>('#fRecipe').value.trim();
-  const p = parseLine(`${nm}: ${rc}`);
+  const p = parseLine(`${nm}: ${rc}`, editingType); // preview parses in the kind being edited
   $('#pvChips').innerHTML = (p && p.ingredients.length)
     ? p.ingredients.map(i => chipHTML(i)).join('')
     : '<span style="color:var(--faint);font-size:11px">…</span>';
