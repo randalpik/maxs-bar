@@ -70,6 +70,16 @@ function insertBefore(grid: HTMLElement, x: number, y: number): HTMLElement | nu
   return idx < rows.length - 1 ? rows[idx + 1]!.items[0]! : null;
 }
 
+/** Park the placeholder in the slot under (x, y) — shared by pointer moves and
+ *  the edge-scroll loop (scrolling slides new grids under a stationary pointer). */
+function positionPlaceholder(x: number, y: number): void {
+  const grid = gridFromPoint(x, y);
+  if (!grid || !chip) return;
+  const before = insertBefore(grid, x, y);
+  if (before) grid.insertBefore(chip, before);
+  else grid.appendChild(chip);
+}
+
 function onMove(e: PointerEvent): void {
   if (e.pointerId !== pointerId || !chip) return;
   if (!dragging) {
@@ -77,15 +87,43 @@ function onMove(e: PointerEvent): void {
     beginDrag();
   }
   e.preventDefault();
-  // Float the ghost.
+  lastX = e.clientX;
+  lastY = e.clientY;
+  // Float the ghost, then park the placeholder in the slot under the pointer.
   ghost!.style.left = (e.clientX - grabDX) + 'px';
   ghost!.style.top = (e.clientY - grabDY) + 'px';
-  // Move the placeholder to the slot under the pointer.
-  const grid = gridFromPoint(e.clientX, e.clientY);
-  if (!grid) return;
-  const before = insertBefore(grid, e.clientX, e.clientY);
-  if (before) grid.insertBefore(chip, before);
-  else grid.appendChild(chip);
+  positionPlaceholder(e.clientX, e.clientY);
+}
+
+/* ---- edge auto-scroll ----
+ * Holding a chip near the viewport's top/bottom edge scrolls the page (speed ramps
+ * with proximity), so a drag can reach categories beyond the screen — essential on
+ * mobile, where there's no wheel and touch-action:none blocks touch scrolling
+ * mid-drag. The rAF loop re-parks the placeholder each frame: the pointer doesn't
+ * move while the content scrolls underneath it. */
+const EDGE_ZONE = 72;       // px from a vertical edge where scrolling kicks in
+const MAX_SCROLL_SPEED = 16; // px per frame at the very edge
+
+let lastX = 0, lastY = 0;
+let scrollRaf = 0;
+
+function edgeSpeed(y: number): number {
+  if (y < EDGE_ZONE) return -((EDGE_ZONE - y) / EDGE_ZONE) * MAX_SCROLL_SPEED;
+  const fromBottom = window.innerHeight - y;
+  if (fromBottom < EDGE_ZONE) return ((EDGE_ZONE - fromBottom) / EDGE_ZONE) * MAX_SCROLL_SPEED;
+  return 0;
+}
+
+function scrollLoop(): void {
+  if (dragging) {
+    const v = edgeSpeed(lastY);
+    if (v !== 0) {
+      const before = window.scrollY;
+      window.scrollBy(0, v);
+      if (window.scrollY !== before) positionPlaceholder(lastX, lastY);
+    }
+  }
+  scrollRaf = requestAnimationFrame(scrollLoop);
 }
 
 function beginDrag(): void {
@@ -102,6 +140,7 @@ function beginDrag(): void {
   document.body.appendChild(ghost);
   chip!.classList.add('drag-src');
   document.body.classList.add('dragging-loc');
+  scrollRaf = requestAnimationFrame(scrollLoop);
 }
 
 /** Persist the order of one grid: sequential pos, the grid's category, for every chip. */
@@ -115,6 +154,7 @@ function onUp(e: PointerEvent): void {
   window.removeEventListener('pointermove', onMove);
   window.removeEventListener('pointerup', onUp);
   window.removeEventListener('pointercancel', onUp);
+  cancelAnimationFrame(scrollRaf);
   if (!dragging) { chip = null; pointerId = -1; return; }
 
   const destGrid = chip!.closest<HTMLElement>('.loc-grid[data-cat]');
