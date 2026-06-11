@@ -1,7 +1,7 @@
 import { state, setIngredientOverride, resetIngredientOverride } from '../core/state';
 import { CATEGORY_ORDER, CATEGORY_LABEL, CATEGORY_BY_ID } from '../ingredients/ingredients';
 import { defaultLocationForCat } from '../ingredients/locations';
-import { HOME_ID, OTHER_CAT, profileCats, catLabel } from '../profiles/profiles';
+import { HOME_ID, OTHER_CAT, catLabel, catKey, sameCat } from '../profiles/profiles';
 import { editableEntry, isKnownKey, isSeedKey, UMBRELLA_PARENTS, reconcileStock, refreshUnits, baselineForms } from '../ingredients/catalog';
 import { icon } from '../ingredients/icons';
 import { titleCase, FAMILY_LABEL } from '../parser/parser';
@@ -67,31 +67,45 @@ export function fillIgCat(): void {
   }
 }
 
-/** Populate the Home-location <select> from the Home profile's live category list
- *  (plus the implicit Other). Home's aisles are user-editable, so openIgModal
- *  re-runs this on every open rather than relying on the once-at-startup fill. */
+/** Populate the default-location <select> with every category from every loaded
+ *  profile, label-deduped (Home first, so its seeded ids win a shared label like
+ *  "Fridge"), plus the implicit Other last. Profiles are user-editable, so
+ *  openIgModal re-runs this on every open rather than relying on the
+ *  once-at-startup fill. */
 export function fillIgLoc(): void {
   const sel = $<HTMLSelectElement>('#igLoc');
   sel.innerHTML = '';
   const home = state.profiles[HOME_ID];
-  for (const c of home ? profileCats(home) : [OTHER_CAT]) {
+  const customs = Object.values(state.profiles)
+    .filter(p => !p.deleted && p.id !== HOME_ID)
+    .sort((a, b) => a.name.localeCompare(b.name));
+  const seen = new Set<string>();
+  const cats: string[] = [];
+  for (const p of [...(home ? [home] : []), ...customs])
+    for (const c of p.cats) {
+      const k = catKey(c);
+      if (!seen.has(k)) { seen.add(k); cats.push(c); }
+    }
+  for (const c of [...cats, OTHER_CAT]) {
     const o = document.createElement('option');
     o.value = c; o.textContent = catLabel(c);
     sel.appendChild(o);
   }
 }
 
-/** Select a location, surfacing one Home no longer lists as a transient "(removed)"
- *  option — so opening and saving an untouched ingredient never silently rewrites
- *  its stored default. */
+/** Select a location: a label-equivalent option counts as a match (stored
+ *  'fridge' selects a lone "Fridge" aisle), and one no profile lists anymore is
+ *  surfaced as a transient "(removed)" option — so opening and saving an
+ *  untouched ingredient never silently rewrites its stored default. */
 function setIgLocValue(loc: string): void {
   const sel = $<HTMLSelectElement>('#igLoc');
-  if (![...sel.options].some(o => o.value === loc)) {
+  const match = [...sel.options].find(o => sameCat(o.value, loc));
+  if (!match) {
     const o = document.createElement('option');
     o.value = loc; o.textContent = `${catLabel(loc)} (removed)`;
     sel.appendChild(o);
   }
-  sel.value = loc;
+  sel.value = match?.value ?? loc;
 }
 
 /** Show the ABV field only for alcohol-bearing categories; hide + zero it otherwise.
@@ -330,10 +344,11 @@ export function saveIgModal(): void {
   const pct = parseFloat($<HTMLInputElement>('#igAbv').value);
   const abv = Number.isFinite(pct) ? Math.max(0, Math.min(1, pct / 100)) : 0;
   const cat = $<HTMLSelectElement>('#igCat').value;
-  // Store the default location only when it deviates from the category default —
-  // otherwise leave it undefined so no redundant override is kept.
+  // Store the default location only when it deviates from the category default
+  // (label-equivalent counts as the default) — otherwise leave it undefined so
+  // no redundant override is kept.
   const loc = $<HTMLSelectElement>('#igLoc').value;
-  const defaultLocation = loc === defaultLocationForCat(cat) ? undefined : loc;
+  const defaultLocation = sameCat(loc, defaultLocationForCat(cat)) ? undefined : loc;
   // Store forms only when they differ from the category/seed baseline, so an untouched
   // edit (e.g. a plain liquid's pour default, or citrus's synth set) keeps no override.
   const isDefaultForms = JSON.stringify(editingForms) === JSON.stringify(baselineForms(editingKey, cat));

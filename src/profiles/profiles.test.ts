@@ -2,7 +2,7 @@ import { describe, it, expect } from 'vitest';
 import type { Profile, StockEntry } from '../core/types';
 import {
   HOME_ID, OTHER_CAT,
-  makeHomeProfile, makeProfile, profileCats, catLabel, isReservedCat,
+  makeHomeProfile, makeProfile, profileCats, catLabel, isReservedCat, sameCat,
   effectiveCat, seedHomeFromStock, foldLegacyPlacements,
 } from './profiles';
 import { LOCATION_ORDER } from '../ingredients/locations';
@@ -39,7 +39,7 @@ describe('makeProfile', () => {
   });
 });
 
-describe('catLabel / isReservedCat', () => {
+describe('catLabel / isReservedCat / sameCat', () => {
   it('labels known location ids, renders custom names verbatim', () => {
     expect(catLabel('fridge')).toBe('Fridge');
     expect(catLabel(OTHER_CAT)).toBe('Other');
@@ -51,6 +51,12 @@ describe('catLabel / isReservedCat', () => {
     expect(isReservedCat(' Other ')).toBe(true);
     expect(isReservedCat('Fridge')).toBe(false);
   });
+
+  it('sameCat matches by label, case-insensitively', () => {
+    expect(sameCat('fridge', 'Fridge')).toBe(true);     // Home id vs custom aisle
+    expect(sameCat('Aisle 1', 'aisle 1')).toBe(true);
+    expect(sameCat('fridge', 'pantry')).toBe(false);
+  });
 });
 
 describe('effectiveCat', () => {
@@ -60,14 +66,16 @@ describe('effectiveCat', () => {
     expect(effectiveCat(h, 'gin', 'bottom-shelf')).toBe('bar-top');
   });
 
-  it('Home falls back to the ingredient default location, then Other', () => {
+  it('falls back to the ingredient default location, then Other', () => {
     const h = makeHomeProfile();
     expect(effectiveCat(h, 'gin', 'bottom-shelf')).toBe('bottom-shelf');
     expect(effectiveCat(h, 'gin', undefined)).toBe(OTHER_CAT);
   });
 
-  it('non-Home profiles ignore the default location — unplaced means Other', () => {
-    expect(effectiveCat(custom(), 'gin', 'bottom-shelf')).toBe(OTHER_CAT);
+  it('matches the default location in ANY profile with a label-equivalent category', () => {
+    const p = custom({ cats: ['Snacks', 'Fridge'] });
+    expect(effectiveCat(p, 'lime', 'fridge')).toBe('Fridge');   // returns the profile's own string
+    expect(effectiveCat(p, 'gin', 'bottom-shelf')).toBe(OTHER_CAT); // no equivalent aisle
   });
 
   it('demotes to Other when the resolved category is no longer listed', () => {
