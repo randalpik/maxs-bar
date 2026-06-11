@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { iconFor, amountTag } from './icons';
+import { icon, iconFor, amountTag } from './icons';
 import { parseIngredient } from '../parser/parser';
 
 const shapeOf = (raw: string) => iconFor(parseIngredient(raw));
@@ -51,5 +51,11 @@ describe('iconFor mapping', () => {
   it('brews (beer, cider) get the can icon', () => {
     expect(shapeOf('1 beer')).toBe('can');
     expect(shapeOf('1 cider')).toBe('can');
+  });
+  it('every food shape is drawn, not the default-circle fallback', () => {
+    const fallback = icon('__nonexistent__', '#000');
+    for (const s of ['jar', 'box', 'bag', 'sack', 'loaf', 'shaker', 'cheese', 'patty', 'scoop',
+                     'mushroom', 'pepper', 'onion', 'avocado'])
+      expect(icon(s, '#000'), s).not.toBe(fallback);
   });
 });
