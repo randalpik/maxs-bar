@@ -17,6 +17,16 @@ describe('defaultLocationForCat', () => {
     expect(defaultLocationForCat('sugar')).toBe('pantry');
   });
 
+  it('maps the food categories (incl. the freezer-defaulted proteins)', () => {
+    expect(defaultLocationForCat('produce')).toBe('fridge');
+    expect(defaultLocationForCat('condiment')).toBe('fridge');
+    expect(defaultLocationForCat('drygood')).toBe('pantry');
+    expect(defaultLocationForCat('bakery')).toBe('pantry');
+    expect(defaultLocationForCat('snack')).toBe('pantry');
+    expect(defaultLocationForCat('protein')).toBe('freezer');
+    expect(LOCATION_ORDER).toContain('freezer'); // seeded into the Home profile
+  });
+
   it('falls through to "other" for unknown categories', () => {
     expect(defaultLocationForCat('other')).toBe('other');
     expect(defaultLocationForCat('whatever')).toBe('other');

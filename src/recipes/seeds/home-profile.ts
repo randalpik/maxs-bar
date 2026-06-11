@@ -22,5 +22,6 @@ export const HOME_PROFILE_CATS: HomeSeedCat[] = [
   { id: 'bottom-shelf', label: 'Bottom shelf' },
   { id: 'wine-rack',    label: 'Wine rack' },
   { id: 'fridge',       label: 'Fridge' },
+  { id: 'freezer',      label: 'Freezer' },
   { id: 'pantry',       label: 'Pantry' },
 ];

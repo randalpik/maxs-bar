@@ -58,6 +58,16 @@ export const CATEGORIES: CategoryDef[] = [
   { id: 'herbspice', label: 'Herbs & spices', loc: 'pantry',       icon: null },
   { id: 'sugar',     label: 'Sugar',          loc: 'pantry',       icon: 'cube' },
   { id: 'dairyegg',  label: 'Dairy & egg',    loc: 'fridge',       icon: null },
+  // ---- Food block (the kitchen side of the taxonomy; bar categories above stay
+  // intact). No `frozen` category: a category is WHAT something is, its loc is WHERE
+  // it lives — frozen things are proteins (or dairy with a defaultLocation override).
+  // Produce counts by default ("2 tomato" = two tomatoes, in any context).
+  { id: 'produce',   label: 'Produce',        loc: 'fridge',       icon: 'leaf',     forms: [{ keyword: '', role: 'count' }] },
+  { id: 'condiment', label: 'Condiments',     loc: 'fridge',       icon: 'jar' },
+  { id: 'drygood',   label: 'Dry goods',      loc: 'pantry',       icon: 'box' },
+  { id: 'bakery',    label: 'Bakery',         loc: 'pantry',       icon: 'loaf' },
+  { id: 'snack',     label: 'Snacks',         loc: 'pantry',       icon: 'bag' },
+  { id: 'protein',   label: 'Proteins',       loc: 'freezer',      icon: 'patty' },
   { id: 'other',     label: 'Other',          loc: 'other',        icon: null },
 ];
 
