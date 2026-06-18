@@ -45,8 +45,10 @@ export function icon(shape: string, color: string): string {
     case 'squeeze': inner = `<path d="M14 3.5 h4 v2 l1 2.5 h-6 l1 -2.5 z" fill="${color}" ${w}/><path d="M10 11 q0 -3 6 -3 q6 0 6 3 v12 a4 4 0 0 1 -4 4 h-4 a4 4 0 0 1 -4 -4 z" fill="${color}" ${w}/><path d="M10 16 h12" fill="none" stroke="${S}" stroke-width="1" opacity=".4"/>`; break;
     // Can/tub cylinder — elliptical lid + rounded base, distinct from the soda `can`.
     case 'cylinder': inner = `<path d="M8 9 V23 A8 4 0 0 0 24 23 V9" fill="${color}" ${w}/><ellipse cx="16" cy="9" rx="8" ry="3.5" fill="${color}" ${w}/><path d="M8 9 A8 3.5 0 0 0 24 9" fill="none" stroke="${S}" stroke-width="1" opacity=".4"/>`; break;
-    // Classic isosceles-triangle cheese wedge (symmetric apex, rounded corners), with holes.
-    case 'cheese': inner = `<path d="M16 6 L25.5 22 Q26 23.5 24.5 23.5 L7.5 23.5 Q6 23.5 6.5 22 Z" fill="${color}" ${w}/><circle cx="16" cy="19" r="1.5" fill="none" stroke="${S}" stroke-width="1" opacity=".5"/><circle cx="13" cy="14" r="1.1" fill="none" stroke="${S}" stroke-width="1" opacity=".5"/><circle cx="19.5" cy="15.5" r="1.1" fill="none" stroke="${S}" stroke-width="1" opacity=".5"/>`; break;
+    // Cheese wedge as a triangular prism: front isosceles-triangle face (tip = wheel
+    // centre at left, short base = rind at right), extruded up-right by ~the side length.
+    // Top + rind faces shaded progressively darker; holes on the bright front face.
+    case 'cheese': inner = `<path d="M16 14 L16 24 L25 17 L25 7 Z" fill="${color}" ${w}/><path d="M16 14 L16 24 L25 17 L25 7 Z" fill="${S}" opacity=".22"/><path d="M5 19 L16 14 L25 7 L14 12 Z" fill="${color}" ${w}/><path d="M5 19 L16 14 L25 7 L14 12 Z" fill="${S}" opacity=".1"/><path d="M5 19 L16 14 L16 24 Z" fill="${color}" ${w}/><circle cx="11" cy="18" r="1.2" fill="${S}" opacity=".3"/><circle cx="13" cy="21" r=".9" fill="${S}" opacity=".3"/><circle cx="9" cy="20" r=".8" fill="${S}" opacity=".3"/>`; break;
     // Faux-3D disc/puck: elliptical top + side thickness, with an inner rim.
     case 'patty': inner = `<path d="M6 15 v3 a10 4.5 0 0 0 20 0 v-3" fill="${color}" ${w}/><ellipse cx="16" cy="15" rx="10" ry="4.5" fill="${color}" ${w}/><ellipse cx="16" cy="15" rx="6" ry="2.5" fill="none" stroke="${S}" stroke-width="1" opacity=".4"/>`; break;
     // Package block — a medium rounded square for non-patty proteins (ground/crumbles/sausage).
