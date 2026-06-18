@@ -54,7 +54,7 @@ describe('iconFor mapping', () => {
   });
   it('every food shape is drawn, not the default-circle fallback', () => {
     const fallback = icon('__nonexistent__', '#000');
-    for (const s of ['jar', 'box', 'bag', 'sack', 'loaf', 'shaker', 'cheese', 'patty', 'scoop',
+    for (const s of ['jar', 'box', 'bag', 'loaf', 'shaker', 'cheese', 'patty', 'squeeze', 'cylinder',
                      'mushroom', 'pepper', 'onion', 'avocado'])
       expect(icon(s, '#000'), s).not.toBe(fallback);
   });
