@@ -31,8 +31,6 @@ export const state: {
   key: string;
   query: string;
   page: 'recipes' | 'food' | 'ingredients' | 'syrups';
-  /** Ingredients-tab sub-mode: stock toggling vs. location grouping/reorder. Session-only. */
-  igMode: 'stock' | 'location';
   stocked: Set<string>;
   /** Sync-only shadow of `stocked`: per-key {on,ts} so an un-stock can win a merge.
    *  Kept in lockstep with the Set by the stock mutators; not read by the UI. */
@@ -55,7 +53,6 @@ export const state: {
   key: 'base',
   query: '',
   page: 'recipes',
-  igMode: 'stock',
   stocked: new Set(),
   stockTs: {},
   ingredients: {},

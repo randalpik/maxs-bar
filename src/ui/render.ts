@@ -19,14 +19,31 @@ import { $ } from '../core/dom';
    ============================================================ */
 const main = $('#main');
 
-const COCKTAIL_KEYS: Record<'group' | 'sort', [string, string][]> = {
-  group: [['spirit', 'By spirit'], ['citrus', 'By citrus'], ['syrup', 'By syrup'], ['liqueur', 'By liqueur'], ['method', 'By method']],
-  sort: [['base', 'Base spirit'], ['name', 'Name'], ['alcohol', 'Alcohol (est.)'], ['missing', 'Missing ingredients'], ['edited', 'Last modified']],
+const COCKTAIL_KEYS: Record<"group" | "sort", [string, string][]> = {
+  group: [
+    ["spirit", "By spirit"],
+    ["citrus", "By citrus"],
+    ["syrup", "By syrup"],
+    ["liqueur", "By liqueur"],
+    ["method", "By method"],
+  ],
+  sort: [
+    ["base", "By base spirit"],
+    ["name", "By name"],
+    ["alcohol", "By ABV"],
+    ["missing", "By missing ingredients"],
+    ["edited", "By date modified"],
+  ],
 };
 // Food drops base/method/alcohol (meaningless) and groups/sorts by its category.
-const FOOD_KEYS: Record<'group' | 'sort', [string, string][]> = {
-  group: [['category', 'By category']],
-  sort: [['category', 'Category'], ['name', 'Name'], ['missing', 'Missing ingredients'], ['edited', 'Last modified']],
+const FOOD_KEYS: Record<"group" | "sort", [string, string][]> = {
+  group: [["category", "By category"]],
+  sort: [
+    ["category", "By category"],
+    ["name", "By name"],
+    ["missing", "By missing ingredients"],
+    ["edited", "By date modified"],
+  ],
 };
 
 /** The group/sort key options for the current page + mode. */
@@ -149,10 +166,10 @@ function groupSortKeys(): string[] | null {
 /** A category section: its header and grid wrapped in one bordered box, so the
  *  whole group reads as a unit (the `.group` panel in styles.css). `gridClass` is
  *  'grid' for recipe/syrup cards, 'ig-grid' for the ingredients page. */
-function groupSection(label: string, count: number, body: string, gridClass = 'grid'): string {
+function groupSection(label: string, count: number, body: string, gridClass = 'grid', dataCat?: string): string {
   return `<section class="group">`
     + `<div class="grouphead"><span class="lbl">${esc(label)}</span><span class="cnt">${count}</span><span class="rule"></span></div>`
-    + `<div class="${gridClass}">${body}</div>`
+    + `<div class="${gridClass}"${dataCat !== undefined ? ` data-cat="${esc(dataCat)}"` : ''}>${body}</div>`
     + `</section>`;
 }
 
@@ -280,34 +297,32 @@ export function updateIngredientChip(el: HTMLElement): void {
   $('#count').textContent = `${n} of ${chips.length} stocked`;
 }
 
-function igChipHTML(e: IngredientEntry, stocked: boolean, locMode = false): string {
-  // Location mode keeps the out-of-stock styling (hide-unstocked off shows unstocked
-  // chips in place) but swaps the toggle affordance for the grab one — clicking
-  // can't toggle here, it would fight the drag.
-  const cls = 'chip ig' + (locMode ? ' loc-chip' : '') + (stocked ? '' : ' unstocked');
-  const title = locMode ? `Drag to place ${e.disp}` : stocked ? IG_TITLE.stocked : IG_TITLE.out;
+function igChipHTML(e: IngredientEntry, stocked: boolean): string {
+  // One chip serves both affordances: tap toggles stock, drag rearranges placement
+  // (drag is armed on any real profile — see drag.ts). The toggle title is the primary
+  // hint; a >5px drag suppresses the trailing click so it never toggles by accident.
+  const cls = 'chip ig' + (stocked ? '' : ' unstocked');
+  const title = stocked ? IG_TITLE.stocked : IG_TITLE.out;
   return `<div class="${cls}" data-ing="${esc(e.key)}" title="${esc(title)}">`
     + `<button type="button" class="ig-edit-btn" data-ig-edit="${esc(e.key)}" title="Edit ${esc(e.disp)}" tabindex="-1">`
     + `<svg width="15" height="15" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4"><path d="M11 2l3 3-8 8-4 1 1-4z"/></svg></button>`
     + (e.shape ? icon(e.shape, e.color) : '<span class="ph"></span>')
     + `<span class="nm">${esc(e.disp)}</span>`
-    + (locMode ? '' : `<span class="qwrap"><span class="tag">${e.count} use${e.count === 1 ? '' : 's'}</span></span>`)
+    + `<span class="qwrap"><span class="tag">${e.count} use${e.count === 1 ? '' : 's'}</span></span>`
     + findBtn(e.key, e.disp)
     + `</div>`;
 }
 
 /** Profile view (any real profile — Home or custom): ingredients bucketed into the
- *  profile's categories by effectiveCat and ordered by stored position. Both sub-modes
- *  share this grouping; they differ in affordance and filters. Stock mode shows every
- *  ingredient with the toggle chip (walk the store, grab things). Location mode swaps
- *  in draggable chips, renders empty groups as drop targets, and honours hideUnstocked
- *  (drop unstocked entries — Location mode only, per the backlog). hideOther drops the
- *  implicit Other group in both modes, which also makes it undraggable-into. */
+ *  profile's categories by effectiveCat and ordered by stored position. One screen does
+ *  both jobs at once — tap a chip to toggle stock, drag it to rearrange placement. Every
+ *  profile category is rendered (empty ones included) as a drop target. hideUnstocked
+ *  drops unstocked entries (a per-profile filter); hideOther drops the implicit Other
+ *  group, which also makes it undraggable-into. */
 function renderProfile(p: Profile, entries: IngredientEntry[]): void {
-  const locMode = state.igMode === 'location';
-  const shown = locMode && p.hideUnstocked ? entries.filter(e => state.stocked.has(e.key)) : entries;
+  const shown = p.hideUnstocked ? entries.filter(e => state.stocked.has(e.key)) : entries;
   const stockedCount = entries.reduce((n, e) => n + (state.stocked.has(e.key) ? 1 : 0), 0);
-  $('#count').textContent = locMode ? `${stockedCount} stocked` : `${stockedCount} of ${entries.length} stocked`;
+  $('#count').textContent = `${stockedCount} of ${entries.length} stocked`;
 
   const cats = profileCats(p).filter(c => !(p.hideOther && c === OTHER_CAT));
   const byCat = new Map<string, IngredientEntry[]>(cats.map(id => [id, []]));
@@ -320,14 +335,8 @@ function renderProfile(p: Profile, entries: IngredientEntry[]): void {
       const pa = p.placements[a.key]?.pos ?? Infinity, pb = p.placements[b.key]?.pos ?? Infinity;
       return pa - pb || a.disp.localeCompare(b.disp);
     });
-    if (locMode) {
-      const body = items.map(e => igChipHTML(e, state.stocked.has(e.key), true)).join('');
-      html += `<section class="group"><div class="grouphead"><span class="lbl">${esc(catLabel(id))}</span>`
-        + `<span class="cnt">${items.length}</span><span class="rule"></span></div>`
-        + `<div class="ig-grid loc-grid" data-cat="${esc(id)}">${body}</div></section>`;
-    } else if (items.length) {
-      html += groupSection(catLabel(id), items.length, items.map(e => igChipHTML(e, state.stocked.has(e.key))).join(''), 'ig-grid');
-    }
+    const body = items.map(e => igChipHTML(e, state.stocked.has(e.key))).join('');
+    html += groupSection(catLabel(id), items.length, body, 'ig-grid loc-grid', id);
   }
   main.innerHTML = html || '<div class="empty">No ingredients to show.</div>';
   scheduleLayout();
@@ -368,7 +377,7 @@ export function renderIngredients(): void {
   if (!total) { main.innerHTML = '<div class="empty">No ingredients yet.</div>'; $('#count').textContent = '0 of 0 stocked'; return; }
   const profile = state.profiles[state.profileId];
   if (state.profileId !== CATEGORIES_ID && profile && !profile.deleted) { renderProfile(profile, entries); return; }
-  // Categories sentinel: the taxonomy view (igMode is meaningless here — the seg is hidden).
+  // Categories sentinel: the taxonomy view (no placements, so no drag — just stock toggling).
   const stockedCount = entries.reduce((n, e) => n + (state.stocked.has(e.key) ? 1 : 0), 0);
   $('#count').textContent = `${stockedCount} of ${total} stocked`;
 
@@ -431,9 +440,6 @@ export function layoutChipGroup(container: HTMLElement): void {
   // Shrink each chip to its widest wrapped line — no dead horizontal space.
   const widths = chips.map(chipNeededWidth);
   chips.forEach((c, k) => { c.style.width = widths[k] + 'px'; });
-  // Location-mode chips get a fixed two-line name box in CSS, so they're already
-  // uniform height — skip equalization (and don't pin a height that fights it).
-  if (container.classList.contains('loc-grid')) return;
   // Equalize every chip to the tallest; CSS distributes contents top-to-bottom.
   const maxH = Math.max(...chips.map(c => c.offsetHeight));
   chips.forEach(c => { c.style.height = maxH + 'px'; });

@@ -7,7 +7,7 @@ import { fillKeySel, render, layoutCards, updateIngredientChip } from './ui/rend
 import { openModal, closeModal, saveModal, updatePreview, deleteEditing } from './ui/modal';
 import { openIgModal, closeIgModal, saveIgModal, resetIgModal, removeIgModal, fillIgCat, fillIgLoc, initIgBuilder } from './ui/igmodal';
 import { openProfileModal, closeProfileModal, saveProfileModal, deleteProfileModal, pickProfileImport, initProfCatDrag } from './ui/profilemodal';
-import { initLocationDrag } from './ui/drag';
+import { initLocationDrag, consumeDragClick } from './ui/drag';
 import { openSeedModal, closeSeedModal, confirmSeed, seedModalForced } from './ui/seedmodal';
 import { confirmModal } from './ui/confirm';
 import {
@@ -108,13 +108,6 @@ $('#modeSeg').addEventListener('click', e => {
   [...$('#modeSeg').children].forEach(x => x.classList.toggle('on', x === b));
   fillKeySel(); render();
 });
-$('#igModeSeg').addEventListener('click', e => {
-  const b = (e.target as HTMLElement).closest('button');
-  if (!b) return;
-  state.igMode = b.dataset.mode as 'stock' | 'location';
-  [...$('#igModeSeg').children].forEach(x => x.classList.toggle('on', x === b));
-  render();
-});
 // Profile selector: a profile id switches the view; the Add sentinel opens the
 // modal instead (reverting the select — creation re-points it on save).
 $<HTMLSelectElement>('#profileSel').addEventListener('change', e => {
@@ -155,9 +148,9 @@ $('#main').addEventListener('click', e => {
   if (state.page === 'ingredients') {
     const editIg = t.closest<HTMLElement>('[data-ig-edit]');
     if (editIg) { openIgModal(editIg.dataset.igEdit!); return; }
-    // Location mode (real profiles only — Categories ignores the stale sub-mode):
-    // clicking a chip never toggles stock (it would fight the drag).
-    if (state.igMode === 'location' && state.profileId !== CATEGORIES_ID) return;
+    // A chip drag fires a trailing synthetic click — swallow it so a rearrange
+    // doesn't also toggle stock. A plain tap leaves the flag clear and toggles.
+    if (consumeDragClick()) return;
     const ing = t.closest<HTMLElement>('[data-ing]');
     if (ing) { toggleStock(ing.dataset.ing!); updateIngredientChip(ing); }
     return;

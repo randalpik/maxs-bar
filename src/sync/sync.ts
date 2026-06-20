@@ -39,7 +39,7 @@ function saveAuth(): void {
 /* ---------------- sync button (toolbar) ---------------- */
 
 let status: SyncStatus = 'off';
-const BTN_LABEL: Record<SyncStatus, string> = { off: 'Sync now', idle: 'Sync now', syncing: 'Syncing…', error: 'Error' };
+const BTN_LABEL: Record<SyncStatus, string> = { off: 'Sync now', idle: 'Sync now', syncing: 'Syncing…', error: 'Sync error' };
 /** The toolbar Sync button shows only while signed in; its label reflects sync status,
  *  and clicking it triggers an immediate sync (see syncNow / main.ts wiring). */
 function renderSyncBtn(): void {

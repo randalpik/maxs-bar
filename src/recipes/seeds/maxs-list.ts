@@ -29,4 +29,6 @@ Hemingway Daiquiri: 2 light rum, 1/2 luxardo, 3/4 oz lime, 1/2 grapefruit
 White Russian: 2 spirit, 1 Kahlua, 1 Bailey's, 1 cacao, dash chocolate bitters, top milk (built)
 
 Alaska: 2 gin, 3/4 yellow chartreuse, orange bitters (stirred)
+
+Quetzal: 3/2 mezcal, 1/2 campari, 2 pineapple, 1/2 lime, 1/2 cinnamon
 `;

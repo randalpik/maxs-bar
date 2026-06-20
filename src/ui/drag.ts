@@ -4,10 +4,11 @@ import { render } from './render';
 import { $ } from '../core/dom';
 
 /* ============================================================
-   Location-mode drag-to-reorder (pointer-based, touch + mouse)
+   Ingredient drag-to-reorder (pointer-based, touch + mouse)
 
-   Active only on the ingredients page in Location mode with a real profile selected
-   (the Categories sentinel has no placements). A chip is dragged by its body (the
+   Active on the ingredients page whenever a real profile is selected (the Categories
+   sentinel has no placements). Coexists with tap-to-toggle-stock: a press under the 5px
+   threshold stays a tap, past it becomes a drag. A chip is dragged by its body (the
    edit/find inset buttons keep working). We float a clone under the pointer and
    move the ORIGINAL chip through the DOM as a live placeholder, so on drop the DOM
    order of each touched .loc-grid IS the desired order — we read it back and persist
@@ -26,7 +27,17 @@ let startX = 0, startY = 0, grabDX = 0, grabDY = 0;
 let dragging = false;
 
 function active(): boolean {
-  return state.page === 'ingredients' && state.igMode === 'location' && state.profileId !== CATEGORIES_ID;
+  return state.page === 'ingredients' && state.profileId !== CATEGORIES_ID;
+}
+
+/* A completed drag fires a trailing synthetic `click` on the moved chip. The #main
+ * click handler calls consumeDragClick() first so that click rearranges instead of
+ * toggling stock; a plain tap (no drag) never sets the flag and toggles as usual. */
+let dragClick = false;
+export function consumeDragClick(): boolean {
+  if (!dragClick) return false;
+  dragClick = false;
+  return true;
 }
 
 function gridFromPoint(x: number, y: number): HTMLElement | null {
@@ -156,6 +167,9 @@ function onUp(e: PointerEvent): void {
   window.removeEventListener('pointercancel', onUp);
   cancelAnimationFrame(scrollRaf);
   if (!dragging) { chip = null; pointerId = -1; return; }
+  // pointerup (not pointercancel) is followed by a synthetic click — flag it for the
+  // #main handler to swallow so the rearrange doesn't also toggle stock.
+  if (e.type === 'pointerup') dragClick = true;
 
   const destGrid = chip!.closest<HTMLElement>('.loc-grid[data-cat]');
   ghost?.remove();
@@ -182,6 +196,7 @@ export function initLocationDrag(): void {
     if (t.closest('.ig-edit-btn,.find')) return;     // let inset buttons do their thing
     const c = t.closest<HTMLElement>('.chip.ig');
     if (!c) return;
+    dragClick = false;   // fresh gesture — clear any stale flag from a drag with no trailing click
     chip = c;
     sourceGrid = c.closest<HTMLElement>('.loc-grid[data-cat]');
     pointerId = pe.pointerId;

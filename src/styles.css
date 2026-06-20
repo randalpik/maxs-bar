@@ -71,7 +71,7 @@ header.bar > .brand{
 header.bar::before{content:''; display:inline-block; width:155px; height:50px; vertical-align:middle}
 /* shorter than the left strut: it only needs to overlap row 1's items to reserve
    their right edge */
-.tr-pad{float:right; width:150px; height:34px}
+.tr-pad{float:right; width:162px; height:34px}
 header.bar:has(#syncBtn[style*="none"]) .tr-pad{width:52px}
 /* The narrow-width reset. Above 720px the wide tab seg shows and wraps to row 2 on
    its own; from 720px down the compact hamburger (#tabMenu) replaces it and becomes
@@ -129,21 +129,17 @@ header.page-ingredients #addBtn, header.page-syrups #addBtn{display:none}
 /* the ingredient add button mirrors the recipe one, but only on the ingredients page */
 #addIgBtn{display:none}
 header.page-ingredients #addIgBtn{display:inline-flex}
-/* the stock/location switch is the inverse of #modeSeg: ingredients page only */
-#igModeSeg{display:none}
-header.page-ingredients #igModeSeg{display:inline-flex}
 /* profile controls: ingredients page only. With the uneditable Categories sentinel
-   selected (header.profile-categories) the sub-mode switch, Edit and Export hide
-   too — only the profile selector remains. */
+   selected (header.profile-categories) Edit and Export hide too — only the profile
+   selector remains. */
 #profileSel, #editProfileBtn, #exportProfileBtn{display:none}
 header.page-ingredients #profileSel{display:inline-flex}
 header.page-ingredients #editProfileBtn,
 header.page-ingredients #exportProfileBtn{display:inline-flex}
-header.page-ingredients.profile-categories #igModeSeg,
 header.page-ingredients.profile-categories #editProfileBtn,
 header.page-ingredients.profile-categories #exportProfileBtn{display:none}
 /* fixed width like #keySel so switching profiles never reflows the toolbar */
-#profileSel{width:150px}
+#profileSel{width:200px}
 select,.btn,.search input{
   font-family:var(--mono); font-size:12px; color:var(--text);
   background:var(--surface); border:1px solid var(--line2); border-radius:9px;
@@ -210,7 +206,7 @@ select{appearance:none; padding-right:30px;
    Fixed width so label changes don't reflow the toolbar. JS toggles display, so the
    float only applies while it's visible. */
 /* a flex child of .topright; fixed width so label changes don't shift the menu */
-#syncBtn{width:88px; justify-content:center}
+#syncBtn{width:100px; justify-content:center; white-space:nowrap}
 #syncBtn[data-status="syncing"]{color:var(--muted)}
 #syncBtn[data-status="error"]{color:#e88; border-color:rgba(200,60,60,.4)}
 
@@ -311,24 +307,16 @@ html.ready body{animation:reveal .2s ease}
 .chip.ig:hover{border-color:var(--line2)}
 .chip.ig .tag{color:var(--faint)}
 
-/* ---------- location mode (drag-to-place) ---------- */
-/* empty groups stay a usable drop target; touch-action:none so a drag doesn't scroll */
+/* ---------- ingredient drag-to-place ---------- */
+/* Every profile category is a drop target (empty ones too); touch-action:none so a
+ * drag doesn't scroll. cursor:grab signals the chip is draggable as well as tappable. */
 .loc-grid{min-height:72px}
 .loc-grid .chip{cursor:grab; touch-action:none}
-/* Fixed-HEIGHT chips so dragging between sections is smooth (width is still sized
- *  per-chip by the fitter). The name box is always two lines tall with its text
- *  vertically centred, so one-line and two-line names occupy the same height. */
-.chip.loc-chip{justify-content:center; gap:5px}
-.chip.loc-chip .nm{height:26px; display:flex; align-items:center; justify-content:center; overflow:hidden}
-/* Opaque while keeping the exact apparent colour: the same 6% overlay .chip uses,
- *  painted over an opaque --bg2 (the group panel behind it) instead of letting it
- *  show through — so a lifted drag chip isn't see-through. */
-.chip.loc-chip{background-color:var(--bg2); background-image:linear-gradient(rgba(244,239,230,.06),rgba(244,239,230,.06))}
-/* unstocked loc chips read exactly like .chip.unstocked everywhere else — same red
- *  tint (as an overlay, so the chip stays opaque for the drag ghost), same border,
- *  and the same hover (border lightens, tint stays — mirroring .chip.ig:hover). */
-.chip.loc-chip.unstocked{background-image:linear-gradient(rgba(195,18,46,.16),rgba(195,18,46,.16)); border-color:rgba(195,18,46,.55)}
-.chip.ig.loc-chip.unstocked:hover{border-color:var(--line2)}
+/* The lifted clone must be opaque (the base .chip background is a translucent overlay
+ * that would let the page show through). Repaint the same 6% overlay over an opaque
+ * --bg2, and the unstocked red tint likewise, so the ghost matches the chip exactly. */
+.chip.ig.drag-ghost{background-color:var(--bg2); background-image:linear-gradient(rgba(244,239,230,.06),rgba(244,239,230,.06))}
+.chip.ig.drag-ghost.unstocked{background-image:linear-gradient(rgba(195,18,46,.16),rgba(195,18,46,.16))}
 .chip.drag-src{opacity:.35; border-style:dashed}
 .chip.drag-ghost{position:fixed; z-index:1000; margin:0; pointer-events:none; cursor:grabbing;
   box-shadow:0 8px 24px rgba(0,0,0,.45); border-color:var(--accent)}

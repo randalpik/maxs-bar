@@ -74,4 +74,6 @@ French 75: 1 gin, 1/2 lemon, 1/2 simple, 3 champagne (built)
 Sidecar: 3/2 cognac, 3/4 curaçao, 3/4 lemon, orange peel
 
 Aperol Spritz: 3 prosecco, 2 aperol, 1 soda, orange (built)
+
+Oaxacan Old Fashioned: 3/2 reposado, 1/2 mezcal, 1/4 simple, angostura bitters, orange peel (stirred)
 `;
