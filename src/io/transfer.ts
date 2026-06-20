@@ -161,6 +161,7 @@ export interface ProfileExport {
   cats: string[];
   hideUnstocked: boolean;
   hideOther: boolean;
+  skipPending: boolean;
   placements: ProfileExportPlacement[];
 }
 
@@ -172,7 +173,7 @@ export function buildProfileExport(p: Profile): ProfileExport {
   const order = profileCats(p);
   const ci = (c: string) => { const i = order.indexOf(c); return i < 0 ? order.length : i; };
   placements.sort((a, b) => ci(a.cat) - ci(b.cat) || a.pos - b.pos || a.key.localeCompare(b.key));
-  return { name: p.name, cats: [...p.cats], hideUnstocked: p.hideUnstocked, hideOther: p.hideOther, placements };
+  return { name: p.name, cats: [...p.cats], hideUnstocked: p.hideUnstocked, hideOther: p.hideOther, skipPending: p.skipPending, placements };
 }
 
 /** Parse a profile export: categories are free-form strings (deduped, reserved
@@ -181,7 +182,7 @@ export function buildProfileExport(p: Profile): ProfileExport {
 export function parseProfileImport(
   data: ProfileExport,
   known: Set<string>,
-): { name: string; cats: string[]; hideUnstocked: boolean; hideOther: boolean; placements: ProfileExportPlacement[] } {
+): { name: string; cats: string[]; hideUnstocked: boolean; hideOther: boolean; skipPending: boolean; placements: ProfileExportPlacement[] } {
   const cats: string[] = [];
   for (const c of data.cats ?? []) {
     const s = String(c).trim();
@@ -192,7 +193,7 @@ export function parseProfileImport(
       !!pl && typeof pl === 'object' && typeof pl.key === 'string' && typeof pl.cat === 'string' && known.has(pl.key))
     .map(pl => ({ key: pl.key, cat: pl.cat, pos: typeof pl.pos === 'number' ? pl.pos : 0 }));
   const name = typeof data.name === 'string' && data.name.trim() ? data.name.trim() : 'Imported profile';
-  return { name, cats, hideUnstocked: !!data.hideUnstocked, hideOther: !!data.hideOther, placements };
+  return { name, cats, hideUnstocked: !!data.hideUnstocked, hideOther: !!data.hideOther, skipPending: !!data.skipPending, placements };
 }
 
 /** Recognise our profile-export JSON shape. */

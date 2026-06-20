@@ -9,7 +9,7 @@ import { LOCATION_ORDER } from '../ingredients/locations';
 
 const custom = (over: Partial<Profile> = {}): Profile => ({
   id: 'p-test', name: 'Liquor store', ts: 0, cats: ['aisle 1', 'aisle 2'],
-  hideUnstocked: false, hideOther: false, placements: {}, ...over,
+  hideUnstocked: false, hideOther: false, skipPending: false, placements: {}, ...over,
 });
 
 describe('home profile', () => {

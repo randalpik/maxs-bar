@@ -194,6 +194,9 @@ export interface Derived {
  *  exists so an *un-stock* can win a merge (a bare key list can't express removal). */
 export interface StockEntry {
   on: boolean;
+  /** Tagged for purchase — a shopping-list flavour of unstocked (so `on` is false).
+   *  Distinct purple tag; an old client sees only `on:false` and treats it as unstocked. */
+  pending?: boolean;
   ts: number;
   /** @deprecated Legacy physical location. Placement now lives in the Home profile
    *  (Profile.placements); this is read once by the profiles migration
@@ -224,10 +227,14 @@ export interface Profile {
   ts: number;
   /** Ordered category list, 'other' excluded (implicit last). */
   cats: string[];
-  /** Location mode only: hide unstocked items. Enabling drops unstocked placements. */
+  /** Location mode only: hide unstocked items (Pending items stay shown). Enabling
+   *  drops the placements of items that are neither stocked nor pending. */
   hideUnstocked: boolean;
   /** Both modes: hide the Other group (blocks dragging in/out of it). */
   hideOther: boolean;
+  /** Collapse the stock toggle to two states: any click → stocked, stocked → unstocked.
+   *  Never *creates* Pending (store profiles); existing pending items click to stocked. */
+  skipPending: boolean;
   placements: Record<string, Placement>;
   /** Deletion tombstone, competing by `ts` like recipe tombstones. Home never deletes. */
   deleted?: true;

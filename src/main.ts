@@ -1,7 +1,7 @@
 import './styles.css';
 import { setClassifier } from './parser/parser';
 import { seedClassify, runtimeCatalog, isSeedKey, reconcileStock, refreshUnits } from './ingredients/catalog';
-import { state, load, toggleStock, hasSeed, resetAll, setCurrentProfile } from './core/state';
+import { state, load, cycleStock, hasSeed, resetAll, setCurrentProfile } from './core/state';
 import { CATEGORIES_ID } from './profiles/profiles';
 import { fillKeySel, render, layoutCards, updateIngredientChip } from './ui/render';
 import { openModal, closeModal, saveModal, updatePreview, deleteEditing } from './ui/modal';
@@ -152,7 +152,7 @@ $('#main').addEventListener('click', e => {
     // doesn't also toggle stock. A plain tap leaves the flag clear and toggles.
     if (consumeDragClick()) return;
     const ing = t.closest<HTMLElement>('[data-ing]');
-    if (ing) { toggleStock(ing.dataset.ing!); updateIngredientChip(ing); }
+    if (ing) { cycleStock(ing.dataset.ing!); updateIngredientChip(ing); }
     return;
   }
   const b = t.closest<HTMLElement>('[data-edit]');

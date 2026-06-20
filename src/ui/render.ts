@@ -4,7 +4,7 @@ import { FAMILY_LABEL, SPIRIT_FAMILIES, METHOD_ORDER, titleCase } from '../parse
 import { FOOD_CATS, FOOD_CAT_LABEL, DEFAULT_FOOD_CAT } from '../recipes/food';
 import { icon, amountTag } from '../ingredients/icons';
 import {
-  buildStockCtx, isAvailable, missingCount, ingredientKey, effectiveChip,
+  buildStockCtx, chipStatus, missingCount, ingredientKey, effectiveChip,
   SECTION_ORDER, SECTION_LABEL,
 } from '../ingredients/ingredients';
 import type { StockCtx, IngredientEntry } from '../ingredients/ingredients';
@@ -105,8 +105,9 @@ export function gotoBtn(key: string, label: string): string {
 export function chipHTML(i: Ingredient, ctx?: StockCtx, searchable = false): string {
   const { disp, color, shape } = effectiveChip(i);
   const { amount, tag } = amountTag(i);
-  // Available/stocked chips stay plain; only flag what's missing (no ctx -> plain, e.g. modal preview).
-  const cls = ctx && !isAvailable(i, ctx) ? ' unstocked' : '';
+  // Available/stocked chips stay plain; flag what's missing (red) or pending (purple).
+  // No ctx -> plain (e.g. modal preview).
+  const cls = ctx ? { available: '', pending: ' pending', missing: ' unstocked' }[chipStatus(i, ctx)] : '';
   return `<div class="chip${cls}">`
     + (shape ? icon(shape, color) : '<span class="ph"></span>')
     + `<span class="nm">${esc(disp)}</span>`
@@ -185,7 +186,7 @@ export function render(): void {
   if (!pageRecs.length) { main.innerHTML = `<div class="empty">${foodPage ? 'No food recipes yet — add one with “+ Add”.' : 'No recipes yet.'}</div>`; return; }
   if (!data.length) { main.innerHTML = '<div class="empty">No recipes match.</div>'; return; }
 
-  const ctx = buildStockCtx(runtimeCatalog(state.records), state.stocked);
+  const ctx = buildStockCtx(runtimeCatalog(state.records), state.stocked, state.pending);
 
   if (state.mode === 'sort') {
     const arr = [...data];
@@ -282,27 +283,45 @@ export function renderSyrups(): void {
 const IG_TITLE = {
   stocked: 'In stock — click to mark out',
   out: 'Out of stock — click to mark stocked',
+  pending: 'Pending — tagged for purchase',
 } as const;
+
+type IgStatus = 'stocked' | 'pending' | 'unstocked';
+
+/** One ingredient's stock status for the ingredients page. */
+function igStatus(key: string): IgStatus {
+  return state.stocked.has(key) ? 'stocked' : state.pending.has(key) ? 'pending' : 'unstocked';
+}
+
+const IG_STATUS_CLASS: Record<IgStatus, string> = { stocked: '', pending: ' pending', unstocked: ' unstocked' };
+const IG_STATUS_TITLE: Record<IgStatus, string> = { stocked: IG_TITLE.stocked, pending: IG_TITLE.pending, unstocked: IG_TITLE.out };
+
+/** Header count line: stocked of total. */
+function stockCountLabel(entries: IngredientEntry[]): string {
+  const stocked = entries.reduce((n, e) => n + (state.stocked.has(e.key) ? 1 : 0), 0);
+  return `${stocked} of ${entries.length} stocked`;
+}
 
 /** Toggle one ingredient chip in place after its stock state changed, and refresh
  *  the header count — avoids rebuilding #main (which jumps the scroll position).
  *  Safe because on the ingredients page each catalog key maps to exactly one chip
  *  and stocking one item never changes another's display. */
 export function updateIngredientChip(el: HTMLElement): void {
-  const stocked = state.stocked.has(el.dataset.ing!);
-  el.classList.toggle('unstocked', !stocked);
-  el.title = stocked ? IG_TITLE.stocked : IG_TITLE.out;
-  const chips = main.querySelectorAll<HTMLElement>('.chip.ig');
-  const n = [...chips].filter(c => !c.classList.contains('unstocked')).length;
-  $('#count').textContent = `${n} of ${chips.length} stocked`;
+  const s = igStatus(el.dataset.ing!);
+  el.classList.toggle('unstocked', s === 'unstocked');
+  el.classList.toggle('pending', s === 'pending');
+  el.title = IG_STATUS_TITLE[s];
+  const chips = [...main.querySelectorAll<HTMLElement>('.chip.ig')];
+  const stocked = chips.filter(c => !c.classList.contains('unstocked') && !c.classList.contains('pending')).length;
+  $('#count').textContent = `${stocked} of ${chips.length} stocked`;
 }
 
-function igChipHTML(e: IngredientEntry, stocked: boolean): string {
-  // One chip serves both affordances: tap toggles stock, drag rearranges placement
+function igChipHTML(e: IngredientEntry, status: IgStatus): string {
+  // One chip serves both affordances: tap cycles stock state, drag rearranges placement
   // (drag is armed on any real profile — see drag.ts). The toggle title is the primary
   // hint; a >5px drag suppresses the trailing click so it never toggles by accident.
-  const cls = 'chip ig' + (stocked ? '' : ' unstocked');
-  const title = stocked ? IG_TITLE.stocked : IG_TITLE.out;
+  const cls = 'chip ig' + IG_STATUS_CLASS[status];
+  const title = IG_STATUS_TITLE[status];
   return `<div class="${cls}" data-ing="${esc(e.key)}" title="${esc(title)}">`
     + `<button type="button" class="ig-edit-btn" data-ig-edit="${esc(e.key)}" title="Edit ${esc(e.disp)}" tabindex="-1">`
     + `<svg width="15" height="15" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4"><path d="M11 2l3 3-8 8-4 1 1-4z"/></svg></button>`
@@ -320,9 +339,9 @@ function igChipHTML(e: IngredientEntry, stocked: boolean): string {
  *  drops unstocked entries (a per-profile filter); hideOther drops the implicit Other
  *  group, which also makes it undraggable-into. */
 function renderProfile(p: Profile, entries: IngredientEntry[]): void {
-  const shown = p.hideUnstocked ? entries.filter(e => state.stocked.has(e.key)) : entries;
-  const stockedCount = entries.reduce((n, e) => n + (state.stocked.has(e.key) ? 1 : 0), 0);
-  $('#count').textContent = `${stockedCount} of ${entries.length} stocked`;
+  // hideUnstocked keeps Pending items shown (they're the shopping list).
+  const shown = p.hideUnstocked ? entries.filter(e => state.stocked.has(e.key) || state.pending.has(e.key)) : entries;
+  $('#count').textContent = stockCountLabel(entries);
 
   const cats = profileCats(p).filter(c => !(p.hideOther && c === OTHER_CAT));
   const byCat = new Map<string, IngredientEntry[]>(cats.map(id => [id, []]));
@@ -335,7 +354,7 @@ function renderProfile(p: Profile, entries: IngredientEntry[]): void {
       const pa = p.placements[a.key]?.pos ?? Infinity, pb = p.placements[b.key]?.pos ?? Infinity;
       return pa - pb || a.disp.localeCompare(b.disp);
     });
-    const body = items.map(e => igChipHTML(e, state.stocked.has(e.key))).join('');
+    const body = items.map(e => igChipHTML(e, igStatus(e.key))).join('');
     html += groupSection(catLabel(id), items.length, body, 'ig-grid loc-grid', id);
   }
   main.innerHTML = html || '<div class="empty">No ingredients to show.</div>';
@@ -378,8 +397,7 @@ export function renderIngredients(): void {
   const profile = state.profiles[state.profileId];
   if (state.profileId !== CATEGORIES_ID && profile && !profile.deleted) { renderProfile(profile, entries); return; }
   // Categories sentinel: the taxonomy view (no placements, so no drag — just stock toggling).
-  const stockedCount = entries.reduce((n, e) => n + (state.stocked.has(e.key) ? 1 : 0), 0);
-  $('#count').textContent = `${stockedCount} of ${total} stocked`;
+  $('#count').textContent = stockCountLabel(entries);
 
   // Section == category now; group directly by the entry's category.
   const byCat = new Map<string, IngredientEntry[]>();
@@ -407,7 +425,7 @@ export function renderIngredients(): void {
       if (ga && a.umbrella !== b.umbrella) return a.umbrella.localeCompare(b.umbrella);
       return a.disp.localeCompare(b.disp);
     });
-    html += groupSection(SECTION_LABEL[cat] || titleCase(cat), items.length, items.map(e => igChipHTML(e, state.stocked.has(e.key))).join(''), 'ig-grid');
+    html += groupSection(SECTION_LABEL[cat] || titleCase(cat), items.length, items.map(e => igChipHTML(e, igStatus(e.key))).join(''), 'ig-grid');
   }
   main.innerHTML = html;
   scheduleLayout();

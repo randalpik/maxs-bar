@@ -32,8 +32,11 @@ export const state: {
   query: string;
   page: 'recipes' | 'food' | 'ingredients' | 'syrups';
   stocked: Set<string>;
-  /** Sync-only shadow of `stocked`: per-key {on,ts} so an un-stock can win a merge.
-   *  Kept in lockstep with the Set by the stock mutators; not read by the UI. */
+  /** Tagged-for-purchase keys (a shopping-list flavour of unstocked; never also in
+   *  `stocked`). Derived from `stockTs` on load/apply, kept in lockstep by the mutators. */
+  pending: Set<string>;
+  /** Sync-only shadow of `stocked`/`pending`: per-key {on,pending?,ts} so an un-stock
+   *  can win a merge. Kept in lockstep with the Sets by the stock mutators; not read by the UI. */
   stockTs: Record<string, StockEntry>;
   /** Per-ingredient edits, keyed by ingredientKey; layered over parser defaults. */
   ingredients: Record<string, IngredientOverride>;
@@ -54,6 +57,7 @@ export const state: {
   query: '',
   page: 'recipes',
   stocked: new Set(),
+  pending: new Set(),
   stockTs: {},
   ingredients: {},
   recipeOverrides: {},
@@ -229,7 +233,7 @@ export function applySyncState(p: SyncPayload): void {
   state.recipeOverrides = p.recipeOverrides ?? {};
   state.ingredients = p.ingredients ?? {};
   state.stockTs = p.stockTs ?? {};
-  state.stocked = new Set(Object.entries(state.stockTs).filter(([, e]) => e.on).map(([k]) => k));
+  deriveStockSets();
   state.profiles = p.profiles ?? {};
   // A pre-profiles device's payload still carries stock loc/pos: ensure Home exists
   // and fold those legacy placements in (newer-ts only, so real placements win).
@@ -247,6 +251,13 @@ export function applySyncState(p: SyncPayload): void {
   state.records = deriveRecords();
 }
 
+/** Rebuild the runtime `stocked`/`pending` Sets from the shadow map (the richer
+ *  representation): `on` ⇒ stocked, `pending` (and not `on`) ⇒ pending, else unstocked. */
+function deriveStockSets(): void {
+  state.stocked = new Set(Object.entries(state.stockTs).filter(([, e]) => e.on).map(([k]) => k));
+  state.pending = new Set(Object.entries(state.stockTs).filter(([, e]) => !e.on && e.pending).map(([k]) => k));
+}
+
 /** Stocked ingredient keys, persisted separately from recipes. */
 export function loadStock(): void {
   try {
@@ -257,6 +268,7 @@ export function loadStock(): void {
     }
   } catch { /* keep empty set */ }
   loadStockTs();
+  deriveStockSets();   // shadow map is authoritative; recovers pending too
 }
 
 /** Load the sync shadow map, migrating from the bare Set (legacy installs) when absent:
@@ -272,6 +284,7 @@ function loadStockTs(): void {
         for (const [k, v] of Object.entries(obj as Record<string, Partial<StockEntry>>))
           if (v && typeof v.on === 'boolean') {
             const e: StockEntry = { on: v.on, ts: Number(v.ts) || 0 };
+            if (v.pending) e.pending = true;
             if (typeof v.loc === 'string') e.loc = v.loc;
             if (typeof v.pos === 'number') e.pos = v.pos;
             out[k] = e;
@@ -290,8 +303,10 @@ function loadStockTs(): void {
  *  keeps the shadow correct just by editing `state.stocked` and calling saveStock. */
 function syncStockTs(): void {
   const now = Date.now();
-  for (const k of state.stocked) if (!state.stockTs[k]?.on) state.stockTs[k] = { on: true, ts: now };
-  for (const [k, e] of Object.entries(state.stockTs)) if (e.on && !state.stocked.has(k)) state.stockTs[k] = { on: false, ts: now };
+  for (const k of state.stocked) { const e = state.stockTs[k]; if (!e?.on) state.stockTs[k] = { on: true, ts: now }; }
+  for (const k of state.pending) { const e = state.stockTs[k]; if (e?.on || !e?.pending) state.stockTs[k] = { on: false, pending: true, ts: now }; }
+  for (const [k, e] of Object.entries(state.stockTs))
+    if ((e.on || e.pending) && !state.stocked.has(k) && !state.pending.has(k)) state.stockTs[k] = { on: false, ts: now };
 }
 
 export function saveStock(): void {
@@ -301,9 +316,25 @@ export function saveStock(): void {
   fireMutate('stock');
 }
 
-export function toggleStock(key: string): void {
-  if (state.stocked.has(key)) state.stocked.delete(key);
-  else state.stocked.add(key);
+/** Does the current profile collapse the toggle to two states? The categories
+ *  sentinel (and any missing profile) allows Pending. */
+export function currentSkipPending(): boolean {
+  return state.profiles[state.profileId]?.skipPending ?? false;
+}
+
+/** Advance one ingredient through the stock cycle on click. Full cycle (Pending allowed):
+ *  stocked → unstocked → pending → stocked. Skip-pending (store) profiles: any non-stocked
+ *  state → stocked, stocked → unstocked. */
+export function cycleStock(key: string): void {
+  const stocked = state.stocked.has(key), pending = state.pending.has(key);
+  state.stocked.delete(key); state.pending.delete(key);
+  if (currentSkipPending()) {
+    if (!stocked) state.stocked.add(key);          // unstocked|pending → stocked; stocked → unstocked
+  } else {
+    if (stocked) { /* → unstocked */ }
+    else if (pending) state.stocked.add(key);      // pending → stocked
+    else state.pending.add(key);                   // unstocked → pending
+  }
   saveStock();
 }
 

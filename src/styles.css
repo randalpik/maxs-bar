@@ -4,6 +4,7 @@
   --text:#F2F0F7; --muted:#A49FB2; --faint:#6C6678;
   --accent:#B79CEB; --accent-dim:rgba(155,111,214,.18);
   --unstocked:#C3122E;
+  --pending:#8B5CF6;
   --stroke:rgba(240,237,248,.85);
   --mono:'Spline Sans Mono',ui-monospace,monospace;
   --sans:'Hanken Grotesk',ui-sans-serif,system-ui,sans-serif;
@@ -293,6 +294,8 @@ html.ready body{animation:reveal .2s ease}
 .chip .tag{font-size:10px; letter-spacing:.02em; color:var(--muted); line-height:1.1}
 /* available/stocked chips stay plain (base); only missing ones are flagged — shared across both tabs */
 .chip.unstocked{background:rgba(195,18,46,.16); border-color:rgba(195,18,46,.55)}
+/* pending: tagged for purchase — purple, distinct from the missing-red — both tabs */
+.chip.pending{background:rgba(139,92,246,.16); border-color:rgba(139,92,246,.6)}
 
 /* ---------- syrups page (read-only) ---------- */
 .card.syrup{display:block; padding:14px 18px 16px}
@@ -317,6 +320,7 @@ html.ready body{animation:reveal .2s ease}
  * --bg2, and the unstocked red tint likewise, so the ghost matches the chip exactly. */
 .chip.ig.drag-ghost{background-color:var(--bg2); background-image:linear-gradient(rgba(244,239,230,.06),rgba(244,239,230,.06))}
 .chip.ig.drag-ghost.unstocked{background-image:linear-gradient(rgba(195,18,46,.16),rgba(195,18,46,.16))}
+.chip.ig.drag-ghost.pending{background-image:linear-gradient(rgba(139,92,246,.16),rgba(139,92,246,.16))}
 .chip.drag-src{opacity:.35; border-style:dashed}
 .chip.drag-ghost{position:fixed; z-index:1000; margin:0; pointer-events:none; cursor:grabbing;
   box-shadow:0 8px 24px rgba(0,0,0,.45); border-color:var(--accent)}

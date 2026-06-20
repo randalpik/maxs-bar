@@ -283,6 +283,7 @@ export function reconcileStock(records: Recipe[]): boolean {
   const stockable = new Set(runtimeCatalog(records).entries.map(e => e.key));
   let changed = false;
   for (const k of [...state.stocked]) if (!stockable.has(k)) { state.stocked.delete(k); changed = true; }
+  for (const k of [...state.pending]) if (!stockable.has(k)) { state.pending.delete(k); changed = true; }
   if (changed) saveStock();
   return changed;
 }

@@ -27,6 +27,7 @@ let importedPlacements: ProfileExportPlacement[] | null = null;
 const nameInput = (): HTMLInputElement => $<HTMLInputElement>('#profName');
 const hideUnstockedBox = (): HTMLInputElement => $<HTMLInputElement>('#profHideUnstocked');
 const hideOtherBox = (): HTMLInputElement => $<HTMLInputElement>('#profHideOther');
+const skipPendingBox = (): HTMLInputElement => $<HTMLInputElement>('#profSkipPending');
 
 function rowHTML(cat: string): string {
   return `<div class="prof-cat" data-cat="${esc(cat)}">`
@@ -66,6 +67,7 @@ export function openProfileModal(id: string | null): void {
   renderCatRows(p ? [...p.cats] : []);
   hideUnstockedBox().checked = p?.hideUnstocked ?? false;
   hideOtherBox().checked = p?.hideOther ?? false;
+  skipPendingBox().checked = p?.skipPending ?? false;
   $('#profImport').style.display = p ? 'none' : '';
   $('#profDelete').style.display = p && id !== HOME_ID ? '' : 'none';
   $('#profileOverlay').classList.add('open');
@@ -84,6 +86,7 @@ export async function saveProfileModal(): Promise<void> {
   const cats = domCats();
   const hideUnstocked = hideUnstockedBox().checked;
   const hideOther = hideOtherBox().checked;
+  const skipPending = skipPendingBox().checked;
   const now = Date.now();
 
   if (editingId) {
@@ -99,13 +102,14 @@ export async function saveProfileModal(): Promise<void> {
       const ok = await confirmModal({ title: 'Save profile changes', message: msgs.join(' '), confirmText: 'Save' });
       if (!ok) return;
     }
-    const next: Profile = { ...prev, name, cats, hideUnstocked, hideOther, placements: { ...prev.placements } };
+    const next: Profile = { ...prev, name, cats, hideUnstocked, hideOther, skipPending, placements: { ...prev.placements } };
     const removedSet = new Set(removed);
     for (const [k, pl] of Object.entries(next.placements)) {
       if (removedSet.has(pl.cat)) next.placements[k] = { ...pl, cat: OTHER_CAT, ts: now };
     }
     if (enablingHide) {
-      for (const k of Object.keys(next.placements)) if (!state.stocked.has(k)) delete next.placements[k];
+      // Pending items stay shown, so keep their placement too.
+      for (const k of Object.keys(next.placements)) if (!state.stocked.has(k) && !state.pending.has(k)) delete next.placements[k];
     }
     upsertProfile(next);
   } else {
@@ -113,6 +117,7 @@ export async function saveProfileModal(): Promise<void> {
     p.cats = cats;
     p.hideUnstocked = hideUnstocked;
     p.hideOther = hideOther;
+    p.skipPending = skipPending;
     if (importedPlacements) {
       p.placements = Object.fromEntries(importedPlacements.map(pl => [pl.key, { cat: pl.cat, pos: pl.pos, ts: now }]));
     }
@@ -151,6 +156,7 @@ function applyProfileImport(text: string): void {
   renderCatRows(parsed.cats);
   hideUnstockedBox().checked = parsed.hideUnstocked;
   hideOtherBox().checked = parsed.hideOther;
+  skipPendingBox().checked = parsed.skipPending;
   importedPlacements = parsed.placements;
 }
 

@@ -173,28 +173,47 @@ export function buildCatalog(records: Recipe[]): Catalog {
 export interface StockCtx {
   stocked: Set<string>;
   stockedUmbrellas: Set<string>;
+  pending: Set<string>;
+  pendingUmbrellas: Set<string>;
   active: Set<string>;
   removed: Set<string>;
 }
 
-/** Precompute, for one render: the stocked keys, the umbrella ids they cover (union
- *  of each stocked entry's parents), and the removed keys (always render unstocked). */
-export function buildStockCtx(cat: Catalog, stocked: Set<string>): StockCtx {
+/** Precompute, for one render: the stocked/pending keys, the umbrella ids each covers
+ *  (union of each entry's parents), and the removed keys (always render unstocked). */
+export function buildStockCtx(cat: Catalog, stocked: Set<string>, pending: Set<string> = new Set()): StockCtx {
   const stockedUmbrellas = new Set<string>();
-  for (const e of cat.entries) if (stocked.has(e.key)) for (const u of e.umbrellas) stockedUmbrellas.add(u);
+  const pendingUmbrellas = new Set<string>();
+  for (const e of cat.entries) {
+    if (stocked.has(e.key)) for (const u of e.umbrellas) stockedUmbrellas.add(u);
+    if (pending.has(e.key)) for (const u of e.umbrellas) pendingUmbrellas.add(u);
+  }
   const removed = new Set(Object.entries(state.ingredients).filter(([, o]) => o.removed).map(([k]) => k));
-  return { stocked, stockedUmbrellas, active: cat.active, removed };
+  return { stocked, stockedUmbrellas, pending, pendingUmbrellas, active: cat.active, removed };
 }
 
 /** A recipe ingredient is available if its exact item is stocked, or — for an
  *  effective generic (a key that is an active umbrella parent) — if any child is
- *  stocked. Removed ingredients are never available. */
+ *  stocked. Removed ingredients are never available. Pending counts as NOT available. */
 export function isAvailable(i: Ingredient, ctx: StockCtx): boolean {
   const key = ingredientKey(i);
   if (ctx.removed.has(key)) return false;
   if (ctx.stocked.has(key)) return true;
   if (ctx.active.has(key)) return ctx.stockedUmbrellas.has(key);
   return false;
+}
+
+export type ChipStatus = 'available' | 'pending' | 'missing';
+
+/** Three-way status for a recipe-chip render: available (stocked), pending (tagged
+ *  for purchase — not yet had), or missing. Mirrors isAvailable's exact/umbrella logic. */
+export function chipStatus(i: Ingredient, ctx: StockCtx): ChipStatus {
+  if (isAvailable(i, ctx)) return 'available';
+  const key = ingredientKey(i);
+  if (ctx.removed.has(key)) return 'missing';
+  if (ctx.pending.has(key)) return 'pending';
+  if (ctx.active.has(key)) return ctx.pendingUmbrellas.has(key) ? 'pending' : 'missing';
+  return 'missing';
 }
 
 /** Distinct unstocked ingredients in a recipe, deduped by stock identity so e.g.

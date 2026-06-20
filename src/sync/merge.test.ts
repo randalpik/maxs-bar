@@ -87,7 +87,7 @@ describe('ingredient merge (union + LWW; reset has no tombstone)', () => {
 
 describe('profile merge (meta whole-profile LWW + per-placement LWW)', () => {
   const prof = (over: Partial<Profile>): Profile => ({
-    id: 'p1', name: 'Store', ts: 0, cats: ['a'], hideUnstocked: false, hideOther: false, placements: {}, ...over,
+    id: 'p1', name: 'Store', ts: 0, cats: ['a'], hideUnstocked: false, hideOther: false, skipPending: false, placements: {}, ...over,
   });
 
   it('unions profiles added on different devices', () => {
@@ -157,14 +157,14 @@ describe('convergence + idempotency', () => {
     recipeOverrides: { x: { recipe: 'ax', edited: '2026-01-02T00:00:00.000Z' }, y: { removed: true, edited: '2026-01-05T00:00:00.000Z' } },
     ingredients: { gin: { color: '#a', ts: 10 } },
     stockTs: { lime: { on: true, ts: 10 }, rum: { on: false, ts: 5 } },
-    profiles: { home: { id: 'home', name: 'Home', ts: 10, cats: ['fridge'], hideUnstocked: false, hideOther: false, placements: { gin: { cat: 'fridge', pos: 0, ts: 10 } } } },
+    profiles: { home: { id: 'home', name: 'Home', ts: 10, cats: ['fridge'], hideUnstocked: false, hideOther: false, skipPending: false, placements: { gin: { cat: 'fridge', pos: 0, ts: 10 } } } },
   });
   const b = P({
     seedId: 'maxs-list', seedTs: 20,
     recipeOverrides: { x: { recipe: 'bx', edited: '2026-01-01T00:00:00.000Z' }, z: { recipe: 'bz', edited: '2026-01-03T00:00:00.000Z' } },
     ingredients: { gin: { color: '#b', ts: 20 }, lime: { cat: 'citrus', ts: 7 } },
     stockTs: { lime: { on: false, ts: 20 }, rum: { on: true, ts: 1 } },
-    profiles: { home: { id: 'home', name: 'Home base', ts: 20, cats: ['fridge', 'pantry'], hideUnstocked: false, hideOther: false, placements: { gin: { cat: 'pantry', pos: 1, ts: 5 }, rum: { cat: 'fridge', pos: 2, ts: 8 } } } },
+    profiles: { home: { id: 'home', name: 'Home base', ts: 20, cats: ['fridge', 'pantry'], hideUnstocked: false, hideOther: false, skipPending: false, placements: { gin: { cat: 'pantry', pos: 1, ts: 5 }, rum: { cat: 'fridge', pos: 2, ts: 8 } } } },
   });
   const c = P({
     seedId: 'empty', seedTs: 15,

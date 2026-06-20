@@ -74,6 +74,7 @@ export function makeHomeProfile(): Profile {
     cats: HOME_PROFILE_CATS.map(c => c.id),
     hideUnstocked: false,
     hideOther: false,
+    skipPending: false,
     placements: {},
   };
 }
@@ -88,6 +89,7 @@ export function makeProfile(name: string): Profile {
     cats: [],
     hideUnstocked: false,
     hideOther: false,
+    skipPending: false,
     placements: {},
   };
 }

@@ -139,7 +139,7 @@ describe('profile export/import (single profile JSON)', () => {
   const profile: Profile = {
     id: 'p-test', name: 'Liquor store', ts: 123,
     cats: ['spirits aisle', 'mixers aisle'],
-    hideUnstocked: true, hideOther: false,
+    hideUnstocked: true, hideOther: false, skipPending: true,
     placements: {
       gin: { cat: 'spirits aisle', pos: 1, ts: 5 },
       rum: { cat: 'spirits aisle', pos: 0, ts: 5 },
@@ -157,7 +157,7 @@ describe('profile export/import (single profile JSON)', () => {
     const parsed = parseProfileImport(file, known);
     const reimported: Profile = {
       id: 'p-new', name: parsed.name, ts: 0, cats: parsed.cats,
-      hideUnstocked: parsed.hideUnstocked, hideOther: parsed.hideOther,
+      hideUnstocked: parsed.hideUnstocked, hideOther: parsed.hideOther, skipPending: parsed.skipPending,
       placements: Object.fromEntries(parsed.placements.map(pl => [pl.key, { cat: pl.cat, pos: pl.pos, ts: 0 }])),
     };
     expect(bytes(buildProfileExport(reimported))).toBe(bytes(file));
